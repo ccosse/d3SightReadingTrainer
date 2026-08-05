@@ -1,6 +1,24 @@
 <template>
   <section class="srt-shell">
-    <div class="srt-controls">
+    <div class="srt-config-header">
+      <div>
+        <strong>Generation</strong>
+        <span>{{ sourceSummary }}</span>
+      </div>
+      <q-btn
+        flat
+        dense
+        round
+        :icon="store.srtConfigOpen ? 'expand_less' : 'tune'"
+        :aria-label="store.srtConfigOpen ? 'Collapse generation controls' : 'Open generation controls'"
+        @click="store.srtConfigOpen = !store.srtConfigOpen"
+      >
+        <q-tooltip>{{ store.srtConfigOpen ? 'Collapse configuration and leave the player visible.' : 'Open generation and composition controls.' }}</q-tooltip>
+      </q-btn>
+    </div>
+
+    <q-slide-transition>
+      <div v-show="store.srtConfigOpen" class="srt-controls">
       <q-select dense dark outlined emit-value map-options label="Source" :model-value="store.srtSource" :options="options.source" @update:model-value="setOption('srtSource', $event)" />
       <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
 
@@ -17,7 +35,7 @@
         :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMotion', $event)"
       />
       <q-select
-        v-if="['walking-chords', 'stride', 'jazz-guitar'].includes(store.srtStyle)"
+        v-if="['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle)"
         dense dark outlined emit-value map-options label="Chords"
         :model-value="store.srtChordSize" :options="options.chordSize"
         @update:model-value="setOption('srtChordSize', $event)"
@@ -62,8 +80,12 @@
 
       <q-toggle v-model="store.srtShowLabels" color="light-blue-5" label="Labels" />
       <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="light-blue-5" label="Loop" />
+      <q-select dense dark outlined emit-value map-options label="Progression" :model-value="store.srtProgression" :options="options.progression" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtProgression', $event)" />
+      <q-select v-if="store.srtStyle === 'riff'" dense dark outlined emit-value map-options label="Riff flavor" :model-value="store.srtRiffFlavor" :options="options.riffFlavor" @update:model-value="setOption('srtRiffFlavor', $event)" />
+      <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
       <q-btn flat icon="refresh" color="grey-3" :disable="store.srtSource === 'staff'" @click="regenerate"><q-tooltip>Regenerate the future passage.</q-tooltip></q-btn>
-    </div>
+      </div>
+    </q-slide-transition>
 
     <div class="srt-hud">
       <span><strong>{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }}</strong> · {{ store.keySignatureSummary }}</span>
@@ -78,6 +100,9 @@
         viewBox="0 0 1120 360"
         role="img"
         aria-label="Common scrolling grand staff with fixed scanline, clip selection, and linked instrument playback"
+        @dragover.stop.prevent="allowPitchDrop"
+        @drop.stop.prevent="dropPitch"
+        @dblclick.stop="addSelectedAtPointer"
         @pointerdown="beginRangeSelection"
         @pointermove="updateRangeSelection"
         @pointerup="finishRangeSelection"
@@ -180,8 +205,11 @@ let selecting = false
 let selectionAnchor = null
 let generatedPulseIndex = 0
 
-const accompanimentStyle = computed(() => ['walking-chords', 'stride', 'jazz-guitar'].includes(store.srtStyle))
-const effectiveSpacing = computed(() => accompanimentStyle.value ? 1 : store.srtEventSpacing)
+const accompanimentStyle = computed(() => ['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle))
+const effectiveSpacing = computed(() => {
+  if (['boogie', 'riff'].includes(store.srtStyle)) return 0.5
+  return accompanimentStyle.value ? 1 : store.srtEventSpacing
+})
 const sourceSummary = computed(() => {
   if (store.srtSource === 'staff') return store.hasStaffSequence ? `manual staff · ${store.staffClusters.length} positions · ${store.srtLoopManual ? 'looping' : 'one pass'}` : 'manual staff · no notes yet'
   return `${labelFor(options.style, store.srtStyle)} · ${labelFor(options.range, store.srtRange)} · endless`
@@ -251,6 +279,105 @@ function beatForPointer(event) {
   const x = (event.clientX - rect.left) / rect.width * 1120
   return Math.max(0, currentBeat.value + (x - scanX) / pixelsPerBeat.value)
 }
+function pointerInViewBox(event) {
+  const rect = readerSvg.value?.getBoundingClientRect()
+  if (!rect?.width || !rect?.height) return null
+  return {
+    x: (event.clientX - rect.left) / rect.width * 1120,
+    y: (event.clientY - rect.top) / rect.height * 360
+  }
+}
+function nearestMidiForPitchClass(pitchClass, y) {
+  let bestMidi = 60 + mod12(pitchClass)
+  let bestDistance = Infinity
+  for (let midi = 24; midi <= 96; midi += 1) {
+    if (mod12(midi) !== mod12(pitchClass)) continue
+    const distance = Math.abs(noteY(midi) - y)
+    if (distance < bestDistance) {
+      bestMidi = midi
+      bestDistance = distance
+    }
+  }
+  return bestMidi
+}
+function currentManualCycleStart(cycleLength = store.staffSequenceBeats) {
+  if (currentBeat.value < leadInBeats) return leadInBeats
+  return leadInBeats + Math.floor((currentBeat.value - leadInBeats) / cycleLength) * cycleLength
+}
+function localManualBeat(absoluteBeat) {
+  const cycleLength = store.staffSequenceBeats
+  const cycleStart = currentManualCycleStart(cycleLength)
+  let local = absoluteBeat - cycleStart
+  while (local < 0) local += cycleLength
+  while (local >= cycleLength) local -= cycleLength
+  return local
+}
+function allowPitchDrop(event) {
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+}
+function placePitchAtPointer(event, pitchClass) {
+  const point = pointerInViewBox(event)
+  const absoluteBeat = beatForPointer(event)
+  if (!point || absoluteBeat === null) return
+
+  if (store.srtTransportState === 'playing') pause()
+  if (store.srtSource !== 'staff') {
+    store.srtSource = 'staff'
+    store.clearClipSelection()
+  }
+
+  const midi = nearestMidiForPitchClass(pitchClass, point.y)
+  const beat = localManualBeat(absoluteBeat)
+  store.addStaffNote({ midi, beat, duration: 1 })
+  refreshManualEvents()
+  store.setFocus(`Added ${midiLabel(midi, store.accidentalMode)} to the manual staff`)
+}
+function shiftChordToPointer(midis, y) {
+  const source = [...new Set((midis || []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b)
+  if (!source.length) return []
+  let best = source
+  let bestDistance = Infinity
+  for (let shift = -48; shift <= 48; shift += 12) {
+    const candidate = source.map((midi) => midi + shift)
+    if (candidate.some((midi) => midi < 24 || midi > 96)) continue
+    const averageY = candidate.reduce((sum, midi) => sum + noteY(midi), 0) / candidate.length
+    const distance = Math.abs(averageY - y)
+    if (distance < bestDistance) {
+      best = candidate
+      bestDistance = distance
+    }
+  }
+  return best
+}
+function placeChordAtPointer(event, payload) {
+  const point = pointerInViewBox(event)
+  const absoluteBeat = beatForPointer(event)
+  if (!point || absoluteBeat === null || !Array.isArray(payload?.midis)) return
+  if (store.srtTransportState === 'playing') pause()
+  if (store.srtSource !== 'staff') {
+    store.srtSource = 'staff'
+    store.clearClipSelection()
+  }
+  const beat = localManualBeat(absoluteBeat)
+  const midis = shiftChordToPointer(payload.midis, point.y)
+  midis.forEach((midi) => store.addStaffNote({ midi, beat, duration: 1 }))
+  refreshManualEvents()
+  store.setFocus(`Added ${payload.label || 'chord'} to the manual staff`)
+}
+function dropPitch(event) {
+  const chordRaw = event.dataTransfer?.getData('application/x-midi-chord')
+  if (chordRaw) {
+    try { placeChordAtPointer(event, JSON.parse(chordRaw)); return } catch { /* try a single note below */ }
+  }
+  const raw = event.dataTransfer?.getData('application/x-pitch-class') || event.dataTransfer?.getData('text/plain')
+  const pitchClass = Number(raw)
+  if (!Number.isFinite(pitchClass) || pitchClass < 0 || pitchClass > 11) return
+  placePitchAtPointer(event, pitchClass)
+}
+function addSelectedAtPointer(event) {
+  const pitchClass = store.selectedPitchClasses[0] ?? store.currentKey.tonic
+  placePitchAtPointer(event, pitchClass)
+}
 function buildVisualEvent(event) {
   const playBeat = playbackBeatForEvent(event)
   const baseX = xForBeat(playBeat)
@@ -288,7 +415,10 @@ function generatedEvent() {
       style: store.srtStyle,
       chordSize: store.srtChordSize,
       bassPattern: store.srtBassPattern,
-      exerciseMode: store.srtExerciseMode
+      exerciseMode: store.srtExerciseMode,
+      progression: store.srtProgression,
+      riffFlavor: store.srtRiffFlavor,
+      dynamics: store.srtDynamics
     }),
     swingIndex: pulseIndex,
     swingUnit: effectiveSpacing.value
@@ -333,6 +463,20 @@ function fillAhead() {
   if (store.srtSource === 'staff') fillManualAhead()
   else fillGeneratedAhead()
   events.value.sort((a, b) => a.beat - b.beat)
+}
+function refreshManualEvents() {
+  if (store.srtSource !== 'staff') return
+  clearReleaseTimers()
+  events.value = []
+  nextManualCycleBeat = currentManualCycleStart()
+  fillManualAhead()
+  events.value.sort((a, b) => a.beat - b.beat)
+  playedIds = new Set(
+    events.value
+      .filter((event) => playbackBeatForEvent(event) <= currentBeat.value)
+      .map((event) => event.id)
+  )
+  previousBeat = currentBeat.value
 }
 function clearReleaseTimers() { releaseTimers.forEach((timer) => window.clearTimeout(timer)); releaseTimers = []; store.clearPlaying('srt') }
 function prepareSession() {
@@ -404,7 +548,7 @@ function tick(now) {
       // instead of collapsing all low Hold settings into the same 240 ms blip.
       const seconds = Math.max(0.055, event.duration * store.srtGate * beatMs / 1000)
       const token = store.beginPlaying(event.midis, 'srt')
-      playChord(event.midis, seconds, event.midis.length > 1 ? 0.095 : 0.16)
+      playChord(event.midis, seconds, event.velocity || (event.midis.length > 1 ? 0.095 : 0.16))
       releaseTimers.push(window.setTimeout(() => store.endPlaying(token), seconds * 1000))
     }
   }
@@ -458,7 +602,7 @@ watch(() => store.srtTransportNonce, () => {
 })
 watch(() => store.srtGenerationNonce, regenerate)
 watch(() => store.srtTempo, rebaseTempoClock)
-watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), () => { if (store.srtSource === 'staff') regenerate() })
+watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), refreshManualEvents)
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
 onMounted(() => { prepareSession(); store.setSrtTransportState('stopped') })
@@ -466,7 +610,11 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 </script>
 
 <style scoped>
-.srt-shell { display: grid; gap: 12px; width: 100%; margin: 0; padding: 2px; color: white; }
+.srt-shell { display: grid; gap: 10px; width: 100%; margin: 0; padding: 2px; color: white; }
+.srt-config-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; background: rgba(35,35,35,.68); }
+.srt-config-header > div { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.srt-config-header strong { color: #bfeaff; font-size: 18px; }
+.srt-config-header span { color: #aaa; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .srt-controls { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: rgba(35,35,35,.88); }
 .srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native), .srt-controls :deep(.q-toggle__label) { font-size: 17px; }
 .tempo-block, .gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #8dffab; font-size: 17px; white-space: nowrap; }
@@ -503,5 +651,5 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .clip-row strong { font-size: 18px; }
 .clip-row span { display: block; color: #bbb; font-size: 15px; }
 @media (max-width: 1200px) { .srt-controls { grid-template-columns: repeat(3, minmax(150px,1fr)); } .clip-toolbar { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 700px) { .srt-shell { padding-inline: 0; } .srt-controls { grid-template-columns: 1fr; } .srt-controls > * { grid-column: 1; } .tempo-block, .gate-block, .swing-block { grid-column: 1; } .clip-toolbar { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-controls { grid-template-columns: 1fr; } .srt-controls > * { grid-column: 1; } .tempo-block, .gate-block, .swing-block { grid-column: 1; } .clip-toolbar { grid-template-columns: 1fr; } }
 </style>

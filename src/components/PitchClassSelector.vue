@@ -1,6 +1,6 @@
 <template>
   <section class="selector" aria-label="Pitch-class selector and playback control">
-    <div class="row items-center justify-between q-col-gutter-md q-mb-sm">
+    <div class="selector-header row items-center justify-between q-col-gutter-md q-mb-sm">
       <div class="text-subtitle1 text-weight-medium">Find note</div>
       <div class="row items-center q-gutter-sm control-modes">
         <q-select
@@ -100,11 +100,14 @@
       </q-btn>
     </div>
 
+    <ChordPalette />
+
     <PlaybackTransport class="q-mt-md" />
   </section>
 </template>
 
 <script setup>
+import ChordPalette from './ChordPalette.vue'
 import PlaybackTransport from './PlaybackTransport.vue'
 import { KEYBOARD_PRESETS } from '../music/keyboardPresets'
 import { useNoteMapStore } from '../stores/noteMap'
@@ -177,8 +180,25 @@ function startPitchDrag(event, pitchClass) {
   .all-none-button { grid-column: span 2; }
 }
 
-@media (max-width: 520px) {
-  .pitch-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .all-none-button { grid-column: span 2; }
+@media (max-width: 600px) {
+  .selector { padding: 7px; }
+  .selector-header { gap: 7px; margin-bottom: 7px; }
+  .selector-header > .text-subtitle1 { display: none; }
+  .control-modes { width: 100%; justify-content: space-between; gap: 5px; }
+  .keyboard-select { width: min(100%, 180px); }
+  .selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 38px; padding-inline: 9px; font-size: 14px; }
+  .accidental-toggle :deep(.q-btn) { min-width: 40px; min-height: 38px; padding: 5px 9px; font-size: 20px; }
+  .pitch-grid {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 4px;
+  }
+  .pitch-button { flex: 0 0 58px; min-height: 43px; scroll-snap-align: start; }
+  .all-none-button { flex-basis: 86px; font-size: 14px; }
+  .pitch-name { font-size: 18px; }
+  .scale-degree { font-size: 11px; }
 }
 </style>

@@ -63,15 +63,30 @@
       v-if="showFifthsTools"
       v-model="store.rightDrawerOpen"
       side="right"
-      overlay
+      :overlay="rightDrawerOverlay"
+      :behavior="rightDrawerOverlay ? 'mobile' : 'desktop'"
+      :show-if-above="!rightDrawerOverlay"
       bordered
       :width="rightDrawerWidth"
-      :breakpoint="1120"
+      :breakpoint="1380"
       class="fifths-overlay text-white"
-      style="background: rgba(18, 18, 18, 0.88); color: #fff; backdrop-filter: blur(10px) saturate(108%);"
+      style="background: rgba(18, 18, 18, 0.86); color: #fff; backdrop-filter: blur(10px) saturate(108%);"
     >
       <q-scroll-area class="fit">
         <div class="circle-overlay-body">
+          <q-btn
+            v-if="canDock"
+            class="drawer-mode-toggle"
+            round
+            dense
+            flat
+            :icon="store.rightDrawerMode === 'dock' ? 'layers' : 'view_sidebar'"
+            color="grey-3"
+            :aria-label="store.rightDrawerMode === 'dock' ? 'Use overlay theory panel' : 'Dock theory panel beside workspace'"
+            @click="store.toggleRightDrawerMode"
+          >
+            <q-tooltip>{{ store.rightDrawerMode === 'dock' ? 'Overlay the theory panel without resizing the workspace.' : 'Dock the theory panel and push the workspace left.' }}</q-tooltip>
+          </q-btn>
           <q-btn
             class="expand-fifths"
             round
@@ -84,7 +99,7 @@
           >
             <q-tooltip>Expand the Circle, signature ladder, and linked controls over the whole workspace.</q-tooltip>
           </q-btn>
-          <FifthsExplorer compact />
+          <FifthsExplorer compact :stacked="!rightDrawerOverlay" />
           <GuitarExplorerControls />
         </div>
       </q-scroll-area>
@@ -148,8 +163,11 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 const $q = useQuasar()
 const showFifthsTools = computed(() => store.activeTab !== 'fifths')
+const canDock = computed(() => $q.screen.width >= 1420)
+const rightDrawerOverlay = computed(() => !canDock.value || store.rightDrawerMode === 'overlay')
 const rightDrawerWidth = computed(() => {
   if ($q.screen.lt.sm) return $q.screen.width
+  if (!rightDrawerOverlay.value) return Math.min(570, Math.round($q.screen.width * 0.34))
   if ($q.screen.lt.md) return Math.round($q.screen.width * 0.96)
   return Math.min(1140, Math.round($q.screen.width * 0.78))
 })
@@ -174,7 +192,8 @@ const navigation = [
 .active-nav { color: white; background: #175f8f; }
 .circle-overlay-body { position: relative; display: grid; gap: 10px; padding: 11px 15px 24px; min-height: 100%; }
 .expand-fifths { position: absolute; z-index: 6; top: 5px; right: 5px; background: rgba(28, 28, 28, 0.48); }
-.fifths-overlay { background: rgba(18, 18, 18, 0.88) !important; color: white; box-shadow: -12px 0 36px rgba(0, 0, 0, 0.38); border-left-color: rgba(255, 255, 255, 0.16) !important; }
+.drawer-mode-toggle { position: absolute; z-index: 6; top: 5px; right: 45px; background: rgba(28, 28, 28, 0.48); }
+.fifths-overlay { background: rgba(18, 18, 18, 0.86) !important; color: white; box-shadow: -12px 0 36px rgba(0, 0, 0, 0.38); border-left-color: rgba(255, 255, 255, 0.16) !important; }
 .fifths-edge-tab {
   position: fixed;
   z-index: 3200;

@@ -27,6 +27,24 @@ export const KEYBOARD_PRESETS = [
     whiteHeight: 170
   },
   {
+    id: '61',
+    label: '61 keys · C2–C7',
+    shortLabel: '61',
+    startMidi: 36,
+    endMidi: 96,
+    whiteWidth: 40,
+    whiteHeight: 170
+  },
+  {
+    id: '49',
+    label: '49 keys · C2–C6',
+    shortLabel: '49',
+    startMidi: 36,
+    endMidi: 84,
+    whiteWidth: 46,
+    whiteHeight: 170
+  },
+  {
     id: 'reface-37',
     label: 'Reface CP · 37 keys · E2–E5',
     shortLabel: '37',

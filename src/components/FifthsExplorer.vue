@@ -1,5 +1,5 @@
 <template>
-  <section class="fifths-explorer" :class="{ compact }">
+  <section class="fifths-explorer" :class="{ compact, stacked }">
     <div class="fifths-grid">
       <KeySignatureLadder />
       <CircleOfFifths />
@@ -17,6 +17,10 @@ defineProps({
   compact: {
     type: Boolean,
     default: false
+  },
+  stacked: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -32,6 +36,7 @@ defineProps({
 .fifths-explorer.compact .fifths-grid {
   grid-template-columns: minmax(270px, 0.92fr) minmax(380px, 1.08fr);
 }
+.fifths-explorer.stacked .fifths-grid { grid-template-columns: 1fr; }
 
 @media (max-width: 720px) {
   .fifths-grid,

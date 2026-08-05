@@ -67,6 +67,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     componentOrder: [...DEFAULT_COMPONENT_ORDER],
     leftDrawerOpen: true,
     rightDrawerOpen: true,
+    rightDrawerMode: 'dock',
     fifthsFullscreenOpen: false,
     focusText: 'Select a note on any linked view',
 
@@ -102,6 +103,10 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtChordSize: 'seventh',
     srtExerciseMode: 'mode-1',
     srtBassPattern: 'walk',
+    srtProgression: 'auto',
+    srtRiffFlavor: 'blues-hook',
+    srtDynamics: 'natural',
+    srtConfigOpen: true,
     clipSelectionStart: null,
     clipSelectionEnd: null,
     clips: readSavedClips()
@@ -258,6 +263,14 @@ export const useNoteMapStore = defineStore('noteMap', {
       this.keyboardPreset = keyboardPresetById(id).id
     },
 
+    setRightDrawerMode(mode) {
+      this.rightDrawerMode = mode === 'overlay' ? 'overlay' : 'dock'
+    },
+
+    toggleRightDrawerMode() {
+      this.rightDrawerMode = this.rightDrawerMode === 'dock' ? 'overlay' : 'dock'
+    },
+
     setStaffZoom(value) {
       this.staffZoom = Math.max(0.55, Math.min(1.6, Number(value) || 1))
     },
@@ -334,7 +347,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     addStaffNote({ midi, beat, duration = 1 }) {
-      const normalizedMidi = Math.max(36, Math.min(84, Math.round(Number(midi))))
+      const normalizedMidi = Math.max(24, Math.min(96, Math.round(Number(midi))))
       const normalizedBeat = roundBeat(beat, this.staffQuantize)
       const existing = this.staffEvents.find((event) => event.beat === normalizedBeat && event.midi === normalizedMidi)
       if (existing) {
@@ -357,7 +370,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     updateStaffEvent(id, changes = {}) {
       const event = this.staffEvents.find((item) => item.id === id)
       if (!event) return
-      if (changes.midi !== undefined) event.midi = Math.max(36, Math.min(84, Math.round(Number(changes.midi))))
+      if (changes.midi !== undefined) event.midi = Math.max(24, Math.min(96, Math.round(Number(changes.midi))))
       if (changes.beat !== undefined) event.beat = roundBeat(changes.beat, this.staffQuantize)
       if (changes.duration !== undefined) event.duration = Math.max(0.25, Math.min(4, Number(changes.duration) || 1))
       this.selectedStaffBeat = event.beat
@@ -470,7 +483,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     setSrtOption(name, value) {
-      const allowed = new Set(['srtMaterial', 'srtMotion', 'srtClefMode', 'srtRange', 'srtSource', 'srtStyle', 'srtChordSize', 'srtExerciseMode', 'srtBassPattern'])
+      const allowed = new Set(['srtMaterial', 'srtMotion', 'srtClefMode', 'srtRange', 'srtSource', 'srtStyle', 'srtChordSize', 'srtExerciseMode', 'srtBassPattern', 'srtProgression', 'srtRiffFlavor', 'srtDynamics'])
       if (!allowed.has(name)) return
       this[name] = value
       this.srtGenerationNonce += 1
