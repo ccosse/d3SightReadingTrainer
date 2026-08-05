@@ -83,7 +83,18 @@
       <q-select dense dark outlined emit-value map-options label="Progression" :model-value="store.srtProgression" :options="options.progression" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtProgression', $event)" />
       <q-select v-if="store.srtStyle === 'riff'" dense dark outlined emit-value map-options label="Riff flavor" :model-value="store.srtRiffFlavor" :options="options.riffFlavor" @update:model-value="setOption('srtRiffFlavor', $event)" />
       <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
-      <q-btn flat icon="refresh" color="grey-3" :disable="store.srtSource === 'staff'" @click="regenerate"><q-tooltip>Regenerate the future passage.</q-tooltip></q-btn>
+      <q-btn
+        flat
+        :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
+        color="grey-3"
+        @click="resetOrReseed"
+      >
+        <q-tooltip>
+          {{ store.srtSource === 'staff'
+            ? 'Clear the manual staff and return its tape to the beginning.'
+            : 'Reseed and regenerate the endless passage from the beginning.' }}
+        </q-tooltip>
+      </q-btn>
       </div>
     </q-slide-transition>
 
@@ -302,8 +313,9 @@ function nearestMidiForPitchClass(pitchClass, y) {
   return bestMidi
 }
 function currentManualCycleStart(cycleLength = store.staffSequenceBeats) {
-  if (currentBeat.value < leadInBeats) return leadInBeats
-  return leadInBeats + Math.floor((currentBeat.value - leadInBeats) / cycleLength) * cycleLength
+  // Manual composition starts at beat zero. Generated material keeps its
+  // lead-in, but an untouched stopped staff must accept visible drops at once.
+  return Math.max(0, Math.floor(currentBeat.value / cycleLength) * cycleLength)
 }
 function localManualBeat(absoluteBeat) {
   const cycleLength = store.staffSequenceBeats
@@ -486,7 +498,7 @@ function refreshManualEvents() {
   events.value.sort((a, b) => a.beat - b.beat)
   playedIds = new Set(
     events.value
-      .filter((event) => playbackBeatForEvent(event) <= currentBeat.value)
+      .filter((event) => playbackBeatForEvent(event) < currentBeat.value - 0.001)
       .map((event) => event.id)
   )
   previousBeat = currentBeat.value
@@ -504,7 +516,7 @@ function prepareSession() {
   currentBeat.value = 0
   previousBeat = 0
   nextGeneratedBeat = leadInBeats
-  nextManualCycleBeat = leadInBeats
+  nextManualCycleBeat = store.srtSource === 'staff' ? 0 : leadInBeats
   playedIds = new Set()
   generatedPulseIndex = 0
   generator.reset()
@@ -522,7 +534,7 @@ async function play() {
   store.setSrtTransportState('playing')
   const beatMs = 60000 / store.srtTempo
   startedAt = performance.now() - currentBeat.value * beatMs
-  previousBeat = currentBeat.value
+  previousBeat = currentBeat.value - 0.001
   tick(performance.now())
 }
 function freezeTransport(state) {
@@ -538,6 +550,27 @@ function pause() {
 function stop() {
   freezeTransport('stopped')
 }
+function resetOrReseed() {
+  if (store.srtSource !== 'staff') {
+    regenerate()
+    store.setFocus('Reseeded the generated passage')
+    return
+  }
+
+  sessionToken += 1
+  cancelAnimation()
+  clearReleaseTimers()
+  store.setSrtTransportState('stopped')
+  store.clearStaffSequence()
+  store.clearClipSelection()
+  events.value = []
+  currentBeat.value = 0
+  previousBeat = -0.001
+  nextManualCycleBeat = 0
+  playedIds = new Set()
+  store.setFocus('Cleared the manual staff')
+}
+
 function regenerate() {
   const wasPlaying = store.srtTransportState === 'playing'
   sessionToken += 1

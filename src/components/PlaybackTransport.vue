@@ -4,25 +4,17 @@
       <q-btn
         square
         outline
-        color="positive"
-        icon="play_arrow"
-        :disable="!hasPlayableSource || store.srtTransportState === 'playing'"
-        aria-label="Play or resume the player staff"
-        @click="store.requestSrtPlay"
+        :color="isPlaying ? 'amber-6' : 'positive'"
+        :icon="isPlaying ? 'pause' : 'play_arrow'"
+        :disable="!isPlaying && !hasPlayableSource"
+        :aria-label="isPlaying ? 'Pause the player staff' : 'Play or resume the player staff'"
+        @click="togglePlayPause"
       >
-        <q-tooltip>Play from the frozen tape position. After Pause or Stop, playback resumes exactly where it left off.</q-tooltip>
-      </q-btn>
-
-      <q-btn
-        square
-        outline
-        color="amber-6"
-        icon="pause"
-        :disable="store.srtTransportState !== 'playing'"
-        aria-label="Pause the player staff"
-        @click="store.requestSrtPause"
-      >
-        <q-tooltip>Pause and freeze the staff exactly where it is. Play resumes from this position.</q-tooltip>
+        <q-tooltip>
+          {{ isPlaying
+            ? 'Pause and freeze the staff exactly where it is.'
+            : 'Play or resume from the frozen tape position.' }}
+        </q-tooltip>
       </q-btn>
 
       <q-btn
@@ -78,6 +70,7 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 
 const hasPlayableSource = computed(() => store.srtSource === 'generated' || store.hasStaffSequence)
+const isPlaying = computed(() => store.srtTransportState === 'playing')
 const hasClipSelection = computed(() => store.clipSelectionStart !== null && store.clipSelectionEnd !== null)
 const transportStateLabel = computed(() => ({
   playing: 'Playing',
@@ -88,6 +81,12 @@ const sourceLabel = computed(() => {
   if (store.srtSource === 'staff') return store.hasStaffSequence ? 'manual staff' : 'manual staff is empty'
   return 'endless generated staff'
 })
+
+function togglePlayPause() {
+  if (isPlaying.value) store.requestSrtPause()
+  else store.requestSrtPlay()
+}
+
 const detailLabel = computed(() => {
   if (store.srtTransportState === 'paused') return 'Tape position frozen · Play resumes here'
   if (store.srtTransportState === 'stopped') return 'Transport stopped without rewinding · Play resumes here'
