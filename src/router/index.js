@@ -3,9 +3,8 @@ import {
   createMemoryHistory,
   createRouter,
   createWebHashHistory,
-  createWebHistory,
+  createWebHistory
 } from 'vue-router'
-
 import routes from './routes'
 
 export default defineRouter(() => {
@@ -18,6 +17,6 @@ export default defineRouter(() => {
   return createRouter({
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE),
     routes,
-    scrollBehavior: () => ({ left: 0, top: 0 }),
+    scrollBehavior: () => ({ left: 0, top: 0 })
   })
 })

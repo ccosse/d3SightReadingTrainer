@@ -16,6 +16,7 @@
         aria-label="Piano keyboard linked to the selected pitch classes and current key"
       >
         <g v-for="key in keyboard.whiteKeys" :key="`white-${key.midi}`">
+          <title>{{ midiLabel(key.midi, store.accidentalMode) }} · MIDI {{ key.midi }} · click to select</title>
           <rect
             :x="key.x"
             :y="key.y"
@@ -37,6 +38,7 @@
         </g>
 
         <g v-for="key in keyboard.blackKeys" :key="`black-${key.midi}`">
+          <title>{{ midiLabel(key.midi, store.accidentalMode) }} · MIDI {{ key.midi }} · click to select</title>
           <rect
             :x="key.x"
             :y="key.y"

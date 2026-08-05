@@ -1,19 +1,21 @@
 import { STANDARD_GUITAR_MIDI_LOW_TO_HIGH, mod12 } from '../theory'
 
 export class StratocasterFretboard {
-  constructor({ width = 1120, height = 270, fretCount = 22 } = {}) {
+  constructor({ width = 1180, height = 280, fretCount = 24, woodFretCount = 22 } = {}) {
     this.width = width
     this.height = height
     this.fretCount = fretCount
+    this.woodFretCount = Math.min(woodFretCount, fretCount)
     this.openX = 20
     this.nutX = 84
     this.endX = width - 28
-    this.topAtNut = 66
-    this.bottomAtNut = height - 66
-    this.topAtEnd = 34
-    this.bottomAtEnd = height - 34
-    this.dotFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21]
+    this.topAtNut = 69
+    this.bottomAtNut = height - 69
+    this.topAtEnd = 31
+    this.bottomAtEnd = height - 31
+    this.dotFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
     this.scaleLength = (this.endX - this.nutX) / (1 - Math.pow(2, -fretCount / 12))
+    this.woodEndX = this.fretX(this.woodFretCount)
     this.frets = this.buildFrets()
     this.strings = this.buildStrings()
     this.viewBox = `0 0 ${width} ${height}`
@@ -46,7 +48,8 @@ export class StratocasterFretboard {
         x,
         centerX: (previousX + x) / 2,
         top: this.edgeY(x, 'top'),
-        bottom: this.edgeY(x, 'bottom')
+        bottom: this.edgeY(x, 'bottom'),
+        beyondWood: fret > this.woodFretCount
       })
     }
     return frets
@@ -64,7 +67,8 @@ export class StratocasterFretboard {
           midi: openMidi + fret,
           pitchClass: mod12(openMidi + fret),
           x,
-          y: this.stringY(stringIndex, Math.max(this.nutX, x))
+          y: this.stringY(stringIndex, Math.max(this.nutX, x)),
+          beyondWood: fret > this.woodFretCount
         })
       }
       return {
@@ -80,9 +84,18 @@ export class StratocasterFretboard {
   boardPoints() {
     return [
       [this.nutX, this.topAtNut],
+      [this.woodEndX, this.edgeY(this.woodEndX, 'top')],
+      [this.woodEndX, this.edgeY(this.woodEndX, 'bottom')],
+      [this.nutX, this.bottomAtNut]
+    ].map((point) => point.join(',')).join(' ')
+  }
+
+  extensionPoints() {
+    return [
+      [this.woodEndX, this.edgeY(this.woodEndX, 'top')],
       [this.endX, this.topAtEnd],
       [this.endX, this.bottomAtEnd],
-      [this.nutX, this.bottomAtNut]
+      [this.woodEndX, this.edgeY(this.woodEndX, 'bottom')]
     ].map((point) => point.join(',')).join(' ')
   }
 
@@ -93,7 +106,7 @@ export class StratocasterFretboard {
     const top = this.edgeY(x, 'top')
     const bottom = this.edgeY(x, 'bottom')
     const middle = (top + bottom) / 2
-    if (fret === 12) return [{ x, y: middle - 25 }, { x, y: middle + 25 }]
+    if (fret === 12 || fret === 24) return [{ x, y: middle - 25 }, { x, y: middle + 25 }]
     return [{ x, y: middle }]
   }
 }

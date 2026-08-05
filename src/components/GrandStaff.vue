@@ -7,7 +7,9 @@
           Key signature: {{ store.currentKey.label }} major · {{ store.keySignatureSummary }}
         </div>
       </div>
-      <q-toggle v-model="store.showKeyOverlay" dense label="Overlay key" color="positive" />
+      <q-toggle v-model="store.showKeyOverlay" dense label="Overlay key" color="positive">
+        <q-tooltip>Show all notes belonging to the current major key in addition to the selected pitch class.</q-tooltip>
+      </q-toggle>
     </div>
 
     <div class="svg-frame staff-frame">
@@ -31,6 +33,7 @@
         <line x1="82" y1="141" x2="1010" y2="141" class="middle-c-guide" />
 
         <g v-for="note in displayedNotes" :key="`${note.midi}-${note.kind}`">
+          <title>{{ note.label }} · click to select this pitch class everywhere</title>
           <line
             v-for="ledgerY in note.ledgerLines"
             :key="ledgerY"

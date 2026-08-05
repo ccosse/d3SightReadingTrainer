@@ -10,11 +10,21 @@
       outside-arrows
       mobile-arrows
     >
-      <q-tab name="note-map" label="Note Map" />
-      <q-tab name="sight-reading" label="Sight Reading" />
-      <q-tab name="guitar-tab" label="Guitar TAB" />
-      <q-tab name="fifths" label="Circle of Fifths" />
-      <q-tab name="composer" label="Composer" />
+      <q-tab name="note-map" label="Note Map">
+        <q-tooltip>Linked pitch-class exploration across all instrument and theory views.</q-tooltip>
+      </q-tab>
+      <q-tab name="sight-reading" label="Sight Reading">
+        <q-tooltip>Future MIDI sight-reading drill.</q-tooltip>
+      </q-tab>
+      <q-tab name="guitar-tab" label="Guitar TAB">
+        <q-tooltip>Future linked guitar-tablature drill.</q-tooltip>
+      </q-tab>
+      <q-tab name="fifths" label="Circle of Fifths">
+        <q-tooltip>Full-size Circle of Fifths and key-information view.</q-tooltip>
+      </q-tab>
+      <q-tab name="composer" label="Composer">
+        <q-tooltip>Future chord design, composition, playback, and accompaniment tools.</q-tooltip>
+      </q-tab>
     </q-tabs>
 
     <q-tab-panels v-model="store.activeTab" animated keep-alive class="workspace-panels">
@@ -32,6 +42,23 @@
           <StratocasterFretboard v-if="store.visibleObjects.guitar" />
           <GrandStaff v-if="store.visibleObjects.staff" />
         </div>
+
+        <q-page-sticky
+          v-if="!store.rightDrawerOpen"
+          position="right"
+          :offset="[0, 96]"
+          class="fifths-handle"
+        >
+          <q-btn
+            round
+            color="primary"
+            icon="donut_large"
+            aria-label="Open linked Circle of Fifths"
+            @click="store.rightDrawerOpen = true"
+          >
+            <q-tooltip anchor="center left" self="center right">Open the linked Circle of Fifths overlay.</q-tooltip>
+          </q-btn>
+        </q-page-sticky>
       </q-tab-panel>
 
       <q-tab-panel name="sight-reading" class="q-pa-none">
@@ -104,6 +131,7 @@ const store = useNoteMapStore()
 }
 .hud { min-height: 34px; border-radius: 8px; background: #292929; border: 1px solid #4e4e4e; gap: 10px; }
 .circle-grid { display: grid; grid-template-columns: minmax(340px, 0.9fr) minmax(320px, 1.1fr); gap: 24px; align-items: start; }
+.fifths-handle { z-index: 2100; }
 
 @media (max-width: 880px) {
   .circle-grid { grid-template-columns: 1fr; }

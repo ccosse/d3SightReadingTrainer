@@ -37,6 +37,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       return new Set(keyPitchClasses(this.currentKey))
     },
     isAllSelected: (state) => state.selectedPitchClasses.length === 12,
+    hasSelection: (state) => state.selectedPitchClasses.length > 0,
     isSelected: (state) => (pitchClass) => state.selectedPitchClasses.includes(mod12(pitchClass)),
     isInCurrentKey() {
       return (pitchClass) => this.keyPitchClassSet.has(mod12(pitchClass))
@@ -75,18 +76,20 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     clearSelection() {
-      if (this.selectionMode === 'single') {
-        this.selectedPitchClasses = [this.currentKey.tonic]
-      } else {
-        this.selectedPitchClasses = []
-      }
+      this.selectedPitchClasses = []
+    },
+
+    toggleAllNone() {
+      if (this.hasSelection) this.clearSelection()
+      else this.selectAll()
     },
 
     setSelectionMode(mode) {
       if (mode !== 'single' && mode !== 'multi') return
       this.selectionMode = mode
-      if (mode === 'single' && this.selectedPitchClasses.length !== 1) {
-        this.selectedPitchClasses = [this.selectedPitchClasses[0] ?? this.currentKey.tonic]
+      // None and All are useful special states even in radio-style Single mode.
+      if (mode === 'single' && this.selectedPitchClasses.length > 1 && !this.isAllSelected) {
+        this.selectedPitchClasses = [this.selectedPitchClasses[0]]
       }
     },
 
