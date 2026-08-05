@@ -17,3 +17,16 @@ body {
 .instrument-section { color: #fff; }
 .q-tab-panel { color: #fff; }
 .q-field--dark .q-field__control { background: #292929; }
+
+/* QDrawer content is teleported outside scoped component styles. */
+.q-drawer.dark-drawer,
+.q-drawer.dark-drawer .q-drawer__content,
+.dark-drawer-scroll {
+  background: #303030 !important;
+  color: #fff !important;
+}
+
+.q-drawer.dark-drawer .q-item,
+.q-drawer.dark-drawer .q-toggle__label {
+  color: #fff;
+}

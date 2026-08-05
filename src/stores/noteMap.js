@@ -9,6 +9,8 @@ import {
   signatureLabel
 } from '../music/theory'
 
+const DEFAULT_COMPONENT_ORDER = ['piano', 'guitar', 'staff']
+
 export const useNoteMapStore = defineStore('noteMap', {
   state: () => ({
     activeTab: 'note-map',
@@ -24,6 +26,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       guitar: true,
       staff: true
     },
+    componentOrder: [...DEFAULT_COMPONENT_ORDER],
     leftDrawerOpen: true,
     rightDrawerOpen: true,
     focusText: 'Select a note on any linked view'
@@ -87,7 +90,6 @@ export const useNoteMapStore = defineStore('noteMap', {
     setSelectionMode(mode) {
       if (mode !== 'single' && mode !== 'multi') return
       this.selectionMode = mode
-      // None and All are useful special states even in radio-style Single mode.
       if (mode === 'single' && this.selectedPitchClasses.length > 1 && !this.isAllSelected) {
         this.selectedPitchClasses = [this.selectedPitchClasses[0]]
       }
@@ -104,6 +106,32 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     setVisibleObject(name, value) {
       if (Object.hasOwn(this.visibleObjects, name)) this.visibleObjects[name] = Boolean(value)
+    },
+
+    moveComponent(sourceId, targetId) {
+      if (sourceId === targetId) return
+      const from = this.componentOrder.indexOf(sourceId)
+      const to = this.componentOrder.indexOf(targetId)
+      if (from < 0 || to < 0) return
+
+      const next = [...this.componentOrder]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      this.componentOrder = next
+    },
+
+    moveComponentBy(id, delta) {
+      const from = this.componentOrder.indexOf(id)
+      const to = from + delta
+      if (from < 0 || to < 0 || to >= this.componentOrder.length) return
+      const next = [...this.componentOrder]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      this.componentOrder = next
+    },
+
+    resetComponentOrder() {
+      this.componentOrder = [...DEFAULT_COMPONENT_ORDER]
     },
 
     setFocus(text) {

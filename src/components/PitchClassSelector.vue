@@ -1,12 +1,7 @@
 <template>
   <section class="selector" aria-label="Pitch-class selector">
     <div class="row items-center justify-between q-col-gutter-md q-mb-sm">
-      <div>
-        <div class="text-subtitle1 text-weight-medium">Find note</div>
-        <div class="text-caption text-grey-5">
-          Single-note radio selection is the default; switch to Multi for chords and sets.
-        </div>
-      </div>
+      <div class="text-subtitle1 text-weight-medium">Find note</div>
       <div class="row items-center q-gutter-sm">
         <q-btn-toggle
           :model-value="store.selectionMode"
@@ -89,7 +84,7 @@ const store = useNoteMapStore()
   border: 1px solid #555;
   border-radius: 12px;
   background: #2b2b2b;
-  padding: 14px;
+  padding: 10px;
 }
 
 .pitch-grid {

@@ -1,17 +1,5 @@
 <template>
-  <section class="instrument-section">
-    <div class="row items-end justify-between q-mb-sm">
-      <div>
-        <div class="text-subtitle1 text-weight-medium">Grand staff</div>
-        <div class="text-caption text-grey-5">
-          Key signature: {{ store.currentKey.label }} major · {{ store.keySignatureSummary }}
-        </div>
-      </div>
-      <q-toggle v-model="store.showKeyOverlay" dense label="Overlay key" color="positive">
-        <q-tooltip>Show all notes belonging to the current major key in addition to the selected pitch class.</q-tooltip>
-      </q-toggle>
-    </div>
-
+  <section class="instrument-section compact-instrument">
     <div class="svg-frame staff-frame">
       <svg
         class="instrument-svg"

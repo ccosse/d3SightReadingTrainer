@@ -1,15 +1,5 @@
 <template>
-  <section class="instrument-section">
-    <div class="row items-end justify-between q-mb-sm">
-      <div>
-        <div class="text-subtitle1 text-weight-medium">Stratocaster fretboard</div>
-        <div class="text-caption text-grey-5">
-          24 note positions; the conceptual 23rd and 24th frets continue beyond the 22-fret wood.
-        </div>
-      </div>
-      <div class="text-caption text-grey-4">note = (open string + fret) mod 12</div>
-    </div>
-
+  <section class="instrument-section compact-instrument">
     <div class="svg-frame fretboard-frame">
       <svg
         class="instrument-svg"

@@ -1,52 +1,43 @@
 <template>
   <q-page class="music-workspace">
-    <q-tabs
-      v-model="store.activeTab"
-      dense
-      align="left"
-      active-color="light-blue-3"
-      indicator-color="light-blue-3"
-      class="workspace-tabs"
-      outside-arrows
-      mobile-arrows
-    >
-      <q-tab name="note-map" label="Note Map">
-        <q-tooltip>Linked pitch-class exploration across all instrument and theory views.</q-tooltip>
-      </q-tab>
-      <q-tab name="sight-reading" label="Sight Reading">
-        <q-tooltip>Future MIDI sight-reading drill.</q-tooltip>
-      </q-tab>
-      <q-tab name="guitar-tab" label="Guitar TAB">
-        <q-tooltip>Future linked guitar-tablature drill.</q-tooltip>
-      </q-tab>
-      <q-tab name="fifths" label="Circle of Fifths">
-        <q-tooltip>Full-size Circle of Fifths and key-information view.</q-tooltip>
-      </q-tab>
-      <q-tab name="composer" label="Composer">
-        <q-tooltip>Future chord design, composition, playback, and accompaniment tools.</q-tooltip>
-      </q-tab>
-    </q-tabs>
-
     <q-tab-panels v-model="store.activeTab" animated keep-alive class="workspace-panels">
       <q-tab-panel name="note-map" class="q-pa-none">
         <PitchClassSelector />
 
-        <div class="hud row items-center justify-between q-my-md q-px-sm">
+        <div class="hud row items-center justify-between q-my-sm q-px-sm">
           <div class="text-caption"><strong>Selection:</strong> {{ store.selectedSummary }}</div>
-          <div class="text-caption"><strong>Key:</strong> {{ store.currentKey.label }} major</div>
+          <div class="text-caption"><strong>Key:</strong> {{ store.currentKey.label }} major · {{ store.keySignatureSummary }}</div>
           <div class="text-caption text-light-blue-2">{{ store.focusText }}</div>
         </div>
 
         <div class="instrument-stack">
-          <PianoKeyboard v-if="store.visibleObjects.piano" />
-          <StratocasterFretboard v-if="store.visibleObjects.guitar" />
-          <GrandStaff v-if="store.visibleObjects.staff" />
+          <div
+            v-for="item in orderedComponents"
+            v-show="store.visibleObjects[item.id]"
+            :key="item.id"
+            class="component-shell"
+            :class="{ dragging: draggingId === item.id, 'drop-target': overId === item.id }"
+            @dragover.prevent="overId = item.id"
+            @dragleave="overId = null"
+            @drop.prevent="dropOn(item.id)"
+          >
+            <div
+              class="component-drag-handle"
+              draggable="true"
+              @dragstart="startDrag($event, item.id)"
+              @dragend="finishDrag"
+            >
+              <q-icon name="drag_indicator" size="18px" />
+              <q-tooltip>Drag to reorder {{ item.label }}. Arrow controls are also available in the left sidebar.</q-tooltip>
+            </div>
+            <component :is="item.component" />
+          </div>
         </div>
 
         <q-page-sticky
           v-if="!store.rightDrawerOpen"
           position="right"
-          :offset="[0, 96]"
+          :offset="[0, 82]"
           class="fifths-handle"
         >
           <q-btn
@@ -56,7 +47,7 @@
             aria-label="Open linked Circle of Fifths"
             @click="store.rightDrawerOpen = true"
           >
-            <q-tooltip anchor="center left" self="center right">Open the linked Circle of Fifths overlay.</q-tooltip>
+            <q-tooltip anchor="center left" self="center right">Open key information and linked display controls.</q-tooltip>
           </q-btn>
         </q-page-sticky>
       </q-tab-panel>
@@ -93,6 +84,7 @@
 </template>
 
 <script setup>
+import { computed, ref } from 'vue'
 import CircleOfFifths from '../components/CircleOfFifths.vue'
 import FeaturePlaceholder from '../components/FeaturePlaceholder.vue'
 import GrandStaff from '../components/GrandStaff.vue'
@@ -103,6 +95,32 @@ import StratocasterFretboard from '../components/StratocasterFretboard.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
+const draggingId = ref(null)
+const overId = ref(null)
+
+const registry = {
+  piano: { id: 'piano', label: 'piano keyboard', component: PianoKeyboard },
+  guitar: { id: 'guitar', label: 'guitar neck', component: StratocasterFretboard },
+  staff: { id: 'staff', label: 'grand staff', component: GrandStaff }
+}
+
+const orderedComponents = computed(() => store.componentOrder.map((id) => registry[id]).filter(Boolean))
+
+function startDrag(event, id) {
+  draggingId.value = id
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', id)
+}
+
+function finishDrag() {
+  draggingId.value = null
+  overId.value = null
+}
+
+function dropOn(targetId) {
+  if (draggingId.value) store.moveComponent(draggingId.value, targetId)
+  finishDrag()
+}
 </script>
 
 <style scoped>
@@ -110,31 +128,49 @@ const store = useNoteMapStore()
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
-  padding: 14px 18px 34px;
+  padding: 10px 14px 28px;
   background: #333;
   color: white;
 }
-
-.workspace-tabs {
-  color: #ddd;
-  border-bottom: 1px solid #555;
-  margin-bottom: 16px;
-}
-
 .workspace-panels { background: transparent; color: white; }
-.instrument-stack { display: grid; gap: 24px; }
-.instrument-stack > * {
-  border: 1px solid #555;
-  border-radius: 12px;
+.instrument-stack { display: grid; gap: 12px; }
+.component-shell {
+  position: relative;
+  border: 1px solid #505050;
+  border-radius: 10px;
   background: #2b2b2b;
-  padding: 14px;
+  padding: 7px;
+  transition: border-color 120ms ease, opacity 120ms ease, background 120ms ease;
 }
-.hud { min-height: 34px; border-radius: 8px; background: #292929; border: 1px solid #4e4e4e; gap: 10px; }
+.component-shell.drop-target { border-color: #77c4ff; background: #30383d; }
+.component-shell.dragging { opacity: 0.48; }
+.component-drag-handle {
+  position: absolute;
+  z-index: 4;
+  top: 5px;
+  right: 5px;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #d5d5d5;
+  background: rgba(20, 20, 20, 0.58);
+  opacity: 0.34;
+  cursor: grab;
+  user-select: none;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+.component-shell:hover .component-drag-handle,
+.component-drag-handle:focus { opacity: 0.95; background: rgba(20, 20, 20, 0.86); }
+.component-drag-handle:active { cursor: grabbing; }
+.hud { min-height: 30px; border-radius: 7px; background: #292929; border: 1px solid #4e4e4e; gap: 8px; }
 .circle-grid { display: grid; grid-template-columns: minmax(340px, 0.9fr) minmax(320px, 1.1fr); gap: 24px; align-items: start; }
 .fifths-handle { z-index: 2100; }
 
 @media (max-width: 880px) {
   .circle-grid { grid-template-columns: 1fr; }
-  .music-workspace { padding-inline: 10px; }
+  .music-workspace { padding-inline: 8px; }
+  .hud { align-items: flex-start; padding-block: 5px; }
 }
 </style>

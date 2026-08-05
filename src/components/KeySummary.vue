@@ -1,15 +1,10 @@
 <template>
   <section class="key-summary" :class="{ compact }">
-    <div class="row items-center justify-between q-mb-md key-heading">
-      <div>
-        <div :class="compact ? 'text-subtitle1' : 'text-h6'">{{ store.currentKey.label }} major</div>
-        <div class="text-caption text-grey-5">
-          {{ store.keySignatureSummary }} · Relative {{ store.currentKey.relativeMinor }}
-        </div>
+    <div class="q-mb-sm">
+      <div :class="compact ? 'text-subtitle1' : 'text-h6'">{{ store.currentKey.label }} major</div>
+      <div class="text-caption text-grey-5">
+        {{ store.keySignatureSummary }} · Relative {{ store.currentKey.relativeMinor }}
       </div>
-      <q-toggle v-model="store.showKeyOverlay" dense label="Overlay key" color="positive">
-        <q-tooltip>Highlight all seven notes of this major key across every linked view.</q-tooltip>
-      </q-toggle>
     </div>
     <div class="row q-gutter-xs">
       <q-chip
@@ -47,15 +42,12 @@ const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey))
 <style scoped>
 .key-summary {
   border: 1px solid #555;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #2b2b2b;
-  padding: 16px;
+  padding: 13px;
 }
 .key-summary.compact {
   background: rgba(43, 43, 43, 0.72);
-  padding: 12px;
-}
-@media (max-width: 420px) {
-  .key-heading { align-items: flex-start; gap: 8px; }
+  padding: 10px;
 }
 </style>
