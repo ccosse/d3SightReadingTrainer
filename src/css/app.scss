@@ -30,3 +30,29 @@ body {
 .q-drawer.dark-drawer .q-toggle__label {
   color: #fff;
 }
+
+body { font-size: 18px; }
+.q-btn .q-btn__content { font-size: 16px; }
+.q-field__native,
+.q-field__input,
+.q-field__label,
+.q-item__label,
+.q-toggle__label { font-size: 17px; }
+.q-tooltip { font-size: 15px; line-height: 1.35; max-width: 420px; }
+.q-toolbar__title { font-size: 22px; }
+.q-drawer .q-item { min-height: 54px; }
+
+
+/* Right theory drawer is teleported; force every Quasar layer dark while retaining slight transparency. */
+.q-drawer.fifths-overlay,
+.q-drawer.fifths-overlay .q-drawer__content,
+.q-drawer.fifths-overlay .q-scrollarea,
+.q-drawer.fifths-overlay .q-scrollarea__container,
+.q-drawer.fifths-overlay .q-scrollarea__content {
+  background: rgba(18, 18, 18, 0.88) !important;
+  color: #fff !important;
+}
+.q-drawer.fifths-overlay {
+  backdrop-filter: blur(10px) saturate(108%);
+  -webkit-backdrop-filter: blur(10px) saturate(108%);
+}

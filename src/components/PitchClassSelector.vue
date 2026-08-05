@@ -1,8 +1,26 @@
 <template>
-  <section class="selector" aria-label="Pitch-class selector">
+  <section class="selector" aria-label="Pitch-class selector and playback control">
     <div class="row items-center justify-between q-col-gutter-md q-mb-sm">
       <div class="text-subtitle1 text-weight-medium">Find note</div>
-      <div class="row items-center q-gutter-sm">
+      <div class="row items-center q-gutter-sm control-modes">
+        <q-select
+          :model-value="store.keyboardPreset"
+          :options="KEYBOARD_PRESETS"
+          option-label="label"
+          option-value="id"
+          emit-value
+          map-options
+          dense
+          outlined
+          dark
+          options-dense
+          label="Keyboard"
+          class="keyboard-select"
+          @update:model-value="store.setKeyboardPreset"
+        >
+          <q-tooltip>Choose the displayed keyboard range. The Reface CP has 37 mini keys, E2 through E5.</q-tooltip>
+        </q-select>
+
         <q-btn-toggle
           :model-value="store.selectionMode"
           dense
@@ -23,6 +41,7 @@
 
         <q-btn-toggle
           v-model="store.accidentalMode"
+          class="accidental-toggle"
           dense
           unelevated
           toggle-color="primary"
@@ -57,26 +76,46 @@
       <q-btn
         v-for="(name, pitchClass) in store.noteNames"
         :key="pitchClass"
-        :label="name"
         no-caps
         dense
         unelevated
         class="pitch-button"
-        :class="{ selected: store.isSelected(pitchClass) && !store.isAllSelected }"
+        :class="{
+          selected: store.isSelected(pitchClass) && !store.isAllSelected,
+          'in-key': store.isInCurrentKey(pitchClass),
+          tonic: store.scaleDegree(pitchClass) === 1
+        }"
         :role="store.selectionMode === 'single' ? 'radio' : 'checkbox'"
         :aria-checked="store.isSelected(pitchClass)"
+        draggable="true"
+        @dragstart="startPitchDrag($event, pitchClass)"
         @click="store.selectPitchClass(pitchClass)"
       >
-        <q-tooltip>{{ store.isSelected(pitchClass) ? `Deselect or replace with ${name}` : `Highlight ${name} everywhere` }}</q-tooltip>
+        <span class="pitch-name">{{ name }}</span>
+        <span v-if="store.scaleDegree(pitchClass)" class="scale-degree">{{ store.scaleDegree(pitchClass) }}</span>
+        <q-tooltip>
+          {{ name }}{{ store.scaleDegree(pitchClass) ? ` · degree ${store.scaleDegree(pitchClass)} of ${store.currentKey.label} ${store.currentMode}` : ` · outside ${store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major'}` }}.
+          Drag this note onto the staff to place it.
+        </q-tooltip>
       </q-btn>
     </div>
+
+    <PlaybackTransport class="q-mt-md" />
   </section>
 </template>
 
 <script setup>
+import PlaybackTransport from './PlaybackTransport.vue'
+import { KEYBOARD_PRESETS } from '../music/keyboardPresets'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
+
+function startPitchDrag(event, pitchClass) {
+  event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('application/x-pitch-class', String(pitchClass))
+  event.dataTransfer.setData('text/plain', String(pitchClass))
+}
 </script>
 
 <style scoped>
@@ -94,12 +133,20 @@ const store = useNoteMapStore()
 }
 
 .pitch-button {
+  position: relative;
   min-width: 0;
-  min-height: 34px;
+  min-height: 54px;
   color: #f3f3f3;
   background: #414141;
   border: 1px solid #5b5b5b;
 }
+
+.pitch-button.in-key {
+  background: #35483a;
+  border-color: #5f8968;
+}
+
+.pitch-button.in-key.tonic { box-shadow: inset 0 -3px 0 #8dffab; }
 
 .pitch-button.selected {
   color: white;
@@ -107,9 +154,25 @@ const store = useNoteMapStore()
   border-color: #9dd4ff;
 }
 
-.all-none-button { font-size: 0.78rem; }
+.pitch-name { line-height: 1; font-size: 22px; font-weight: 650; }
+.scale-degree {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  color: #b9ffc9;
+  font-size: 14px;
+  line-height: 1;
+}
+.pitch-button.selected .scale-degree { color: #fff; }
+.all-none-button { font-size: 1.1rem; }
+.accidental-toggle :deep(.q-btn) { min-width: 48px; min-height: 44px; padding: 8px 14px; border-radius: 4px !important; font-size: 24px; }
+.selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 44px; padding-inline: 16px; font-size: 17px; }
+.keyboard-select { width: 214px; }
+.keyboard-select :deep(.q-field__control) { min-height: 44px; }
 
 @media (max-width: 900px) {
+  .control-modes { width: 100%; justify-content: flex-end; }
+  .keyboard-select { width: min(100%, 230px); }
   .pitch-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .all-none-button { grid-column: span 2; }
 }

@@ -1,20 +1,24 @@
 <template>
   <section class="ladder" aria-label="Interactive key signature ladder">
-    <button
+    <div
       v-for="key in keys"
       :key="key.id"
-      type="button"
       class="ladder-row"
       :class="{ active: key.id === store.currentKeyId }"
-      @click="store.setKey(key.id)"
     >
-      <span class="accidentals">{{ accidentalText(key.signature) }}</span>
-      <span class="major">{{ key.label }} major</span>
-      <span class="minor">{{ key.relativeMinor }}</span>
-      <q-tooltip>
-        Select {{ key.label }} major: {{ signatureLabel(key.signature) }}; relative {{ key.relativeMinor }}.
-      </q-tooltip>
-    </button>
+      <button type="button" class="accidentals" @click="store.setKey(key.id, { mode: 'major' })">
+        {{ accidentalText(key.signature) }}
+        <q-tooltip>Select {{ key.label }} major: {{ signatureLabel(key.signature) }}.</q-tooltip>
+      </button>
+      <button type="button" class="major" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'major' }" @click="store.setKey(key.id, { mode: 'major' })">
+        {{ key.label }} major
+        <q-tooltip>Select {{ key.label }} major.</q-tooltip>
+      </button>
+      <button type="button" class="minor" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'minor' }" @click="store.setKey(key.id, { mode: 'minor' })">
+        {{ key.relativeMinor }}
+        <q-tooltip>Select {{ key.relativeMinor }} while preserving this key signature.</q-tooltip>
+      </button>
+    </div>
   </section>
 </template>
 
@@ -34,44 +38,44 @@ function accidentalText(signature) {
 <style scoped>
 .ladder {
   display: grid;
-  align-content: start;
-  border: 1px solid #505050;
-  border-radius: 9px;
-  overflow: hidden;
-  background: rgba(32, 32, 32, 0.72);
+  grid-template-rows: repeat(15, minmax(0, 1fr));
+  align-self: stretch;
+  min-height: 0;
+  background: transparent;
 }
 .ladder-row {
   display: grid;
-  grid-template-columns: minmax(126px, 1.45fr) minmax(72px, 0.75fr) minmax(82px, 0.85fr);
-  align-items: center;
-  min-height: 25px;
-  padding: 2px 7px;
+  grid-template-columns: minmax(145px, 1.5fr) minmax(82px, 0.78fr) minmax(94px, 0.9fr);
+  align-items: stretch;
+  min-height: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  background: transparent;
+}
+.ladder-row:last-child { border-bottom: 0; }
+.ladder-row:hover { background: rgba(255, 255, 255, 0.06); }
+.ladder-row.active { background: rgba(44, 143, 207, 0.19); box-shadow: inset 3px 0 0 var(--q-primary); }
+.ladder-row button {
+  min-width: 0;
+  padding: 1px 6px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  color: #ddd;
+  color: inherit;
   background: transparent;
   text-align: left;
   font: inherit;
-  font-size: 10px;
+  font-size: 18px;
+  line-height: 1.12;
   cursor: pointer;
-}
-.ladder-row:last-child { border-bottom: 0; }
-.ladder-row:hover { background: rgba(255, 255, 255, 0.07); }
-.ladder-row.active {
-  background: rgba(44, 143, 207, 0.28);
-  box-shadow: inset 3px 0 0 var(--q-primary);
-}
-.accidentals {
-  color: #25d55a;
   white-space: nowrap;
-  letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.major { color: #e46ca9; white-space: nowrap; }
-.minor { color: #8db5ff; white-space: nowrap; }
-
-@media (max-width: 560px) {
-  .ladder-row { grid-template-columns: minmax(110px, 1.3fr) 0.8fr 0.9fr; font-size: 9px; }
+.accidentals { color: #28e45f !important; letter-spacing: 0.015em; }
+.major { color: #ef7eb8 !important; }
+.minor { color: #91b7ff !important; }
+.emphasized { font-weight: 800 !important; color: #fff !important; }
+@media (max-width: 680px) {
+  .ladder { min-height: 390px; }
+  .ladder-row { grid-template-columns: minmax(126px, 1.35fr) 0.8fr 0.9fr; }
+  .ladder-row button { font-size: 16px; }
 }
 </style>

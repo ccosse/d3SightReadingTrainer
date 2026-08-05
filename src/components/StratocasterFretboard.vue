@@ -6,7 +6,8 @@
         :style="svgStyle"
         :viewBox="fretboard.viewBox"
         role="img"
-        aria-label="Scalable d3GuitarExplorer-style tapered Stratocaster fretboard with 24 note positions"
+        aria-label="Scalable d3GuitarExplorer-style tapered Stratocaster fretboard with linked sounding-note highlights"
+        @pointerleave="releasePreview"
       >
         <defs>
           <linearGradient id="d3geMahogany" x1="0" y1="0" x2="0" y2="1">
@@ -75,16 +76,17 @@
           />
 
           <g v-for="note in string.notes" :key="`${string.index}-${note.fret}`">
-            <title>
-              String {{ 6 - string.index }}, fret {{ note.fret }}: {{ midiLabel(note.midi, store.accidentalMode) }}
-            </title>
+            <title>String {{ 6 - string.index }}, fret {{ note.fret }}: {{ midiLabel(note.midi, store.accidentalMode) }} · press to hear</title>
 
             <circle
               :cx="note.x"
               :cy="note.y"
-              r="12"
+              r="13"
               class="note-hit"
               @mouseenter="focusNote(string, note)"
+              @pointerdown.prevent="pressNote(note)"
+              @pointerup.prevent="releasePreview"
+              @pointercancel="releasePreview"
               @click="store.selectPitchClass(note.pitchClass)"
             />
 
@@ -96,24 +98,30 @@
               class="note-dot"
               :class="noteClass(note)"
               @mouseenter="focusNote(string, note)"
+              @pointerdown.prevent="pressNote(note)"
+              @pointerup.prevent="releasePreview"
+              @pointercancel="releasePreview"
               @click="store.selectPitchClass(note.pitchClass)"
             />
 
             <text
               v-if="store.notesAsNames && noteVisible(note)"
               :x="note.x"
-              :y="note.y + 3.2"
+              :y="note.y + 4.8"
               text-anchor="middle"
               class="note-label"
               :class="noteClass(note)"
               @mouseenter="focusNote(string, note)"
+              @pointerdown.prevent="pressNote(note)"
+              @pointerup.prevent="releasePreview"
+              @pointercancel="releasePreview"
               @click="store.selectPitchClass(note.pitchClass)"
             >{{ store.noteName(note.pitchClass) }}</text>
 
             <text
               v-if="store.showOctavesFromE && noteVisible(note)"
               :x="note.x"
-              :y="note.y + 12"
+              :y="note.y + 15"
               text-anchor="middle"
               class="octave-label"
             >E{{ octaveFromE(note.midi) }}</text>
@@ -125,7 +133,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
+import { startChord, stopChordVoices } from '../music/audio'
 import { StratocasterFretboard as StratocasterFretboardModel } from '../music/instruments/StratocasterFretboard'
 import { midiLabel } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
@@ -133,14 +142,18 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 const fretboard = new StratocasterFretboardModel({ fretCount: 24, woodFretCount: 22 })
 const svgStyle = computed(() => ({ width: `${store.fretboardZoom * 100}%` }))
+let previewVoices = []
+let previewToken = null
+let previewRequest = 0
 
 function noteVisible(note) {
-  return store.showAllNoteNames || store.isSelected(note.pitchClass) || (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass))
+  return store.showAllNoteNames || store.isPlayingMidi(note.midi) || store.isSelected(note.pitchClass) || (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass))
 }
 
 function noteClass(note) {
   return {
     selected: store.isSelected(note.pitchClass),
+    playing: store.isPlayingMidi(note.midi),
     'current-key': store.showKeyOverlay && store.isInCurrentKey(note.pitchClass) && !store.isSelected(note.pitchClass),
     neutral: store.showAllNoteNames && !store.isSelected(note.pitchClass) && !(store.showKeyOverlay && store.isInCurrentKey(note.pitchClass)),
     'beyond-wood': note.beyondWood
@@ -148,9 +161,30 @@ function noteClass(note) {
 }
 
 function noteRadius(note) {
+  if (store.isPlayingMidi(note.midi)) return 9.2
   if (store.isSelected(note.pitchClass)) return 8.5
   if (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass)) return 6.8
-  return 2.8
+  return 3.2
+}
+
+async function pressNote(note) {
+  releasePreview()
+  const request = ++previewRequest
+  previewToken = store.beginPlaying([note.midi], 'pointer')
+  const voices = await startChord([note.midi], 0.15)
+  if (request !== previewRequest) {
+    stopChordVoices(voices, 0.05)
+    return
+  }
+  previewVoices = voices
+}
+
+function releasePreview() {
+  previewRequest += 1
+  stopChordVoices(previewVoices, 0.10)
+  previewVoices = []
+  if (previewToken !== null) store.endPlaying(previewToken)
+  previewToken = null
 }
 
 function octaveFromE(midi) {
@@ -161,37 +195,35 @@ function focusNote(string, note) {
   const displayString = 6 - string.index
   store.setFocus(`String ${displayString} · fret ${note.fret} · ${midiLabel(note.midi, store.accidentalMode)}`)
 }
+
+onBeforeUnmount(releasePreview)
 </script>
 
 <style scoped>
-.instrument-svg { min-width: 100%; height: auto; display: block; transition: width 140ms ease; }
+.instrument-svg { min-width: 100%; height: auto; display: block; transition: width 140ms ease; touch-action: none; }
 .svg-frame { border-radius: 7px; }
-.fretboard-frame {
-  overflow-x: auto;
-  overflow-y: hidden;
-  background: #666;
-  padding: 3px 7px 0;
-  scrollbar-color: #888 #444;
-}
+.fretboard-frame { overflow-x: auto; overflow-y: hidden; background: #666; padding: 3px 7px 0; scrollbar-color: #888 #444; }
 .board { stroke: #8e5d45; stroke-width: 1.6; }
 .concept-extension { fill: rgba(255, 255, 255, 0.025); stroke: #ddd; stroke-width: 1; stroke-dasharray: 4 3; }
 .fret-wire { stroke: #ece7dd; stroke-width: 1.55; opacity: 0.96; }
 .fret-wire.beyond-wood { stroke-dasharray: 4 3; }
 .nut { stroke: #f7f1e5; stroke-width: 5; }
 .guitar-string { stroke: #f7f7f7; opacity: 0.95; }
-.inlay { fill: #d8d5ca; stroke: #7c786f; stroke-width: 0.8; }
-.extension-inlay { fill: #e5e5e5; stroke: #fff; opacity: 0.9; }
-.fret-number { fill: #f0f0f0; font-size: 10px; }
+.inlay { fill: #e53935; stroke: #ffc2bf; stroke-width: 0.9; }
+.extension-inlay { fill: #e53935; stroke: #ffc2bf; opacity: 0.92; }
+.fret-number { fill: #f0f0f0; font-size: 18px; }
 .beyond-wood-number { fill: #d9efff; }
 .note-hit { fill: transparent; cursor: pointer; }
 .note-dot { cursor: pointer; stroke-width: 1; }
 .note-dot.selected { fill: #00f035; stroke: #b7ffc7; }
 .note-dot.current-key { fill: #00c72d; stroke: #72ff92; }
 .note-dot.neutral { fill: #bdbdbd; stroke: #e6e6e6; opacity: 0.68; }
+.note-dot.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.85)); }
 .note-dot.beyond-wood { stroke-dasharray: 2 1; }
-.note-label { fill: #fff; font-size: 8.5px; cursor: pointer; user-select: none; }
-.note-label.selected { fill: #0aff44; font-weight: 700; }
+.note-label { fill: #fff; font-size: 16px; cursor: pointer; user-select: none; font-weight: 600; }
+.note-label.selected { fill: #0aff44; font-weight: 800; }
 .note-label.current-key { fill: #55ff79; }
 .note-label.neutral { fill: #e2e2e2; opacity: 0.76; }
-.octave-label { fill: #ffeb84; font-size: 6.5px; pointer-events: none; }
+.note-label.playing { fill: #ffd866; font-weight: 900; }
+.octave-label { fill: #ffeb84; font-size: 12px; pointer-events: none; }
 </style>

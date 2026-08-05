@@ -22,36 +22,16 @@
     </div>
 
     <div class="toggle-grid">
-      <q-toggle v-model="store.showGuitarStrings" dense label="Show strings">
-        <q-tooltip>Show or hide the six guitar strings.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showGuitarFrets" dense label="Show frets">
-        <q-tooltip>Show or hide fret wires, including the conceptual 23rd and 24th frets beyond the wood.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showNeckDots" dense label="Show neck dots">
-        <q-tooltip>Show or hide the physical fretboard position markers.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showFretNumbers" dense label="Show fret numbers">
-        <q-tooltip>Show or hide fret numbers beneath the neck.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.notesAsDots" dense label="Notes as dots" color="positive">
-        <q-tooltip>Render visible note positions as dots, using green for the d3GuitarExplorer visual language.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.notesAsNames" dense label="Notes as names" color="positive">
-        <q-tooltip>Write note names at visible fretboard positions.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showOctavesFromE" dense label="Octaves from low E">
-        <q-tooltip>Add the octave band counted upward from the open low-E string.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showAllNoteNames" dense label="Show every position">
-        <q-tooltip>Show every fretboard note position rather than only selected notes and current-key notes.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.showKeyOverlay" dense label="Show current key" color="positive">
-        <q-tooltip>Overlay all seven notes of the current major key on the fretboard, piano, and staff.</q-tooltip>
-      </q-toggle>
-      <q-toggle v-model="store.keySelectsTonic" dense label="Key selects tonic">
-        <q-tooltip>In Single mode, selecting a key also selects its tonic note everywhere.</q-tooltip>
-      </q-toggle>
+      <ImageCheckbox v-model="store.showGuitarStrings" label="Show strings" tooltip="Show or hide the six guitar strings." />
+      <ImageCheckbox v-model="store.showGuitarFrets" label="Show frets" tooltip="Show or hide fret wires, including the conceptual 23rd and 24th frets beyond the wood." />
+      <ImageCheckbox v-model="store.showNeckDots" label="Show neck dots" tooltip="Show or hide the physical fretboard position markers." />
+      <ImageCheckbox v-model="store.showFretNumbers" label="Show fret numbers" tooltip="Show or hide fret numbers beneath the neck." />
+      <ImageCheckbox v-model="store.notesAsDots" label="Notes as dots" tooltip="Render visible note positions as dots, using green for the d3GuitarExplorer visual language." />
+      <ImageCheckbox v-model="store.notesAsNames" label="Notes as names" tooltip="Write note names at visible fretboard positions." />
+      <ImageCheckbox v-model="store.showOctavesFromE" label="Octaves from low E" tooltip="Add the octave band counted upward from the open low-E string." />
+      <ImageCheckbox v-model="store.showAllNoteNames" label="Show every position" tooltip="Show every fretboard note position rather than only selected notes and current-key notes." />
+      <ImageCheckbox v-model="store.showKeyOverlay" label="Show current key" tooltip="Overlay all seven notes of the current key on the fretboard, piano, and staff." />
+      <ImageCheckbox v-model="store.keySelectsTonic" label="Key selects tonic" tooltip="In Single mode, selecting a key also selects its tonic note everywhere." />
     </div>
 
     <div class="slider-block">
@@ -76,6 +56,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import ImageCheckbox from './ImageCheckbox.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -95,8 +76,8 @@ const signedHalfSteps = computed(() => store.halfStepsFromC > 0 ? `+${store.half
   gap: 4px 10px;
 }
 .slider-block { padding: 0 4px; }
-.control-heading { color: #d8d8d8; font-size: 11px; }
-.slider-value { color: #9ed5ff; font-size: 11px; font-variant-numeric: tabular-nums; }
+.control-heading { color: #d8d8d8; font-size: 18px; }
+.slider-value { color: #9ed5ff; font-size: 18px; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 480px) {
   .toggle-grid { grid-template-columns: 1fr; }

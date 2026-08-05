@@ -22,18 +22,18 @@ defineProps({
 </script>
 
 <style scoped>
-.fifths-explorer { display: grid; gap: 10px; }
+.fifths-explorer { display: grid; gap: 8px; width: 100%; }
 .fifths-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(300px, 1.05fr);
-  gap: 10px;
-  align-items: center;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(360px, 1.05fr);
+  gap: 8px;
+  align-items: stretch;
 }
 .fifths-explorer.compact .fifths-grid {
-  grid-template-columns: minmax(250px, 0.96fr) minmax(290px, 1.04fr);
+  grid-template-columns: minmax(270px, 0.92fr) minmax(380px, 1.08fr);
 }
 
-@media (max-width: 610px) {
+@media (max-width: 720px) {
   .fifths-grid,
   .fifths-explorer.compact .fifths-grid { grid-template-columns: 1fr; }
 }

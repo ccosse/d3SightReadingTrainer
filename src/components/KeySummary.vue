@@ -1,14 +1,14 @@
 <template>
   <section class="key-summary" :class="{ compact }">
     <div class="q-mb-sm">
-      <div :class="compact ? 'text-subtitle1' : 'text-h6'">{{ store.currentKey.label }} major</div>
+      <div :class="compact ? 'text-subtitle1' : 'text-h6'">{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }}</div>
       <div class="text-caption text-grey-5">
         {{ store.keySignatureSummary }} · Relative {{ store.currentKey.relativeMinor }}
       </div>
     </div>
     <div class="row q-gutter-xs">
       <q-chip
-        v-for="(name, index) in store.currentKey.scale"
+        v-for="(name, index) in store.activeScaleNames"
         :key="name"
         clickable
         dense
@@ -36,7 +36,7 @@ defineProps({
 })
 
 const store = useNoteMapStore()
-const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey))
+const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey, store.currentMode))
 </script>
 
 <style scoped>

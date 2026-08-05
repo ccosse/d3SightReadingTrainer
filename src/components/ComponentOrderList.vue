@@ -3,7 +3,7 @@
     <div class="row items-center justify-between q-px-md q-pt-md q-pb-xs">
       <div class="drawer-title">Arrange views</div>
       <q-btn flat dense round size="sm" icon="restart_alt" @click="store.resetComponentOrder">
-        <q-tooltip>Restore the default keyboard, fretboard, staff order.</q-tooltip>
+        <q-tooltip>Restore the default control-panel, keyboard, fretboard, staff order.</q-tooltip>
       </q-btn>
     </div>
 
@@ -79,9 +79,10 @@ const draggingId = ref(null)
 const overId = ref(null)
 
 const metadata = {
+  controls: { label: 'Control panel', icon: 'tune' },
   piano: { label: 'Piano keyboard', icon: 'piano' },
   guitar: { label: 'Guitar neck', icon: 'linear_scale' },
-  staff: { label: 'Grand staff', icon: 'music_note' }
+  staff: { label: 'Player staff', icon: 'music_note' }
 }
 
 function startDrag(event, id) {
@@ -103,7 +104,7 @@ function dropOn(targetId) {
 
 <style scoped>
 .object-order { color: #fff; }
-.drawer-title { color: #b9dfff; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.drawer-title { color: #b9dfff; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .order-list { display: grid; gap: 5px; }
 .order-row {
   display: grid;
