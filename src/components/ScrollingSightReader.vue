@@ -130,7 +130,7 @@
         </g>
 
         <g v-for="event in visibleEvents" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
-          <line v-if="event.stem" :x1="event.stem.x" :x2="event.stem.x" :y1="event.stem.y1" :y2="event.stem.y2" class="note-stem" />
+          <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
           <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
             <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
             <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="scroll-head" />
@@ -171,7 +171,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ensureAudioReady, playChord } from '../music/audio'
+import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
 import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
 import { midiLabel, mod12 } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
@@ -200,6 +200,7 @@ let nextGeneratedBeat = leadInBeats
 let nextManualCycleBeat = leadInBeats
 let playedIds = new Set()
 let releaseTimers = []
+let activeVoiceGroups = []
 let sessionToken = 0
 let selecting = false
 let selectionAnchor = null
@@ -391,12 +392,24 @@ function buildVisualEvent(event) {
     const x = baseX + (alternate ? 8 : 0)
     return { midi, x, y, label: midiLabel(midi, store.accidentalMode), ledgerLines: ledgerLines(y) }
   })
-  const ys = notes.map((note) => note.y)
-  const minY = ys.length ? Math.min(...ys) : 181
-  const maxY = ys.length ? Math.max(...ys) : 181
-  const meanY = ys.length ? ys.reduce((sum, value) => sum + value, 0) / ys.length : 181
-  const stem = notes.length ? (meanY >= 181 ? { x: baseX + 10, y1: maxY, y2: Math.max(49, minY - 34) } : { x: baseX - 10, y1: minY, y2: Math.min(313, maxY + 34) }) : null
-  return { ...event, playBeat, x: baseX, notes, stem, crossing: Math.abs(baseX - scanX) < 13 }
+  // Simultaneous bass and treble material is one musical event, but conventional
+  // grand-staff notation does not use one stem crossing between the two staves.
+  // Build a separate stem for each staff group instead.
+  const stemFor = (group) => {
+    if (!group.length) return null
+    const ys = group.map((note) => note.y)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+    const meanY = ys.reduce((sum, value) => sum + value, 0) / ys.length
+    return meanY >= 181
+      ? { x: baseX + 10, y1: maxY, y2: Math.max(186, minY - 34) }
+      : { x: baseX - 10, y1: minY, y2: Math.min(176, maxY + 34) }
+  }
+  const stems = [
+    stemFor(notes.filter((note) => note.y < 181)),
+    stemFor(notes.filter((note) => note.y >= 181))
+  ].filter(Boolean)
+  return { ...event, playBeat, x: baseX, notes, stems, crossing: Math.abs(baseX - scanX) < 13 }
 }
 function generatedEvent() {
   const pulseIndex = generatedPulseIndex
@@ -478,7 +491,13 @@ function refreshManualEvents() {
   )
   previousBeat = currentBeat.value
 }
-function clearReleaseTimers() { releaseTimers.forEach((timer) => window.clearTimeout(timer)); releaseTimers = []; store.clearPlaying('srt') }
+function clearReleaseTimers() {
+  releaseTimers.forEach((timer) => window.clearTimeout(timer))
+  releaseTimers = []
+  activeVoiceGroups.forEach((group) => { group.cancelled = true; stopChordVoices(group.voices, 0.05) })
+  activeVoiceGroups = []
+  store.clearPlaying('srt')
+}
 function prepareSession() {
   clearReleaseTimers()
   events.value = []
@@ -546,10 +565,25 @@ function tick(now) {
       // Gate/hold is deliberately evaluated at the instant of playback rather
       // than baked into generated events. The lower floor preserves short notes
       // instead of collapsing all low Hold settings into the same 240 ms blip.
-      const seconds = Math.max(0.055, event.duration * store.srtGate * beatMs / 1000)
+      const holdSeconds = Math.max(0.075, event.duration * store.srtGate * beatMs / 1000)
+      const releaseSeconds = Math.min(0.22, Math.max(0.07, holdSeconds * 0.16))
       const token = store.beginPlaying(event.midis, 'srt')
-      playChord(event.midis, seconds, event.velocity || (event.midis.length > 1 ? 0.095 : 0.16))
-      releaseTimers.push(window.setTimeout(() => store.endPlaying(token), seconds * 1000))
+      const group = { token, voices: [], cancelled: false }
+      activeVoiceGroups.push(group)
+      startChord(event.midis, event.velocity || (event.midis.length > 1 ? 0.095 : 0.16)).then((voices) => {
+        group.voices = voices.filter(Boolean)
+        if (group.cancelled) { stopChordVoices(group.voices, 0.05); return }
+        const timer = window.setTimeout(() => {
+          stopChordVoices(group.voices, releaseSeconds)
+          // Keep the gold player-piano indication through the audible release tail.
+          const visualTimer = window.setTimeout(() => {
+            store.endPlaying(token)
+            activeVoiceGroups = activeVoiceGroups.filter((item) => item !== group)
+          }, releaseSeconds * 1000)
+          releaseTimers.push(visualTimer)
+        }, holdSeconds * 1000)
+        releaseTimers.push(timer)
+      })
     }
   }
   previousBeat = currentBeat.value

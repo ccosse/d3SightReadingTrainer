@@ -37,7 +37,7 @@ export class StratocasterFretboard {
     this.bottomAtNut = this.edgeY(this.nutX, 'bottom')
     this.topAtEnd = this.edgeY(this.endX, 'top')
     this.bottomAtEnd = this.edgeY(this.endX, 'bottom')
-    this.dotFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
+    this.dotFrets = [0, 3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
     this.woodEndX = this.fretX(this.woodFretCount)
     this.frets = this.buildFrets()
     this.strings = this.buildStrings()
@@ -143,7 +143,7 @@ export class StratocasterFretboard {
     const bottom = this.edgeY(x, 'bottom')
     const middle = (top + bottom) / 2
     const offset = (bottom - top) * 0.22
-    if (fret === 12 || fret === 24) return [{ x, y: middle - offset }, { x, y: middle + offset }]
+    if (fret === 0 || fret === 12 || fret === 24) return [{ x, y: middle - offset }, { x, y: middle + offset }]
     return [{ x, y: middle }]
   }
 }
