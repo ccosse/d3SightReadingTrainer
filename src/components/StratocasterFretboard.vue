@@ -1,21 +1,11 @@
 <template>
-  <section class="instrument-section">
-    <div class="row items-end justify-between q-mb-sm">
-      <div>
-        <div class="text-subtitle1 text-weight-medium">Stratocaster fretboard</div>
-        <div class="text-caption text-grey-5">
-          Equal-tempered fret spacing, tapered mahogany neck, standard E–A–D–G–B–E tuning.
-        </div>
-      </div>
-      <div class="text-caption text-grey-4">note = (open string + fret) mod 12</div>
-    </div>
-
+  <section class="instrument-section compact-instrument">
     <div class="svg-frame fretboard-frame">
       <svg
         class="instrument-svg"
         :viewBox="fretboard.viewBox"
         role="img"
-        aria-label="Scalable Stratocaster-style fretboard with linked note highlighting"
+        aria-label="Scalable Stratocaster-style fretboard with 24 linked note positions"
       >
         <defs>
           <linearGradient id="mahogany" x1="0" y1="0" x2="0" y2="1">
@@ -29,6 +19,7 @@
         </defs>
 
         <polygon :points="fretboard.boardPoints()" fill="url(#mahogany)" class="board" filter="url(#softShadow)" />
+        <polygon :points="fretboard.extensionPoints()" class="concept-extension" />
         <rect
           :x="fretboard.openX"
           :y="fretboard.topAtNut"
@@ -45,13 +36,15 @@
             :x2="fret.x"
             :y2="fret.bottom"
             class="fret-wire"
+            :class="{ 'beyond-wood': fret.beyondWood }"
           />
           <text
             v-if="fret.number > 0"
             :x="fret.centerX"
-            y="256"
+            y="266"
             text-anchor="middle"
             class="fret-number"
+            :class="{ 'beyond-wood-number': fret.beyondWood }"
           >{{ fret.number }}</text>
         </g>
 
@@ -71,6 +64,7 @@
             :cy="dot.y"
             r="6"
             class="inlay"
+            :class="{ 'extension-inlay': fret > fretboard.woodFretCount }"
           />
         </g>
 
@@ -85,6 +79,9 @@
           />
 
           <g v-for="note in string.notes" :key="`${string.index}-${note.fret}`">
+            <title>
+              String {{ 6 - string.index }}, fret {{ note.fret }}: {{ midiLabel(note.midi, store.accidentalMode) }}
+            </title>
             <circle
               v-if="store.showKeyOverlay && store.isInCurrentKey(note.pitchClass) && !store.isSelected(note.pitchClass)"
               :cx="note.x"
@@ -105,7 +102,7 @@
               :y="note.y + 4"
               text-anchor="middle"
               class="note-label"
-              :class="{ selected: store.isSelected(note.pitchClass) }"
+              :class="{ selected: store.isSelected(note.pitchClass), 'beyond-wood-label': note.beyondWood }"
               @mouseenter="focusNote(string, note)"
               @click="store.selectPitchClass(note.pitchClass)"
             >{{ store.noteName(note.pitchClass) }}</text>
@@ -122,7 +119,7 @@ import { midiLabel } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
-const fretboard = new StratocasterFretboardModel({ fretCount: 22 })
+const fretboard = new StratocasterFretboardModel({ fretCount: 24, woodFretCount: 22 })
 
 function focusNote(string, note) {
   const displayString = 6 - string.index
@@ -135,14 +132,19 @@ function focusNote(string, note) {
 .svg-frame { overflow: hidden; border-radius: 8px; }
 .fretboard-frame { background: #1e1e1e; padding: 4px 8px 0; }
 .board { stroke: #a06a4d; stroke-width: 2; }
+.concept-extension { fill: rgba(255, 255, 255, 0.025); stroke: #7f7f7f; stroke-width: 1; stroke-dasharray: 5 5; }
 .open-zone { fill: #292929; opacity: 0.9; }
 .fret-wire { stroke: #d9d5cb; stroke-width: 2.1; opacity: 0.9; }
+.fret-wire.beyond-wood { stroke: #e8e5dc; stroke-dasharray: 4 3; opacity: 0.9; }
 .nut { stroke: #f3eee2; stroke-width: 7; }
 .guitar-string { stroke: #ddd7ca; opacity: 0.9; }
 .inlay { fill: #e4ded0; stroke: #7a7368; stroke-width: 1; opacity: 0.92; }
+.extension-inlay { fill: #dce9f2; stroke: #7aa6c4; opacity: 0.8; }
 .fret-number { fill: #d8d8d8; font-size: 12px; }
+.beyond-wood-number { fill: #a9d9ff; }
 .key-note { fill: #78a979; opacity: 0.72; stroke: #c8e2c7; stroke-width: 1.5; }
 .selected-note { fill: var(--q-primary); stroke: #d9efff; stroke-width: 1.5; }
 .note-label { fill: #e2ded6; font-size: 10px; cursor: pointer; user-select: none; }
 .note-label.selected { fill: #fff; font-weight: 700; }
+.beyond-wood-label { fill: #d9efff; }
 </style>

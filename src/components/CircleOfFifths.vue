@@ -7,6 +7,7 @@
       aria-label="Interactive circle of fifths linked to key signatures and instrument views"
     >
       <g v-for="sector in sectors" :key="sector.index">
+        <title>{{ sector.tooltip }}</title>
         <path
           :d="sector.path"
           class="sector"
@@ -39,7 +40,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { CIRCLE_OF_FIFTHS } from '../music/theory'
+import { CIRCLE_OF_FIFTHS, keyById, signatureLabel } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -79,6 +80,7 @@ const sectors = computed(() => CIRCLE_OF_FIFTHS.map((entry, index) => {
   const endAngle = centerAngle + Math.PI / 12
   const major = polar(132, centerAngle)
   const minor = polar(93, centerAngle)
+  const key = keyById(resolvedId(entry))
   return {
     index,
     entry,
@@ -87,7 +89,8 @@ const sectors = computed(() => CIRCLE_OF_FIFTHS.map((entry, index) => {
     labelY: major.y + 4,
     minorX: minor.x,
     minorY: minor.y + 4,
-    active: entry.ids.includes(store.currentKeyId)
+    active: entry.ids.includes(store.currentKeyId),
+    tooltip: `Select ${key.label} major: ${signatureLabel(key.signature)}; relative ${key.relativeMinor}`
   }
 }))
 

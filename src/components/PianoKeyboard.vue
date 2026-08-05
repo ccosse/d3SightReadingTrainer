@@ -1,13 +1,5 @@
 <template>
-  <section class="instrument-section">
-    <div class="row items-end justify-between q-mb-sm">
-      <div>
-        <div class="text-subtitle1 text-weight-medium">Piano keyboard</div>
-        <div class="text-caption text-grey-5">Scalable SVG; standard black and white key geometry.</div>
-      </div>
-      <div class="text-caption text-grey-4">{{ store.selectedSummary }}</div>
-    </div>
-
+  <section class="instrument-section compact-instrument">
     <div class="svg-frame keyboard-frame">
       <svg
         class="instrument-svg"
@@ -16,6 +8,7 @@
         aria-label="Piano keyboard linked to the selected pitch classes and current key"
       >
         <g v-for="key in keyboard.whiteKeys" :key="`white-${key.midi}`">
+          <title>{{ midiLabel(key.midi, store.accidentalMode) }} · MIDI {{ key.midi }} · click to select</title>
           <rect
             :x="key.x"
             :y="key.y"
@@ -37,6 +30,7 @@
         </g>
 
         <g v-for="key in keyboard.blackKeys" :key="`black-${key.midi}`">
+          <title>{{ midiLabel(key.midi, store.accidentalMode) }} · MIDI {{ key.midi }} · click to select</title>
           <rect
             :x="key.x"
             :y="key.y"
@@ -82,8 +76,8 @@ function focusKey(key) {
 
 <style scoped>
 .instrument-svg { width: 100%; height: auto; display: block; }
-.svg-frame { overflow: hidden; border-radius: 8px; }
-.keyboard-frame { background: #171717; padding: 10px; }
+.svg-frame { overflow: hidden; border-radius: 7px; }
+.keyboard-frame { background: #171717; padding: 4px; }
 .white-key { fill: #f8f8f4; stroke: #181818; stroke-width: 1.5; cursor: pointer; }
 .black-key { fill: #111214; stroke: #050505; stroke-width: 1.5; cursor: pointer; }
 .white-key.key-overlay { fill: #dbead8; }
