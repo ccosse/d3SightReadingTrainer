@@ -1,1 +1,19 @@
-// app global css
+html,
+body,
+#q-app {
+  min-height: 100%;
+  background: #333;
+  color: #fff;
+}
+
+body {
+  margin: 0;
+  color: #fff;
+  background: #333;
+}
+
+* { box-sizing: border-box; }
+
+.instrument-section { color: #fff; }
+.q-tab-panel { color: #fff; }
+.q-field--dark .q-field__control { background: #292929; }

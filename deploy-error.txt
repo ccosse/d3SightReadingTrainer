@@ -1,0 +1,64 @@
+charlie@Precision-7670:~/d3SightReadingTrainer$ gh run view 30971938578 --log-failed
+build	Install dependencies	2026-08-05T03:20:06.1695226Z ##[group]Run npm ci
+build	Install dependencies	2026-08-05T03:20:06.1695551Z npm ci
+build	Install dependencies	2026-08-05T03:20:06.1730397Z shell: /usr/bin/bash -e {0}
+build	Install dependencies	2026-08-05T03:20:06.1730677Z env:
+build	Install dependencies	2026-08-05T03:20:06.1730886Z   PUBLIC_PATH: /d3SightReadingTrainer/
+build	Install dependencies	2026-08-05T03:20:06.1731139Z ##[endgroup]
+build	Install dependencies	2026-08-05T03:20:12.5861475Z 
+build	Install dependencies	2026-08-05T03:20:12.5867686Z > d3sightreadingtrainer@0.0.1 postinstall
+build	Install dependencies	2026-08-05T03:20:12.5868368Z > quasar prepare --silent
+build	Install dependencies	2026-08-05T03:20:12.5868591Z 
+build	Install dependencies	2026-08-05T03:20:12.8620693Z 
+build	Install dependencies	2026-08-05T03:20:12.8636241Z Error: Build failed with 1 error:
+build	Install dependencies	2026-08-05T03:20:12.8642541Z 
+build	Install dependencies	2026-08-05T03:20:12.8643562Z [PARSE_ERROR] Expected `,` or `}` but found `Identifier`
+build	Install dependencies	2026-08-05T03:20:12.8645015Z     ╭─[ quasar.config.js:56:7 ]
+build	Install dependencies	2026-08-05T03:20:12.8646023Z     │
+build	Install dependencies	2026-08-05T03:20:12.8646895Z  34 │     build: {
+build	Install dependencies	2026-08-05T03:20:12.8648922Z     │            ┬  
+build	Install dependencies	2026-08-05T03:20:12.8649507Z     │            ╰── Opened here
+build	Install dependencies	2026-08-05T03:20:12.8649924Z     │ 
+build	Install dependencies	2026-08-05T03:20:12.8650818Z  56 │       vitePlugins: [
+build	Install dependencies	2026-08-05T03:20:12.8651821Z     │       ─────┬─────  
+build	Install dependencies	2026-08-05T03:20:12.8652412Z     │            ╰─────── `,` or `}` expected
+build	Install dependencies	2026-08-05T03:20:12.8652920Z ────╯
+build	Install dependencies	2026-08-05T03:20:12.8653094Z 
+build	Install dependencies	2026-08-05T03:20:12.8653882Z     at aggregateBindingErrorsIntoJsError (file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/rolldown/dist/shared/error-nLggAzpQ.mjs:48:18)
+build	Install dependencies	2026-08-05T03:20:12.8655329Z     at unwrapBindingResult (file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/rolldown/dist/shared/error-nLggAzpQ.mjs:18:128)
+build	Install dependencies	2026-08-05T03:20:12.8656698Z     at #build (file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/rolldown/dist/shared/rolldown-D23fYgSS.mjs:132:34)
+build	Install dependencies	2026-08-05T03:20:12.8658018Z     at async #build (file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/quasar-config-file.js:734:7)
+build	Install dependencies	2026-08-05T03:20:12.8659234Z     at async file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/cmd/prepare.js:55:20 {
+build	Install dependencies	2026-08-05T03:20:12.8659987Z   errors: [Getter/Setter]
+build	Install dependencies	2026-08-05T03:20:12.8660296Z }
+build	Install dependencies	2026-08-05T03:20:12.8660825Z 
+build	Install dependencies	2026-08-05T03:20:12.8673550Z Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/quasar.config.js.temporary.compiled.1785900012849.js' imported from /home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/quasar-config-file.js
+build	Install dependencies	2026-08-05T03:20:12.8686662Z     at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+build	Install dependencies	2026-08-05T03:20:12.8687350Z     at moduleResolve (node:internal/modules/esm/resolve:865:10)
+build	Install dependencies	2026-08-05T03:20:12.8687882Z     at defaultResolve (node:internal/modules/esm/resolve:992:11)
+build	Install dependencies	2026-08-05T03:20:12.8688445Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+build	Install dependencies	2026-08-05T03:20:12.8689110Z     at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+build	Install dependencies	2026-08-05T03:20:12.8689806Z     at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+build	Install dependencies	2026-08-05T03:20:12.8690390Z     at #resolve (node:internal/modules/esm/loader:683:17)
+build	Install dependencies	2026-08-05T03:20:12.8691112Z     at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:603:35)
+build	Install dependencies	2026-08-05T03:20:12.8691805Z     at node:internal/modules/esm/loader:632:32
+build	Install dependencies	2026-08-05T03:20:12.8692380Z     at TracingChannel.tracePromise (node:diagnostics_channel:362:14) {
+build	Install dependencies	2026-08-05T03:20:12.8692856Z   code: 'ERR_MODULE_NOT_FOUND',
+build	Install dependencies	2026-08-05T03:20:12.8694031Z   url: 'file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/quasar.config.js.temporary.compiled.1785900012849.js?t=1785900012864'
+build	Install dependencies	2026-08-05T03:20:12.8694797Z }
+build	Install dependencies	2026-08-05T03:20:12.8695546Z file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/quasar-config-file.js:541
+build	Install dependencies	2026-08-05T03:20:12.8696290Z         envCfg: quasarConf.build.env,
+build	Install dependencies	2026-08-05T03:20:12.8696619Z                            ^
+build	Install dependencies	2026-08-05T03:20:12.8696806Z 
+build	Install dependencies	2026-08-05T03:20:12.8697096Z TypeError: Cannot read properties of undefined (reading 'build')
+build	Install dependencies	2026-08-05T03:20:12.8698145Z     at #injectAppEnv (file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/quasar-config-file.js:541:28)
+build	Install dependencies	2026-08-05T03:20:12.8699553Z     at file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/quasar-config-file.js:471:27
+build	Install dependencies	2026-08-05T03:20:12.8700820Z     at async file:///home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer/node_modules/@quasar/app-vite/lib/cmd/prepare.js:55:20
+build	Install dependencies	2026-08-05T03:20:12.8701725Z 
+build	Install dependencies	2026-08-05T03:20:12.8701871Z Node.js v24.18.0
+build	Install dependencies	2026-08-05T03:20:12.8763569Z npm error code 1
+build	Install dependencies	2026-08-05T03:20:12.8764459Z npm error path /home/runner/work/d3SightReadingTrainer/d3SightReadingTrainer
+build	Install dependencies	2026-08-05T03:20:12.8765208Z npm error command failed
+build	Install dependencies	2026-08-05T03:20:12.8766200Z npm error command sh -c quasar prepare --silent
+build	Install dependencies	2026-08-05T03:20:12.8782225Z npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-08-05T03_20_06_227Z-debug-0.log
+build	Install dependencies	2026-08-05T03:20:12.9133220Z ##[error]Process completed with exit code 1.
