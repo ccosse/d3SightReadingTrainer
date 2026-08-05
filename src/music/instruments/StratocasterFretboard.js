@@ -1,19 +1,19 @@
 import { STANDARD_GUITAR_MIDI_LOW_TO_HIGH, mod12 } from '../theory'
 
 export class StratocasterFretboard {
-  constructor({ width = 1180, height = 280, fretCount = 24, woodFretCount = 22 } = {}) {
+  constructor({ width = 1180, height = 210, fretCount = 24, woodFretCount = 22 } = {}) {
     this.width = width
     this.height = height
     this.fretCount = fretCount
     this.woodFretCount = Math.min(woodFretCount, fretCount)
-    this.openX = 20
-    this.nutX = 84
-    this.endX = width - 28
-    this.topAtNut = 69
-    this.bottomAtNut = height - 69
-    this.topAtEnd = 31
-    this.bottomAtEnd = height - 31
-    this.dotFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]
+    this.openX = 14
+    this.nutX = 68
+    this.endX = width - 18
+    this.topAtNut = 73
+    this.bottomAtNut = 137
+    this.topAtEnd = 37
+    this.bottomAtEnd = 173
+    this.dotFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 23, 24]
     this.scaleLength = (this.endX - this.nutX) / (1 - Math.pow(2, -fretCount / 12))
     this.woodEndX = this.fretX(this.woodFretCount)
     this.frets = this.buildFrets()
@@ -106,7 +106,7 @@ export class StratocasterFretboard {
     const top = this.edgeY(x, 'top')
     const bottom = this.edgeY(x, 'bottom')
     const middle = (top + bottom) / 2
-    if (fret === 12 || fret === 24) return [{ x, y: middle - 25 }, { x, y: middle + 25 }]
+    if (fret === 12 || fret === 24) return [{ x, y: middle - 18 }, { x, y: middle + 18 }]
     return [{ x, y: middle }]
   }
 }

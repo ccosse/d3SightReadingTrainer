@@ -3,7 +3,9 @@ import {
   FLAT_NAMES,
   MAJOR_KEYS,
   SHARP_NAMES,
+  halfStepsFromCForKey,
   keyById,
+  keyForHalfStepsFromC,
   keyPitchClasses,
   mod12,
   signatureLabel
@@ -18,9 +20,18 @@ export const useNoteMapStore = defineStore('noteMap', {
     selectionMode: 'single',
     accidentalMode: 'sharp',
     currentKeyId: 'C',
+    halfStepsFromC: 0,
     showKeyOverlay: false,
     keySelectsTonic: true,
-    showAllNoteNames: true,
+    showAllNoteNames: false,
+    showGuitarStrings: true,
+    showGuitarFrets: true,
+    showNeckDots: true,
+    notesAsDots: true,
+    notesAsNames: false,
+    showOctavesFromE: false,
+    showFretNumbers: true,
+    fretboardZoom: 1,
     visibleObjects: {
       piano: true,
       guitar: true,
@@ -95,13 +106,25 @@ export const useNoteMapStore = defineStore('noteMap', {
       }
     },
 
-    setKey(keyId) {
+    setKey(keyId, options = {}) {
+      const { syncTranspose = true } = options
       const key = keyById(keyId)
       this.currentKeyId = key.id
       this.accidentalMode = key.accidentalMode
+      if (syncTranspose) this.halfStepsFromC = halfStepsFromCForKey(key)
       if (this.keySelectsTonic && this.selectionMode === 'single') {
         this.selectedPitchClasses = [key.tonic]
       }
+    },
+
+    setHalfStepsFromC(value) {
+      const steps = Math.max(-12, Math.min(12, Math.round(Number(value) || 0)))
+      this.halfStepsFromC = steps
+      this.setKey(keyForHalfStepsFromC(steps).id, { syncTranspose: false })
+    },
+
+    setFretboardZoom(value) {
+      this.fretboardZoom = Math.max(0.75, Math.min(1.6, Number(value) || 1))
     },
 
     setVisibleObject(name, value) {

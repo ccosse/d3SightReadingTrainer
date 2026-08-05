@@ -3,6 +3,8 @@ export const FLAT_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A�
 export const NATURAL_PITCH_CLASSES = new Set([0, 2, 4, 5, 7, 9, 11])
 export const MAJOR_SCALE_OFFSETS = [0, 2, 4, 5, 7, 9, 11]
 export const STANDARD_GUITAR_MIDI_LOW_TO_HIGH = [40, 45, 50, 55, 59, 64]
+export const SHARP_SIGNATURE_ORDER = ['F♯', 'C♯', 'G♯', 'D♯', 'A♯', 'E♯', 'B♯']
+export const FLAT_SIGNATURE_ORDER = ['B♭', 'E♭', 'A♭', 'D♭', 'G♭', 'C♭', 'F♭']
 
 export const MAJOR_KEYS = [
   { id: 'Cb', label: 'C♭', tonic: 11, signature: -7, accidentalMode: 'flat', relativeMinor: 'A♭ minor', scale: ['C♭', 'D♭', 'E♭', 'F♭', 'G♭', 'A♭', 'B♭'] },
@@ -23,19 +25,22 @@ export const MAJOR_KEYS = [
 ]
 
 export const CIRCLE_OF_FIFTHS = [
-  { label: 'C', ids: ['C'], minor: 'A m' },
-  { label: 'G', ids: ['G'], minor: 'E m' },
-  { label: 'D', ids: ['D'], minor: 'B m' },
-  { label: 'A', ids: ['A'], minor: 'F♯ m' },
-  { label: 'E', ids: ['E'], minor: 'C♯ m' },
-  { label: 'B / C♭', ids: ['B', 'Cb'], minor: 'G♯ / A♭ m' },
-  { label: 'F♯ / G♭', ids: ['F#', 'Gb'], minor: 'D♯ / E♭ m' },
-  { label: 'C♯ / D♭', ids: ['C#', 'Db'], minor: 'A♯ / B♭ m' },
-  { label: 'A♭', ids: ['Ab'], minor: 'F m' },
-  { label: 'E♭', ids: ['Eb'], minor: 'C m' },
-  { label: 'B♭', ids: ['Bb'], minor: 'G m' },
-  { label: 'F', ids: ['F'], minor: 'D m' }
+  { label: 'C', ids: ['C'], minor: 'Am' },
+  { label: 'G', ids: ['G'], minor: 'Em' },
+  { label: 'D', ids: ['D'], minor: 'Bm' },
+  { label: 'A', ids: ['A'], minor: 'F♯m' },
+  { label: 'E', ids: ['E'], minor: 'C♯m' },
+  { label: 'B / C♭', ids: ['B', 'Cb'], minor: 'G♯m / A♭m' },
+  { label: 'F♯ / G♭', ids: ['F#', 'Gb'], minor: 'D♯m / E♭m' },
+  { label: 'C♯ / D♭', ids: ['C#', 'Db'], minor: 'A♯m / B♭m' },
+  { label: 'A♭', ids: ['Ab'], minor: 'Fm' },
+  { label: 'E♭', ids: ['Eb'], minor: 'Cm' },
+  { label: 'B♭', ids: ['Bb'], minor: 'Gm' },
+  { label: 'F', ids: ['F'], minor: 'Dm' }
 ]
+
+const POSITIVE_TRANSPOSE_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+const NEGATIVE_TRANSPOSE_KEYS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'Cb']
 
 export function mod12(value) {
   return ((value % 12) + 12) % 12
@@ -66,4 +71,29 @@ export function signatureLabel(signature) {
   const symbol = signature > 0 ? '♯' : '♭'
   const count = Math.abs(signature)
   return `${count} ${symbol}${count === 1 ? '' : 's'}`
+}
+
+export function signatureAccidentals(signature) {
+  if (signature === 0) return []
+  const source = signature > 0 ? SHARP_SIGNATURE_ORDER : FLAT_SIGNATURE_ORDER
+  return source.slice(0, Math.abs(signature))
+}
+
+export function compactSignature(signature) {
+  if (signature === 0) return '—'
+  const symbol = signature > 0 ? '♯' : '♭'
+  const count = Math.abs(signature)
+  return count <= 3 ? symbol.repeat(count) : `${count}${symbol}`
+}
+
+export function keyForHalfStepsFromC(steps) {
+  const rounded = Math.max(-12, Math.min(12, Math.round(Number(steps) || 0)))
+  const ids = rounded < 0 ? NEGATIVE_TRANSPOSE_KEYS : POSITIVE_TRANSPOSE_KEYS
+  return keyById(ids[mod12(rounded)])
+}
+
+export function halfStepsFromCForKey(key) {
+  if (!key || key.id === 'C') return 0
+  if (key.signature < 0) return key.tonic === 0 ? 0 : key.tonic - 12
+  return key.tonic
 }

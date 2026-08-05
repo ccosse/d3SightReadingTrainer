@@ -47,7 +47,7 @@
             aria-label="Open linked Circle of Fifths"
             @click="store.rightDrawerOpen = true"
           >
-            <q-tooltip anchor="center left" self="center right">Open key information and linked display controls.</q-tooltip>
+            <q-tooltip anchor="center left" self="center right">Open the Circle, key-signature ladder, and linked fretboard controls.</q-tooltip>
           </q-btn>
         </q-page-sticky>
       </q-tab-panel>
@@ -67,9 +67,9 @@
       </q-tab-panel>
 
       <q-tab-panel name="fifths" class="q-pa-none">
-        <div class="circle-grid">
-          <CircleOfFifths />
-          <KeySummary />
+        <div class="fifths-study">
+          <FifthsExplorer />
+          <GuitarExplorerControls />
         </div>
       </q-tab-panel>
 
@@ -85,10 +85,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import CircleOfFifths from '../components/CircleOfFifths.vue'
 import FeaturePlaceholder from '../components/FeaturePlaceholder.vue'
+import FifthsExplorer from '../components/FifthsExplorer.vue'
 import GrandStaff from '../components/GrandStaff.vue'
-import KeySummary from '../components/KeySummary.vue'
+import GuitarExplorerControls from '../components/GuitarExplorerControls.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import PitchClassSelector from '../components/PitchClassSelector.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -165,11 +165,10 @@ function dropOn(targetId) {
 .component-drag-handle:focus { opacity: 0.95; background: rgba(20, 20, 20, 0.86); }
 .component-drag-handle:active { cursor: grabbing; }
 .hud { min-height: 30px; border-radius: 7px; background: #292929; border: 1px solid #4e4e4e; gap: 8px; }
-.circle-grid { display: grid; grid-template-columns: minmax(340px, 0.9fr) minmax(320px, 1.1fr); gap: 24px; align-items: start; }
+.fifths-study { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; }
 .fifths-handle { z-index: 2100; }
 
 @media (max-width: 880px) {
-  .circle-grid { grid-template-columns: 1fr; }
   .music-workspace { padding-inline: 8px; }
   .hud { align-items: flex-start; padding-block: 5px; }
 }
