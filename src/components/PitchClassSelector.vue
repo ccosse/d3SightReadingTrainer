@@ -2,25 +2,8 @@
   <section class="selector" aria-label="Pitch-class selector and playback control">
     <div class="selector-toolbar">
       <div class="row items-center q-gutter-sm control-modes">
-        <q-select
-          :model-value="store.keyboardPreset"
-          :options="KEYBOARD_PRESETS"
-          option-label="label"
-          option-value="id"
-          emit-value
-          map-options
-          dense
-          outlined
-          dark
-          options-dense
-          label="Keyboard"
-          class="keyboard-select"
-          @update:model-value="store.setKeyboardPreset"
-        >
-          <q-tooltip v-if="store.tooltipsEnabled">Choose the displayed keyboard range. The Reface CP has 37 mini keys, E2 through E5.</q-tooltip>
-        </q-select>
-
         <q-btn-toggle
+          class="mode-toggle selection-toggle"
           :model-value="store.selectionMode"
           dense
           unelevated
@@ -40,7 +23,7 @@
 
         <q-btn-toggle
           v-model="store.accidentalMode"
-          class="accidental-toggle"
+          class="mode-toggle accidental-toggle"
           dense
           unelevated
           toggle-color="grey-6"
@@ -115,15 +98,12 @@
 
     <div class="selector-lower-row">
       <ChordPalette />
-      <PlaybackTransport />
     </div>
   </section>
 </template>
 
 <script setup>
 import ChordPalette from './ChordPalette.vue'
-import PlaybackTransport from './PlaybackTransport.vue'
-import { KEYBOARD_PRESETS } from '../music/keyboardPresets'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -184,25 +164,22 @@ function startPitchDrag(event, pitchClass) {
 }
 .pitch-button.selected .scale-degree { color: #fff; }
 .all-none-button { font-size: 1.1rem; }
-.accidental-toggle :deep(.q-btn) { min-width: 48px; min-height: 44px; padding: 8px 14px; border-radius: 4px !important; font-size: 24px; }
-.selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 44px; padding-inline: 16px; font-size: 17px; }
-.keyboard-select { width: 214px; }
-.keyboard-select :deep(.q-field__control) { min-height: 44px; }
-.selector-lower-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: end;
-  margin-top: 8px;
+.mode-toggle :deep(.q-btn) {
+  width: 78px;
+  min-width: 78px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 4px !important;
+  font-size: 17px;
 }
-
-@media (max-width: 1050px) {
-  .selector-lower-row { grid-template-columns: 1fr; align-items: stretch; }
+.accidental-toggle :deep(.q-btn) { font-size: 23px; }
+.selector-lower-row {
+  display: block;
+  margin-top: 8px;
 }
 
 @media (max-width: 900px) {
   .control-modes { width: 100%; justify-content: flex-end; }
-  .keyboard-select { width: min(100%, 230px); }
   .pitch-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .all-none-button { grid-column: span 2; }
 }
@@ -211,9 +188,8 @@ function startPitchDrag(event, pitchClass) {
   .selector { padding: 7px; }
   .selector-toolbar { align-items: flex-start; gap: 7px; margin-bottom: 7px; }
   .control-modes { width: 100%; justify-content: space-between; gap: 5px; }
-  .keyboard-select { width: min(100%, 180px); }
-  .selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 38px; padding-inline: 9px; font-size: 14px; }
-  .accidental-toggle :deep(.q-btn) { min-width: 40px; min-height: 38px; padding: 5px 9px; font-size: 20px; }
+  .mode-toggle :deep(.q-btn) { width: 62px; min-width: 62px; min-height: 38px; padding: 0 8px; font-size: 14px; }
+  .accidental-toggle :deep(.q-btn) { font-size: 20px; }
   .pitch-grid {
     display: flex;
     gap: 5px;

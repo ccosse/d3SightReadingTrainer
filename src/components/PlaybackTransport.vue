@@ -19,8 +19,8 @@
         <q-tooltip v-if="store.tooltipsEnabled">Stop without rewinding.</q-tooltip>
       </q-btn>
 
-      <q-btn square outline color="grey-5" icon="save" :disable="!hasClipSelection" aria-label="Save the selected staff region" @click="store.requestSrtSave">
-        <q-tooltip v-if="store.tooltipsEnabled">Save the selected staff region to the clip library.</q-tooltip>
+      <q-btn square outline color="grey-5" icon="save" :disable="!hasSaveableMaterial" aria-label="Save the selected region or current staff contents" @click="store.requestSrtSave">
+        <q-tooltip v-if="store.tooltipsEnabled">Save the selected region; if nothing is selected, save the current staff contents.</q-tooltip>
       </q-btn>
     </div>
 
@@ -49,7 +49,7 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 const hasPlayableSource = computed(() => store.srtSource === 'generated' || store.hasStaffSequence)
 const isPlaying = computed(() => store.srtTransportState === 'playing')
-const hasClipSelection = computed(() => store.clipSelectionStart !== null && store.clipSelectionEnd !== null)
+const hasSaveableMaterial = computed(() => store.srtSource === 'generated' || store.hasStaffSequence)
 
 function togglePlayPause() {
   if (isPlaying.value) store.requestSrtPause()
@@ -59,9 +59,9 @@ function togglePlayPause() {
 
 <style scoped>
 .transport {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: flex-end;
   gap: 12px;
   min-height: 76px;
   border: 0;
@@ -70,12 +70,14 @@ function togglePlayPause() {
   padding: 0;
   white-space: nowrap;
 }
-.tape-controls { display: flex; gap: 4px; }
+.tape-controls { grid-column: 2; display: flex; justify-content: center; gap: 5px; }
+.transport :deep(.q-knob) { grid-column: 3; justify-self: end; }
 .tape-controls :deep(.q-btn) { min-width: 46px; min-height: 44px; }
 .knob-value { display: grid; place-items: center; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .knob-value strong { font-size: 17px; }
 .knob-value span { margin-top: 2px; color: #cfcfcf; font-size: 10px; letter-spacing: .04em; }
 @media (max-width: 620px) {
-  .transport { justify-content: flex-start; }
+  .transport { grid-template-columns: 1fr auto 1fr; }
+  .transport :deep(.q-knob) { transform: scale(.88); transform-origin: right center; }
 }
 </style>

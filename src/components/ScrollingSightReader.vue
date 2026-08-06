@@ -194,6 +194,8 @@
       </svg>
     </div>
 
+    <PlaybackTransport class="staff-transport" />
+
     <div class="clip-toolbar">
       <q-knob
         :model-value="visibleBars"
@@ -211,7 +213,6 @@
         <q-tooltip v-if="store.tooltipsEnabled">Turn right for more visible bars.</q-tooltip>
       </q-knob>
       <q-input v-model="clipName" dark outlined dense label="Clip name" />
-      <q-btn outline color="grey-5" icon="content_cut" label="Save selected region" no-caps :disable="!canSaveSelection" @click="saveSelection" />
       <q-btn outline color="grey-5" icon="playlist_add" label="Next 2 bars → staff" no-caps :disable="store.srtSource !== 'generated' || !events.length" @click="captureToStaff" />
       <q-btn v-if="store.clipSelectionStart !== null" flat color="grey-4" icon="deselect" @click="store.clearClipSelection"><q-tooltip v-if="store.tooltipsEnabled">Clear the selected time region.</q-tooltip></q-btn>
     </div>
@@ -242,6 +243,7 @@ import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
 import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import ImageCheckbox from './ImageCheckbox.vue'
+import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -289,7 +291,7 @@ const sourceSummary = computed(() => {
   return `${labelFor(options.style, store.srtStyle)} · ${labelFor(options.range, store.srtRange)} · endless`
 })
 const hasPlayableSource = computed(() => store.srtSource === 'generated' || store.hasStaffSequence)
-const canSaveSelection = computed(() => store.clipSelectionStart !== null && store.clipSelectionEnd !== null && selectedEvents.value.length > 0)
+const canSaveSelection = computed(() => store.clipSelectionStart !== null && store.clipSelectionEnd !== null && selectedEvents.value.some((event) => event.midis?.length))
 const selectedEvents = computed(() => {
   if (store.clipSelectionStart === null || store.clipSelectionEnd === null) return []
   return events.value.filter((event) => event.beat >= store.clipSelectionStart && event.beat <= store.clipSelectionEnd)
@@ -927,10 +929,33 @@ function startClipDrag(event, clip) {
   event.dataTransfer.setData('text/plain', clip.name)
 }
 
-function saveSelection() {
-  if (!canSaveSelection.value) return
-  const start = store.clipSelectionStart
-  const normalized = selectedEvents.value.map((event) => ({ beat: event.beat - start, duration: event.duration, midis: event.midis }))
+function saveFromTransport() {
+  let sourceEvents = []
+  let start = 0
+
+  if (canSaveSelection.value) {
+    sourceEvents = selectedEvents.value
+    start = store.clipSelectionStart
+  } else if (store.srtSource === 'staff') {
+    sourceEvents = store.staffClusters.map((cluster) => ({
+      beat: cluster.beat,
+      duration: cluster.duration,
+      midis: cluster.events.map((event) => event.midi)
+    }))
+    start = sourceEvents.length ? Math.min(...sourceEvents.map((event) => event.beat)) : 0
+  } else {
+    sourceEvents = visibleEvents.value
+      .map((item) => item.rawEvent || item)
+      .filter((event) => !event.isRest && event.midis?.length)
+    start = sourceEvents.length ? Math.min(...sourceEvents.map((event) => event.beat)) : 0
+  }
+
+  if (!sourceEvents.length) return
+  const normalized = sourceEvents.map((event) => ({
+    beat: event.beat - start,
+    duration: event.duration,
+    midis: event.midis
+  }))
   store.saveClip({ name: clipName.value || `Clip ${store.clips.length + 1}`, events: normalized })
   clipName.value = ''
   store.clearClipSelection()
@@ -939,7 +964,7 @@ function saveSelection() {
 watch(() => store.srtTransportNonce, () => {
   if (store.srtTransportCommand === 'play' || store.srtTransportCommand === 'start') play()
   else if (store.srtTransportCommand === 'pause') pause()
-  else if (store.srtTransportCommand === 'save') saveSelection()
+  else if (store.srtTransportCommand === 'save') saveFromTransport()
   else stop()
 })
 watch(() => store.srtGenerationNonce, regenerate)
@@ -995,7 +1020,8 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .clip-selection { fill: rgba(215,169,40,.16); stroke: #ffd866; stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
-.clip-toolbar { display: grid; grid-template-columns: auto minmax(170px,.6fr) auto auto auto; gap: 10px; align-items: center; padding: 6px 0 0; border: 0; border-radius: 0; background: transparent; }
+.staff-transport { padding: 5px 0 2px; }
+.clip-toolbar { display: grid; grid-template-columns: auto minmax(170px,.65fr) auto auto; gap: 10px; align-items: center; padding: 2px 0 0; border: 0; border-radius: 0; background: transparent; }
 .clip-toolbar :deep(.q-field__label), .clip-toolbar :deep(.q-field__native), .clip-toolbar :deep(.q-btn__content) { font-size: 16px; }
 .clip-library { display: grid; gap: 6px; border-top: 0; padding-top: 6px; }
 .clip-library-title { font-size: 20px; font-weight: 650; color: #ffd866; }

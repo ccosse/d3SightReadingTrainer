@@ -211,7 +211,7 @@ onBeforeUnmount(releasePreview)
 .guitar-string { stroke: #f7f7f7; opacity: 0.95; }
 .inlay { fill: #e53935; stroke: #ffc2bf; stroke-width: 0.9; }
 .extension-inlay { fill: #e53935; stroke: #ffc2bf; opacity: 0.92; }
-.fret-number { fill: #f0f0f0; font-size: 18px; }
+.fret-number { fill: #f0f0f0; font-size: 13px; letter-spacing: -0.25px; }
 .beyond-wood-number { fill: #d9efff; }
 .note-hit { fill: transparent; cursor: pointer; }
 .note-dot { cursor: pointer; stroke-width: 1; }

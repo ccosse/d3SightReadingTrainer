@@ -112,18 +112,21 @@ async function audition() {
 <style scoped>
 .chord-palette {
   display: grid;
-  grid-template-columns: minmax(300px, 560px) minmax(210px, 290px);
-  gap: 9px;
-  align-items: center;
+  grid-template-columns: minmax(320px, 560px) minmax(230px, 300px);
+  gap: 10px;
+  align-items: stretch;
   justify-content: start;
   min-width: 0;
   padding-top: 0;
   border-top: 0;
 }
 .chord-select { width: 100%; min-width: 0; }
+.chord-select :deep(.q-field__control) { min-height: 46px; height: 46px; border-radius: 4px; background: #292929; }
+.chord-select :deep(.q-field__control::before) { border: 1px solid #676767 !important; }
+.chord-select :deep(.q-field__control::after) { border: 1px solid #bdbdbd !important; }
 .chord-select :deep(.q-field__native),
 .chord-select :deep(.q-field__input) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chord-drag-button { min-height: 44px; border-color: #777 !important; background: #333; }
+.chord-drag-button { height: 46px; min-height: 46px; border-color: #777 !important; border-radius: 4px; background: #333; align-self: stretch; }
 .chord-drag-button :deep(.q-btn__content) { gap: 8px; min-width: 0; }
 .chord-name { font-size: 18px; font-weight: 700; }
 .chord-notes { font-size: 14px; opacity: .86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
