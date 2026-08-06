@@ -554,6 +554,14 @@ export const useNoteMapStore = defineStore('noteMap', {
       return clip.id
     },
 
+    renameClip(id, name) {
+      const clip = this.clips.find((item) => item.id === id)
+      const nextName = String(name || '').trim()
+      if (!clip || !nextName) return
+      clip.name = nextName
+      persistClips(this.clips)
+    },
+
     removeClip(id) {
       this.clips = this.clips.filter((clip) => clip.id !== id)
       persistClips(this.clips)

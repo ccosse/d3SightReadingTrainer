@@ -179,10 +179,10 @@ const rightDrawerWidth = computed(() => {
   return Math.min(990, Math.round($q.screen.width * 0.68))
 })
 const leftEdgeTabStyle = computed(() => ({
-  left: store.leftDrawerOpen ? `${leftDrawerWidth.value}px` : '0px'
+  left: store.leftDrawerOpen ? `${leftDrawerWidth.value + 10}px` : '10px'
 }))
 const fifthsEdgeTabStyle = computed(() => ({
-  right: store.rightDrawerOpen ? `${Math.max(0, rightDrawerWidth.value - 38)}px` : '0px'
+  right: store.rightDrawerOpen ? `${rightDrawerWidth.value + 10}px` : '10px'
 }))
 
 const navigation = [

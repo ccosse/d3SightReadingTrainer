@@ -194,28 +194,8 @@
       </svg>
     </div>
 
-    <PlaybackTransport class="staff-transport" />
+    <PlaybackTransport class="staff-transport" :visible-bars="visibleBars" @update:visible-bars="setVisibleBars" />
 
-    <div class="clip-toolbar">
-      <q-knob
-        :model-value="visibleBars"
-        :min="1"
-        :max="6"
-        :step="1"
-        size="68px"
-        :thickness="0.16"
-        color="grey-4"
-        track-color="grey-8"
-        show-value
-        @update:model-value="setVisibleBars"
-      >
-        <div class="dial-value"><strong>{{ visibleBars }}</strong><span>Bars</span></div>
-        <q-tooltip v-if="store.tooltipsEnabled">Turn right for more visible bars.</q-tooltip>
-      </q-knob>
-      <q-input v-model="clipName" dark outlined dense label="Clip name" />
-      <q-btn outline color="grey-5" icon="playlist_add" label="Next 2 bars → staff" no-caps :disable="store.srtSource !== 'generated' || !events.length" @click="captureToStaff" />
-      <q-btn v-if="store.clipSelectionStart !== null" flat color="grey-4" icon="deselect" @click="store.clearClipSelection"><q-tooltip v-if="store.tooltipsEnabled">Clear the selected time region.</q-tooltip></q-btn>
-    </div>
 
     <div v-if="store.clips.length" class="clip-library">
       <div class="clip-library-title">Clip library</div>
@@ -229,11 +209,33 @@
       >
         <q-icon name="drag_indicator" size="22px" class="clip-drag-icon" />
         <div><strong>{{ clip.name }}</strong><span>{{ clip.events.length }} events · {{ clip.tempo }} BPM</span></div>
-        <q-btn flat color="grey-4" icon="edit_note" @click="store.loadClipToStaff(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Load this clip into the editable staff.</q-tooltip></q-btn>
+        <q-btn flat color="grey-4" icon="playlist_play" @click="store.loadClipToStaff(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Load this clip into the editable staff.</q-tooltip></q-btn>
+        <q-btn flat color="grey-4" icon="edit" @click="openRenameDialog(clip)"><q-tooltip v-if="store.tooltipsEnabled">Rename this clip.</q-tooltip></q-btn>
         <q-btn flat color="grey-4" icon="delete" @click="store.removeClip(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Delete this saved clip.</q-tooltip></q-btn>
         <q-tooltip v-if="store.tooltipsEnabled">Drag the clip onto the staff to insert it at that time position.</q-tooltip>
       </div>
     </div>
+
+    <q-dialog v-model="renameDialogOpen">
+      <q-card class="rename-card text-white">
+        <q-card-section class="text-h6">Rename clip</q-card-section>
+        <q-card-section>
+          <q-input
+            ref="renameInput"
+            v-model="renameValue"
+            dark
+            outlined
+            autofocus
+            label="Clip name"
+            @keyup.enter="commitRename"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey-4" v-close-popup />
+          <q-btn flat label="Save" color="grey-2" :disable="!renameValue.trim()" @click="commitRename" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </section>
 </template>
 
@@ -252,8 +254,10 @@ const generator = new SightReadingGenerator()
 const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
-const clipName = ref('')
 const dropPreview = ref(null)
+const renameDialogOpen = ref(false)
+const renameValue = ref('')
+const renameClipId = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
 const visibleBars = computed(() => Math.max(1, Math.min(6, Math.round((1120 / pixelsPerBeat.value) / 4))))
@@ -885,13 +889,6 @@ function tick(now) {
   if (store.srtSource === 'staff' && !store.srtLoopManual && nextManualCycleBeat < currentBeat.value - 1) { stop(); return }
   animationFrame = window.requestAnimationFrame(tick)
 }
-function captureToStaff() {
-  fillGeneratedAhead()
-  const measureStart = Math.max(leadInBeats, Math.ceil(currentBeat.value / 4) * 4)
-  const selected = events.value.filter((event) => event.beat >= measureStart && event.beat < measureStart + 8).map((event) => ({ beat: event.beat - measureStart, duration: event.duration, midis: event.midis }))
-  store.replaceStaffSequence(selected)
-  store.setFocus(`Captured ${selected.length} generated positions into the editable staff`)
-}
 function beginRangeSelection(event) {
   if (event.button !== 0) return
   const beat = beatForPointer(event)
@@ -956,9 +953,23 @@ function saveFromTransport() {
     duration: event.duration,
     midis: event.midis
   }))
-  store.saveClip({ name: clipName.value || `Clip ${store.clips.length + 1}`, events: normalized })
-  clipName.value = ''
+  store.saveClip({ name: `Clip ${store.clips.length + 1}`, events: normalized })
   store.clearClipSelection()
+}
+
+function openRenameDialog(clip) {
+  renameClipId.value = clip.id
+  renameValue.value = clip.name
+  renameDialogOpen.value = true
+}
+
+function commitRename() {
+  const name = renameValue.value.trim()
+  if (!renameClipId.value || !name) return
+  store.renameClip(renameClipId.value, name)
+  renameDialogOpen.value = false
+  renameClipId.value = null
+  renameValue.value = ''
 }
 
 watch(() => store.srtTransportNonce, () => {
@@ -1021,15 +1032,14 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
 .staff-transport { padding: 5px 0 2px; }
-.clip-toolbar { display: grid; grid-template-columns: auto minmax(170px,.65fr) auto auto; gap: 10px; align-items: center; padding: 2px 0 0; border: 0; border-radius: 0; background: transparent; }
-.clip-toolbar :deep(.q-field__label), .clip-toolbar :deep(.q-field__native), .clip-toolbar :deep(.q-btn__content) { font-size: 16px; }
 .clip-library { display: grid; gap: 6px; border-top: 0; padding-top: 6px; }
 .clip-library-title { font-size: 20px; font-weight: 650; color: #ffd866; }
-.clip-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); cursor: grab; }
+.clip-row { display: grid; grid-template-columns: 28px 1fr auto auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); cursor: grab; }
 .clip-row:active { cursor: grabbing; }
 .clip-drag-icon { color: #aaa; }
 .clip-row strong { font-size: 18px; }
 .clip-row span { display: block; color: #bbb; font-size: 15px; }
-@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-dial-row { flex-wrap: wrap; } .srt-action-row { justify-content: flex-start; margin-left: 0; } .clip-toolbar { grid-template-columns: auto 1fr; } }
-@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row { grid-template-columns: 1fr; } .srt-dial-row { align-items: center; } .srt-action-row { width: 100%; justify-content: space-between; } .clip-toolbar { grid-template-columns: auto 1fr; } .clip-toolbar :deep(.q-btn) { grid-column: span 2; } }
+.rename-card { width: min(430px, calc(100vw - 32px)); background: #292929; }
+@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-dial-row { flex-wrap: wrap; } .srt-action-row { justify-content: flex-start; margin-left: 0; } }
+@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row { grid-template-columns: 1fr; } .srt-dial-row { align-items: center; } .srt-action-row { width: 100%; justify-content: space-between; } .clip-row { grid-template-columns: 24px minmax(0,1fr) auto auto auto; gap: 4px; } }
 </style>

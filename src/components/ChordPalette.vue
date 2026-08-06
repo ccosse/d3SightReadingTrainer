@@ -39,20 +39,21 @@
 
     <q-btn
       v-if="selectedChord"
-      no-caps
+      square
       outline
       color="grey-5"
       text-color="white"
       icon="drag_indicator"
       class="chord-drag-button"
       draggable="true"
+      :aria-label="`Drag ${selectedChord.chordName} to the staff`"
       @dragstart="startChordDrag"
       @dragend="store.clearStaffDragPayload"
       @click="audition"
     >
-      <span class="chord-name">{{ selectedChord.chordName }}</span>
-      <span class="chord-notes">{{ selectedChord.notes.join('–') }}</span>
-      <q-tooltip v-if="store.tooltipsEnabled">Click to hear it. Drag it onto the staff to place the complete voicing.</q-tooltip>
+      <q-tooltip v-if="store.tooltipsEnabled">
+        {{ selectedChord.chordName }} · {{ selectedChord.notes.join('–') }}. Click to hear it; drag onto the staff to place it.
+      </q-tooltip>
     </q-btn>
   </div>
 </template>
@@ -112,10 +113,11 @@ async function audition() {
 <style scoped>
 .chord-palette {
   display: grid;
-  grid-template-columns: minmax(320px, 560px) minmax(230px, 300px);
-  gap: 10px;
-  align-items: stretch;
+  grid-template-columns: minmax(280px, 720px) 46px;
+  gap: 8px;
+  align-items: center;
   justify-content: start;
+  width: min(774px, 100%);
   min-width: 0;
   padding-top: 0;
   border-top: 0;
@@ -126,12 +128,11 @@ async function audition() {
 .chord-select :deep(.q-field__control::after) { border: 1px solid #bdbdbd !important; }
 .chord-select :deep(.q-field__native),
 .chord-select :deep(.q-field__input) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chord-drag-button { height: 46px; min-height: 46px; border-color: #777 !important; border-radius: 4px; background: #333; align-self: stretch; }
-.chord-drag-button :deep(.q-btn__content) { gap: 8px; min-width: 0; }
-.chord-name { font-size: 18px; font-weight: 700; }
-.chord-notes { font-size: 14px; opacity: .86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 760px) {
-  .chord-palette { grid-template-columns: 1fr; }
-  .chord-notes { display: none; }
+.chord-drag-button { width: 46px; min-width: 46px; height: 46px; min-height: 46px; padding: 0; border-color: #777 !important; border-radius: 4px; background: #333; }
+.chord-drag-button :deep(.q-icon) { font-size: 24px; }
+@media (max-width: 520px) {
+  .chord-palette { grid-template-columns: minmax(0, 1fr) 42px; width: 100%; }
+  .chord-drag-button { width: 42px; min-width: 42px; height: 42px; min-height: 42px; }
 }
+
 </style>
