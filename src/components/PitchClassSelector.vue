@@ -89,6 +89,7 @@
         :aria-checked="store.isSelected(pitchClass)"
         draggable="true"
         @dragstart="startPitchDrag($event, pitchClass)"
+        @dragend="store.clearStaffDragPayload"
         @click="store.selectPitchClass(pitchClass)"
       >
         <span class="pitch-name">{{ name }}</span>
@@ -115,6 +116,7 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 
 function startPitchDrag(event, pitchClass) {
+  store.setStaffDragPayload({ type: 'pitch', pitchClass })
   event.dataTransfer.effectAllowed = 'copy'
   event.dataTransfer.setData('application/x-pitch-class', String(pitchClass))
   event.dataTransfer.setData('text/plain', String(pitchClass))

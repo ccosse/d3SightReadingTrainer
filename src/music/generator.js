@@ -231,6 +231,7 @@ export class SightReadingGenerator {
     this.lastMidi = { treble: 67, bass: 48 }
     this.lastChordCenter = { treble: 67, bass: 48 }
     this.riffPattern = RIFF_PATTERNS['blues-hook']
+    this.lastOutputMidis = []
   }
 
   chooseClef(mode) {
@@ -325,9 +326,10 @@ export class SightReadingGenerator {
   makeForClef({ key, clef, material, motion, rangeName, harmonyDegree }) {
     const range = RANGE_PRESETS[rangeName]?.[clef] || RANGE_PRESETS.comfortable[clef]
     const selectedMaterial = this.chooseMaterial(material)
+    const effectiveMotion = motion === 'voice-led' && Math.random() < 0.34 ? 'stepwise' : motion
     if (selectedMaterial === 'triad') return this.chooseChord(key, clef, range, harmonyDegree, 'triad')
-    if (selectedMaterial === 'dyad') return this.chooseDyad(key, clef, range, motion, harmonyDegree)
-    return this.chooseSingle(key, clef, range, motion, harmonyDegree)
+    if (selectedMaterial === 'dyad') return this.chooseDyad(key, clef, range, effectiveMotion, harmonyDegree)
+    return this.chooseSingle(key, clef, range, effectiveMotion, harmonyDegree)
   }
 
   bassNoteForBeat(key, degree, beatIndex, pattern = 'walk') {
@@ -420,6 +422,37 @@ export class SightReadingGenerator {
     return { midis, clef: 'treble', harmonyDegree, duration, isChord: midis.length > 1 }
   }
 
+  decorateEvent(event, style, beat, duration) {
+    const phase = ((Number(beat) % 4) + 4) % 4
+    const downbeat = phase < 0.001
+    const restChance = style === 'free' ? 0.08 : style === 'riff' ? 0.06 : style === 'boogie' ? 0.035 : 0.02
+    const tieChance = style === 'free' ? 0.11 : style === 'riff' ? 0.08 : 0
+
+    if (!downbeat && style !== 'strato' && style !== 'jazz-guitar' && Math.random() < restChance) {
+      return {
+        ...event,
+        midis: [],
+        isRest: true,
+        restClef: event.clef === 'bass' ? 'bass' : event.clef === 'both' ? (Math.random() < 0.5 ? 'bass' : 'treble') : 'treble',
+        duration: Math.max(0.5, Number(duration) || 1)
+      }
+    }
+
+    if (!downbeat && tieChance > 0 && this.lastOutputMidis.length > 0 && event.midis.length <= 2 && Math.random() < tieChance) {
+      return {
+        ...event,
+        midis: [...this.lastOutputMidis],
+        tieFromPrevious: true,
+        silent: true,
+        isChord: this.lastOutputMidis.length > 1,
+        duration: Math.max(0.25, Number(duration) || 1)
+      }
+    }
+
+    this.lastOutputMidis = [...event.midis]
+    return event
+  }
+
   generate({ key, beat, duration, material, motion, clefMode, rangeName, style = 'free', chordSize = 'seventh', bassPattern = 'walk', exerciseMode = 'mode-1', progression = 'auto', riffFlavor = 'blues-hook', dynamics = 'natural' }) {
     let styled = null
     if (style === 'walking-chords') styled = this.walkingChordEvent({ key, beat, duration, chordSize, bassPattern, progression })
@@ -431,7 +464,7 @@ export class SightReadingGenerator {
 
     if (styled) {
       this.eventIndex += 1
-      return {
+      return this.decorateEvent({
         id: `g-${this.eventIndex}-${Math.round(beat * 1000)}`,
         beat,
         duration: styled.duration,
@@ -440,7 +473,7 @@ export class SightReadingGenerator {
         clef: styled.clef,
         style,
         velocity: this.velocityForBeat(beat, dynamics, styled.isChord)
-      }
+      }, style, beat, styled.duration)
     }
 
     const harmonyDegree = this.harmonyForBeat(beat, progression, motion)
@@ -453,7 +486,7 @@ export class SightReadingGenerator {
     } else midis = this.makeForClef({ key, clef: selectedClef, material, motion, rangeName, harmonyDegree })
 
     this.eventIndex += 1
-    return {
+    return this.decorateEvent({
       id: `g-${this.eventIndex}-${Math.round(beat * 1000)}`,
       beat,
       duration,
@@ -461,6 +494,6 @@ export class SightReadingGenerator {
       harmonyDegree,
       clef: selectedClef,
       velocity: this.velocityForBeat(beat, dynamics, midis.length > 1)
-    }
+    }, style, beat, duration)
   }
 }

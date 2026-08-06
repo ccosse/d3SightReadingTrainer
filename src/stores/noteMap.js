@@ -109,7 +109,8 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtConfigOpen: true,
     clipSelectionStart: null,
     clipSelectionEnd: null,
-    clips: readSavedClips()
+    clips: readSavedClips(),
+    staffDragPayload: null
   }),
 
   getters: {
@@ -338,6 +339,16 @@ export const useNoteMapStore = defineStore('noteMap', {
       this.playingTokens = source
         ? this.playingTokens.filter((entry) => entry.source !== source)
         : []
+    },
+
+    setStaffDragPayload(payload) {
+      this.staffDragPayload = payload && typeof payload === 'object'
+        ? JSON.parse(JSON.stringify(payload))
+        : null
+    },
+
+    clearStaffDragPayload() {
+      this.staffDragPayload = null
     },
 
     setStaffQuantize(value) {

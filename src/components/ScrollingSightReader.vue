@@ -19,82 +19,88 @@
 
     <q-slide-transition>
       <div v-show="store.srtConfigOpen" class="srt-controls">
-      <q-select dense dark outlined emit-value map-options label="Source" :model-value="store.srtSource" :options="options.source" @update:model-value="setOption('srtSource', $event)" />
-      <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
+        <div class="srt-select-row">
+          <q-select dense dark outlined emit-value map-options label="Source" :model-value="store.srtSource" :options="options.source" @update:model-value="setOption('srtSource', $event)" />
+          <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
 
-      <q-select
-        v-if="store.srtStyle === 'free'"
-        dense dark outlined emit-value map-options label="Material"
-        :model-value="store.srtMaterial" :options="options.material"
-        :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMaterial', $event)"
-      />
-      <q-select
-        v-if="store.srtStyle === 'free'"
-        dense dark outlined emit-value map-options label="Logic"
-        :model-value="store.srtMotion" :options="options.motion"
-        :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMotion', $event)"
-      />
-      <q-select
-        v-if="['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle)"
-        dense dark outlined emit-value map-options label="Chords"
-        :model-value="store.srtChordSize" :options="options.chordSize"
-        @update:model-value="setOption('srtChordSize', $event)"
-      />
-      <q-select
-        v-if="store.srtStyle === 'walking-chords'"
-        dense dark outlined emit-value map-options label="Bass"
-        :model-value="store.srtBassPattern" :options="options.bassPattern"
-        @update:model-value="setOption('srtBassPattern', $event)"
-      />
-      <q-select
-        v-if="store.srtStyle === 'strato'"
-        dense dark outlined emit-value map-options label="Exercise"
-        :model-value="store.srtExerciseMode" :options="options.exerciseMode"
-        @update:model-value="setOption('srtExerciseMode', $event)"
-      />
+          <q-select
+            v-if="store.srtStyle === 'free'"
+            dense dark outlined emit-value map-options label="Material"
+            :model-value="store.srtMaterial" :options="options.material"
+            :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMaterial', $event)"
+          />
+          <q-select
+            v-if="store.srtStyle === 'free'"
+            dense dark outlined emit-value map-options label="Logic"
+            :model-value="store.srtMotion" :options="options.motion"
+            :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMotion', $event)"
+          />
+          <q-select
+            v-if="['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle)"
+            dense dark outlined emit-value map-options label="Chords"
+            :model-value="store.srtChordSize" :options="options.chordSize"
+            @update:model-value="setOption('srtChordSize', $event)"
+          />
+          <q-select
+            v-if="store.srtStyle === 'walking-chords'"
+            dense dark outlined emit-value map-options label="Bass"
+            :model-value="store.srtBassPattern" :options="options.bassPattern"
+            @update:model-value="setOption('srtBassPattern', $event)"
+          />
+          <q-select
+            v-if="store.srtStyle === 'strato'"
+            dense dark outlined emit-value map-options label="Exercise"
+            :model-value="store.srtExerciseMode" :options="options.exerciseMode"
+            @update:model-value="setOption('srtExerciseMode', $event)"
+          />
 
-      <q-select dense dark outlined emit-value map-options label="Clefs" :model-value="store.srtClefMode" :options="options.clefMode" :disable="store.srtSource === 'staff' || store.srtStyle !== 'free'" @update:model-value="setOption('srtClefMode', $event)" />
-      <q-select dense dark outlined emit-value map-options label="Range" :model-value="store.srtRange" :options="options.range" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtRange', $event)" />
-      <q-select dense dark outlined emit-value map-options label="New event" :model-value="store.srtEventSpacing" :options="options.spacing" :disable="store.srtSource === 'staff' || accompanimentStyle" @update:model-value="store.setSrtEventSpacing" />
+          <q-select dense dark outlined emit-value map-options label="Clefs" :model-value="store.srtClefMode" :options="options.clefMode" :disable="store.srtSource === 'staff' || store.srtStyle !== 'free'" @update:model-value="setOption('srtClefMode', $event)" />
+          <q-select dense dark outlined emit-value map-options label="Range" :model-value="store.srtRange" :options="options.range" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtRange', $event)" />
+          <q-select dense dark outlined emit-value map-options label="New event" :model-value="store.srtEventSpacing" :options="options.spacing" :disable="store.srtSource === 'staff' || accompanimentStyle" @update:model-value="store.setSrtEventSpacing" />
+          <q-select dense dark outlined emit-value map-options label="Progression" :model-value="store.srtProgression" :options="options.progression" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtProgression', $event)" />
+          <q-select v-if="store.srtStyle === 'riff'" dense dark outlined emit-value map-options label="Riff flavor" :model-value="store.srtRiffFlavor" :options="options.riffFlavor" @update:model-value="setOption('srtRiffFlavor', $event)" />
+          <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
+        </div>
 
-      <div class="tempo-block">
-        <span>{{ store.srtTempo }} BPM</span>
-        <q-slider :model-value="store.srtTempo" :min="30" :max="180" :step="1" color="positive" @update:model-value="store.setSrtTempo">
-          <q-tooltip>Tempo controls scrolling and held-note playback.</q-tooltip>
-        </q-slider>
-      </div>
+        <div class="srt-slider-row">
+          <div class="tempo-block">
+            <span>{{ store.srtTempo }} BPM</span>
+            <q-slider :model-value="store.srtTempo" :min="30" :max="180" :step="1" color="positive" @update:model-value="store.setSrtTempo">
+              <q-tooltip>Tempo controls scrolling and held-note playback.</q-tooltip>
+            </q-slider>
+          </div>
 
-      <div class="gate-block">
-        <span>Hold {{ Math.round(store.srtGate * 100) }}%</span>
-        <q-slider :model-value="store.srtGate" :min="0.35" :max="1.2" :step="0.05" color="amber-6" @update:model-value="store.setSrtGate">
-          <q-tooltip>Gate length for the next sounding event. At 100%, a one-beat note is held for one full beat; values above 100% overlap into the next event.</q-tooltip>
-        </q-slider>
-      </div>
+          <div class="gate-block">
+            <span>Hold {{ Math.round(store.srtGate * 100) }}%</span>
+            <q-slider :model-value="store.srtGate" :min="0.35" :max="1.2" :step="0.05" color="amber-6" @update:model-value="store.setSrtGate">
+              <q-tooltip>Gate length for every note in the event, bass and treble alike.</q-tooltip>
+            </q-slider>
+          </div>
 
-      <div class="swing-block">
-        <span>Swing {{ Math.round(store.srtSwing * 100) }}%</span>
-        <q-slider :model-value="store.srtSwing" :min="0" :max="0.45" :step="0.05" color="pink-4" @update:model-value="store.setSrtSwing">
-          <q-tooltip>Delays every second generated pulse to create a long-short feel. With ½-beat events this becomes conventional eighth-note swing; it also remains audible with beat-based accompaniment styles.</q-tooltip>
-        </q-slider>
-      </div>
+          <div class="swing-block">
+            <span>Swing {{ Math.round(store.srtSwing * 100) }}%</span>
+            <q-slider :model-value="store.srtSwing" :min="0" :max="0.45" :step="0.05" color="pink-4" @update:model-value="store.setSrtSwing">
+              <q-tooltip>Delays alternating pulses to create a long-short feel.</q-tooltip>
+            </q-slider>
+          </div>
 
-      <q-toggle v-model="store.srtShowLabels" color="light-blue-5" label="Labels" />
-      <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="light-blue-5" label="Loop" />
-      <q-select dense dark outlined emit-value map-options label="Progression" :model-value="store.srtProgression" :options="options.progression" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtProgression', $event)" />
-      <q-select v-if="store.srtStyle === 'riff'" dense dark outlined emit-value map-options label="Riff flavor" :model-value="store.srtRiffFlavor" :options="options.riffFlavor" @update:model-value="setOption('srtRiffFlavor', $event)" />
-      <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
-      <q-btn
-        flat
-        :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
-        color="grey-3"
-        @click="resetOrReseed"
-      >
-        <q-tooltip>
-          {{ store.srtSource === 'staff'
-            ? 'Clear the manual staff and return its tape to the beginning.'
-            : 'Reseed and regenerate the endless passage from the beginning.' }}
-        </q-tooltip>
-      </q-btn>
+          <div class="srt-action-row">
+            <q-toggle v-model="store.srtShowLabels" color="light-blue-5" label="Labels" />
+            <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="light-blue-5" label="Loop" />
+            <q-btn
+              flat
+              :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
+              color="grey-3"
+              @click="resetOrReseed"
+            >
+              <q-tooltip>
+                {{ store.srtSource === 'staff'
+                  ? 'Clear the manual staff and return its tape to the beginning.'
+                  : 'Reseed and regenerate the endless passage from the beginning.' }}
+              </q-tooltip>
+            </q-btn>
+          </div>
+        </div>
       </div>
     </q-slide-transition>
 
@@ -111,7 +117,9 @@
         viewBox="0 0 1120 360"
         role="img"
         aria-label="Common scrolling grand staff with fixed scanline, clip selection, and linked instrument playback"
-        @dragover.stop.prevent="allowPitchDrop"
+        @dragenter.stop.prevent="updateDropPreview"
+        @dragover.stop.prevent="updateDropPreview"
+        @dragleave.stop="clearDropPreview"
         @drop.stop.prevent="dropPitch"
         @dblclick.stop="addSelectedAtPointer"
         @pointerdown="beginRangeSelection"
@@ -121,6 +129,11 @@
         @pointerleave="finishRangeSelection"
       >
         <rect x="0" y="0" width="1120" height="360" class="stage-bg" />
+        <defs>
+          <clipPath id="moving-note-clip">
+            <rect x="176" y="40" width="916" height="278" />
+          </clipPath>
+        </defs>
 
         <g class="moving-grid">
           <g v-for="marker in timelineMarkers" :key="marker.key">
@@ -140,19 +153,33 @@
           <text x="560" y="194" text-anchor="middle" class="empty-sub">Add notes on Note Map, or switch Source to Generated.</text>
         </g>
 
-        <g v-for="event in visibleEvents" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
-          <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
-          <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
-            <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
-            <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="scroll-head" />
-            <text v-if="store.srtShowLabels" :x="note.x" :y="note.y - 14" text-anchor="middle" class="scroll-label">{{ note.label }}</text>
+        <g clip-path="url(#moving-note-clip)">
+          <path v-for="tie in visibleTies" :key="tie.key" :d="tie.path" class="note-tie" />
+          <g v-for="event in visibleEvents" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
+            <text v-if="event.isRest" :x="event.x" :y="event.restY" text-anchor="middle" class="rest-symbol">{{ event.restGlyph }}</text>
+            <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
+            <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
+              <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
+              <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="note-accidental">{{ note.accidental }}</text>
+              <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="scroll-head" />
+              <text v-if="store.srtShowLabels" :x="note.labelX" :y="note.labelY" :text-anchor="note.labelAnchor" class="scroll-label">{{ note.label }}</text>
+            </g>
           </g>
+        </g>
+
+        <g v-if="dropPreview" class="drop-preview" pointer-events="none">
+          <line :x1="dropPreview.x" :x2="dropPreview.x" y1="45" y2="314" class="drop-guide" />
+          <g v-for="note in dropPreview.notes" :key="`preview-${note.midi}`">
+            <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="preview-ledger" />
+            <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="preview-accidental">{{ note.accidental }}</text>
+            <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="preview-head" />
+          </g>
+          <text :x="dropPreview.x + 14" y="56" class="preview-label">{{ dropPreview.label }} · beat {{ dropPreview.beatLabel }}</text>
         </g>
 
         <rect v-if="selectionVisual" :x="selectionVisual.x" y="42" :width="selectionVisual.width" height="274" class="clip-selection" />
         <line :x1="scanX" :x2="scanX" y1="34" y2="318" class="fixed-scanline" />
         <polygon :points="`${scanX - 7},34 ${scanX + 7},34 ${scanX},46`" class="scan-marker" />
-        <text :x="scanX" y="342" text-anchor="middle" class="scan-caption">PLAY</text>
       </svg>
     </div>
 
@@ -184,7 +211,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
 import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
-import { midiLabel, mod12 } from '../music/theory'
+import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -194,6 +221,7 @@ const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
 const clipName = ref('')
+const dropPreview = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
 const visibleBars = computed(() => Math.max(1, Math.round((1120 / pixelsPerBeat.value) / 4)))
@@ -202,8 +230,6 @@ const horizonBeats = 28
 const historyBeats = 64
 const staffLines = [78, 92, 106, 120, 134, 228, 242, 256, 270, 284]
 const letterOrder = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
-const pitchLetterSharp = ['C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B']
-const pitchLetterFlat = ['C', 'D', 'D', 'E', 'E', 'F', 'G', 'G', 'A', 'A', 'B', 'B']
 let animationFrame = 0
 let startedAt = 0
 let previousBeat = 0
@@ -253,7 +279,29 @@ const timelineMarkers = computed(() => {
   }
   return result
 })
-const visibleEvents = computed(() => events.value.map(buildVisualEvent).filter((event) => event.x > -90 && event.x < 1210))
+const visualEvents = computed(() => events.value.map(buildVisualEvent))
+const visibleEvents = computed(() => visualEvents.value.filter((event) => event.x > -90 && event.x < 1210))
+const visibleTies = computed(() => {
+  const result = []
+  for (let index = 1; index < visualEvents.value.length; index += 1) {
+    const current = visualEvents.value[index]
+    if (!current.tieFromPrevious || current.isRest) continue
+    const previous = visualEvents.value[index - 1]
+    if (!previous || previous.isRest) continue
+    for (const note of current.notes) {
+      const prior = previous.notes.find((candidate) => candidate.midi === note.midi)
+      if (!prior) continue
+      const startX = prior.x + 11
+      const endX = note.x - 11
+      if (endX <= startX) continue
+      const arch = note.y < 181 ? -18 : 18
+      const controlX = (startX + endX) / 2
+      const controlY = note.y + arch
+      result.push({ key: `${previous.id}-${current.id}-${note.midi}`, path: `M ${startX} ${note.y} Q ${controlX} ${controlY} ${endX} ${note.y}` })
+    }
+  }
+  return result.filter((tie) => !tie.path.includes('NaN'))
+})
 const signatureSymbols = computed(() => {
   const signature = store.currentKey.signature
   if (signature === 0) return []
@@ -270,11 +318,37 @@ const signatureSymbols = computed(() => {
 function labelFor(list, value) { return list.find((item) => item.value === value)?.label || value }
 function mod4(value) { return ((value % 4) + 4) % 4 }
 function setOption(name, value) { store.setSrtOption(name, value) }
-function diatonicStepFromC4(midi) {
+function accidentalSymbol(name) {
+  if (String(name).includes('♯') || String(name).includes('#')) return '♯'
+  if (String(name).includes('♭') || String(name).includes('b')) return '♭'
+  return ''
+}
+function spellingForMidi(midi) {
   const pc = mod12(midi)
-  const octave = Math.floor(midi / 12) - 1
-  const letters = store.accidentalMode === 'flat' ? pitchLetterFlat : pitchLetterSharp
-  return (octave - 4) * 7 + letterOrder.indexOf(letters[pc])
+  const scalePcs = keyPitchClasses(store.currentKey, store.currentMode)
+  const scaleIndex = scalePcs.indexOf(pc)
+  if (scaleIndex >= 0) return store.activeScaleNames[scaleIndex]
+  return noteName(pc, store.accidentalMode)
+}
+function keySignatureAccidentalForLetter(letter) {
+  const scaleName = store.currentKey.scale.find((name) => String(name).startsWith(letter))
+  return accidentalSymbol(scaleName || '')
+}
+function accidentalForMidi(midi) {
+  const spelling = spellingForMidi(midi)
+  const actual = accidentalSymbol(spelling)
+  const expected = keySignatureAccidentalForLetter(String(spelling)[0])
+  if (actual === expected) return ''
+  if (!actual && expected) return '♮'
+  return actual || '♮'
+}
+function displayLabelForMidi(midi) {
+  return `${spellingForMidi(midi)}${midiOctave(midi)}`
+}
+function diatonicStepFromC4(midi) {
+  const spelling = spellingForMidi(midi)
+  const octave = midiOctave(midi)
+  return (octave - 4) * 7 + letterOrder.indexOf(String(spelling)[0])
 }
 function noteY(midi) { return 181 - diatonicStepFromC4(midi) * 7 }
 function ledgerLines(y) {
@@ -325,8 +399,52 @@ function localManualBeat(absoluteBeat) {
   while (local >= cycleLength) local -= cycleLength
   return local
 }
-function allowPitchDrop(event) {
+function payloadFromDragEvent(event) {
+  if (store.staffDragPayload) return store.staffDragPayload
+  const chordRaw = event.dataTransfer?.getData('application/x-midi-chord')
+  if (chordRaw) {
+    try { return { type: 'chord', ...JSON.parse(chordRaw) } } catch { /* ignore */ }
+  }
+  const raw = event.dataTransfer?.getData('application/x-pitch-class') || event.dataTransfer?.getData('text/plain')
+  const pitchClass = Number(raw)
+  return Number.isFinite(pitchClass) && pitchClass >= 0 && pitchClass <= 11
+    ? { type: 'pitch', pitchClass }
+    : null
+}
+function previewNotesForPayload(payload, y) {
+  if (!payload) return []
+  if (payload.type === 'chord' && Array.isArray(payload.midis)) return shiftChordToPointer(payload.midis, y)
+  if (payload.type === 'pitch') return [nearestMidiForPitchClass(payload.pitchClass, y)]
+  return []
+}
+function updateDropPreview(event) {
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+  const point = pointerInViewBox(event)
+  const absoluteBeat = beatForPointer(event)
+  const payload = payloadFromDragEvent(event)
+  if (!point || absoluteBeat === null || !payload) return
+  const midis = previewNotesForPayload(payload, Math.max(48, Math.min(310, point.y)))
+  if (!midis.length) return
+  const beat = localManualBeat(absoluteBeat)
+  const x = xForBeat(currentManualCycleStart() + beat)
+  dropPreview.value = {
+    x,
+    beat,
+    beatLabel: String(Math.round(beat / store.staffQuantize) * store.staffQuantize + 1),
+    label: payload.type === 'chord' ? (payload.label || 'Chord') : displayLabelForMidi(midis[0]),
+    notes: midis.map((midi) => ({
+      midi,
+      x,
+      y: noteY(midi),
+      accidental: accidentalForMidi(midi),
+      ledgerLines: ledgerLines(noteY(midi))
+    }))
+  }
+}
+function clearDropPreview(event) {
+  const related = event?.relatedTarget
+  if (related && readerSvg.value?.contains?.(related)) return
+  dropPreview.value = null
 }
 function placePitchAtPointer(event, pitchClass) {
   const point = pointerInViewBox(event)
@@ -343,7 +461,7 @@ function placePitchAtPointer(event, pitchClass) {
   const beat = localManualBeat(absoluteBeat)
   store.addStaffNote({ midi, beat, duration: 1 })
   refreshManualEvents()
-  store.setFocus(`Added ${midiLabel(midi, store.accidentalMode)} to the manual staff`)
+  store.setFocus(`Added ${displayLabelForMidi(midi)} at beat ${Math.round(beat / store.staffQuantize) * store.staffQuantize + 1}`)
 }
 function shiftChordToPointer(midis, y) {
   const source = [...new Set((midis || []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b)
@@ -378,76 +496,139 @@ function placeChordAtPointer(event, payload) {
   store.setFocus(`Added ${payload.label || 'chord'} to the manual staff`)
 }
 function dropPitch(event) {
-  const chordRaw = event.dataTransfer?.getData('application/x-midi-chord')
-  if (chordRaw) {
-    try { placeChordAtPointer(event, JSON.parse(chordRaw)); return } catch { /* try a single note below */ }
+  const payload = payloadFromDragEvent(event)
+  dropPreview.value = null
+  store.clearStaffDragPayload()
+  if (!payload) return
+  if (payload.type === 'chord' && Array.isArray(payload.midis)) {
+    placeChordAtPointer(event, payload)
+    return
   }
-  const raw = event.dataTransfer?.getData('application/x-pitch-class') || event.dataTransfer?.getData('text/plain')
-  const pitchClass = Number(raw)
-  if (!Number.isFinite(pitchClass) || pitchClass < 0 || pitchClass > 11) return
-  placePitchAtPointer(event, pitchClass)
+  if (payload.type === 'pitch' && Number.isFinite(Number(payload.pitchClass))) {
+    placePitchAtPointer(event, Number(payload.pitchClass))
+  }
 }
 function addSelectedAtPointer(event) {
   const pitchClass = store.selectedPitchClasses[0] ?? store.currentKey.tonic
   placePitchAtPointer(event, pitchClass)
 }
+function restGlyphForDuration(duration) {
+  if (Number(duration) >= 2) return '𝄼'
+  if (Number(duration) < 1) return '𝄾'
+  return '𝄽'
+}
 function buildVisualEvent(event) {
   const playBeat = playbackBeatForEvent(event)
   const baseX = xForBeat(playBeat)
+  if (event.isRest) {
+    return {
+      ...event,
+      playBeat,
+      x: baseX,
+      notes: [],
+      stems: [],
+      restY: event.restClef === 'bass' ? 258 : 108,
+      restGlyph: restGlyphForDuration(event.duration),
+      crossing: Math.abs(baseX - scanX) < 13
+    }
+  }
+
   let previousY = null
   let alternate = false
-  const notes = event.midis.map((midi) => {
+  const rawNotes = event.midis.map((midi) => {
     const y = noteY(midi)
     if (previousY !== null && Math.abs(previousY - y) <= 8) alternate = !alternate
     else alternate = false
     previousY = y
     const x = baseX + (alternate ? 8 : 0)
-    return { midi, x, y, label: midiLabel(midi, store.accidentalMode), ledgerLines: ledgerLines(y) }
+    return {
+      midi,
+      x,
+      y,
+      label: displayLabelForMidi(midi),
+      accidental: accidentalForMidi(midi),
+      ledgerLines: ledgerLines(y)
+    }
   })
-  // Simultaneous bass and treble material is one musical event, but conventional
-  // grand-staff notation does not use one stem crossing between the two staves.
-  // Build a separate stem for each staff group instead.
-  const stemFor = (group) => {
+
+  const groups = [
+    rawNotes.filter((note) => note.y < 181).sort((a, b) => a.y - b.y),
+    rawNotes.filter((note) => note.y >= 181).sort((a, b) => a.y - b.y)
+  ]
+  for (const group of groups) {
+    group.forEach((note, index) => {
+      const placeRight = index % 2 === 1
+      note.labelX = note.x + (placeRight ? 17 : -17)
+      note.labelY = note.y + (note.y < 181 ? -12 : 20)
+      note.labelAnchor = placeRight ? 'start' : 'end'
+    })
+  }
+  const notes = [...groups[0], ...groups[1]]
+
+  const stemFor = (group, staff) => {
     if (!group.length) return null
     const ys = group.map((note) => note.y)
     const minY = Math.min(...ys)
     const maxY = Math.max(...ys)
     const meanY = ys.reduce((sum, value) => sum + value, 0) / ys.length
-    return meanY >= 181
-      ? { x: baseX + 10, y1: maxY, y2: Math.max(186, minY - 34) }
-      : { x: baseX - 10, y1: minY, y2: Math.min(176, maxY + 34) }
+    const centerLine = staff === 'treble' ? 106 : 256
+    const stemDown = meanY < centerLine
+    if (stemDown) {
+      return {
+        x: baseX - 10,
+        y1: minY,
+        y2: Math.min(staff === 'treble' ? 170 : 304, maxY + 40)
+      }
+    }
+    return {
+      x: baseX + 10,
+      y1: maxY,
+      y2: Math.max(staff === 'treble' ? 58 : 190, minY - 40)
+    }
   }
-  const stems = [
-    stemFor(notes.filter((note) => note.y < 181)),
-    stemFor(notes.filter((note) => note.y >= 181))
-  ].filter(Boolean)
+  const stems = [stemFor(groups[0], 'treble'), stemFor(groups[1], 'bass')].filter(Boolean)
   return { ...event, playBeat, x: baseX, notes, stems, crossing: Math.abs(baseX - scanX) < 13 }
 }
 function generatedEvent() {
   const pulseIndex = generatedPulseIndex
   generatedPulseIndex += 1
-  return {
-    ...generator.generate({
-      key: store.compositionKey,
-      beat: nextGeneratedBeat,
-      // Duration is the written/nominal duration. Hold is applied live at playback,
-      // so moving the Hold slider affects the very next note without regenerating.
-      duration: Math.max(0.25, effectiveSpacing.value),
-      material: store.srtMaterial,
-      motion: store.srtMotion,
-      clefMode: store.srtClefMode,
-      rangeName: store.srtRange,
-      style: store.srtStyle,
-      chordSize: store.srtChordSize,
-      bassPattern: store.srtBassPattern,
-      exerciseMode: store.srtExerciseMode,
-      progression: store.srtProgression,
-      riffFlavor: store.srtRiffFlavor,
-      dynamics: store.srtDynamics
-    }),
+  const generated = generator.generate({
+    key: store.compositionKey,
+    beat: nextGeneratedBeat,
+    // Duration is the written/nominal duration. Hold is applied live at playback.
+    duration: Math.max(0.25, effectiveSpacing.value),
+    material: store.srtMaterial,
+    motion: store.srtMotion,
+    clefMode: store.srtClefMode,
+    rangeName: store.srtRange,
+    style: store.srtStyle,
+    chordSize: store.srtChordSize,
+    bassPattern: store.srtBassPattern,
+    exerciseMode: store.srtExerciseMode,
+    progression: store.srtProgression,
+    riffFlavor: store.srtRiffFlavor,
+    dynamics: store.srtDynamics
+  })
+  const event = {
+    ...generated,
     swingIndex: pulseIndex,
     swingUnit: effectiveSpacing.value
   }
+
+  if (event.tieFromPrevious) {
+    const previous = events.value[events.value.length - 1]
+    const sameNotes = previous && !previous.isRest && previous.midis.length === event.midis.length
+      && previous.midis.every((midi, index) => midi === event.midis[index])
+    if (sameNotes) {
+      previous.tieToNext = true
+      previous.duration = Math.max(previous.duration, effectiveSpacing.value) + effectiveSpacing.value
+      event.silent = true
+    } else {
+      event.tieFromPrevious = false
+      event.silent = false
+    }
+  }
+  return event
 }
 function swingOffsetForEvent(event) {
   const amount = Number(store.srtSwing) || 0
@@ -595,6 +776,7 @@ function tick(now) {
     const playBeat = playbackBeatForEvent(event)
     if (playBeat > previousBeat && playBeat <= currentBeat.value + 0.025) {
       playedIds.add(event.id)
+      if (event.isRest || event.silent || !event.midis?.length) continue
       // Gate/hold is deliberately evaluated at the instant of playback rather
       // than baked into generated events. The lower floor preserves short notes
       // instead of collapsing all low Hold settings into the same 240 ms blip.
@@ -682,7 +864,10 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .srt-config-header > div { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
 .srt-config-header strong { color: #bfeaff; font-size: 18px; }
 .srt-config-header span { color: #aaa; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.srt-controls { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: rgba(35,35,35,.88); }
+.srt-controls { display: grid; gap: 10px; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: rgba(35,35,35,.88); }
+.srt-select-row { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; }
+.srt-slider-row { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)) auto; gap: 14px; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
+.srt-action-row { display: flex; gap: 12px; align-items: center; justify-content: flex-end; white-space: nowrap; }
 .srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native), .srt-controls :deep(.q-toggle__label) { font-size: 17px; }
 .tempo-block, .gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #8dffab; font-size: 17px; white-space: nowrap; }
 .gate-block { color: #ffd866; }
@@ -703,10 +888,17 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .scroll-head { fill: #e6e6e6; stroke: #171717; stroke-width: 1.3; }
 .scroll-event.crossing .scroll-head { fill: #d7a928; stroke: #fff1a6; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(215,169,40,.9)); }
 .note-stem { stroke: #eee; stroke-width: 1.4; }
-.scroll-label { fill: #bfeaff; font-size: 18px; font-weight: 650; }
+.note-tie { fill: none; stroke: #e8e8e8; stroke-width: 2; }
+.rest-symbol { fill: #e8e8e8; font-size: 34px; }
+.note-accidental { fill: #f4f4f4; font-size: 23px; font-weight: 600; }
+.scroll-label { fill: #bfeaff; font-size: 17px; font-weight: 650; paint-order: stroke; stroke: #202020; stroke-width: 3px; stroke-linejoin: round; }
+.drop-guide { stroke: rgba(255,216,102,.75); stroke-width: 1.4; stroke-dasharray: 5 5; }
+.preview-head { fill: rgba(255,216,102,.72); stroke: #fff3b2; stroke-width: 1.8; }
+.preview-ledger { stroke: rgba(255,243,178,.8); stroke-width: 1.2; }
+.preview-accidental { fill: #fff3b2; font-size: 23px; }
+.preview-label { fill: #ffd866; font-size: 16px; font-weight: 650; paint-order: stroke; stroke: #202020; stroke-width: 3px; }
 .fixed-scanline { stroke: #ff5a5a; stroke-width: 2.6; filter: drop-shadow(0 0 5px rgba(255,90,90,.9)); }
 .scan-marker { fill: #ff5a5a; }
-.scan-caption { fill: #ffaaaa; font-size: 16px; letter-spacing: .13em; }
 .clip-selection { fill: rgba(215,169,40,.16); stroke: #ffd866; stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
@@ -717,6 +909,6 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .clip-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); }
 .clip-row strong { font-size: 18px; }
 .clip-row span { display: block; color: #bbb; font-size: 15px; }
-@media (max-width: 1200px) { .srt-controls { grid-template-columns: repeat(3, minmax(150px,1fr)); } .clip-toolbar { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-controls { grid-template-columns: 1fr; } .srt-controls > * { grid-column: 1; } .tempo-block, .gate-block, .swing-block { grid-column: 1; } .clip-toolbar { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-slider-row { grid-template-columns: 1fr 1fr; } .srt-action-row { justify-content: flex-start; } .clip-toolbar { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row, .srt-slider-row { grid-template-columns: 1fr; } .srt-action-row { justify-content: space-between; } .clip-toolbar { grid-template-columns: 1fr; } }
 </style>

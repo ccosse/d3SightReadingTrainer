@@ -36,6 +36,7 @@
       class="chord-drag-button"
       draggable="true"
       @dragstart="startChordDrag"
+      @dragend="store.clearStaffDragPayload"
       @click="audition"
     >
       <span class="chord-name">{{ selectedChord.chordName }}</span>
@@ -71,6 +72,12 @@ watch([() => store.currentKeyId, () => store.currentMode], () => {
 
 function startChordDrag(event) {
   if (!selectedChord.value) return
+  store.setStaffDragPayload({
+    type: 'chord',
+    label: selectedChord.value.chordName,
+    midis: selectedChord.value.midis,
+    pitchClasses: selectedChord.value.pitchClasses
+  })
   event.dataTransfer.effectAllowed = 'copy'
   event.dataTransfer.setData('application/x-midi-chord', JSON.stringify({
     label: selectedChord.value.chordName,
