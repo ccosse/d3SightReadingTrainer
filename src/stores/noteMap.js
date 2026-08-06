@@ -33,7 +33,7 @@ function persistClips(clips) {
 
 function roundBeat(value, quantum) {
   const q = Math.max(0.25, Number(quantum) || 0.5)
-  return Math.max(0, Math.min(STAFF_LENGTH_BEATS - q, Math.round(Number(value) / q) * q))
+  return Math.max(0, Math.round(Number(value) / q) * q)
 }
 
 export const useNoteMapStore = defineStore('noteMap', {
@@ -58,6 +58,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     fretboardZoom: 1,
     keyboardPreset: '88',
     staffZoom: 1,
+    pitchPanelOpen: true,
     visibleObjects: {
       controls: true,
       piano: true,
@@ -169,7 +170,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       return (pitchClass) => this.playingPitchClassSet.has(mod12(pitchClass))
     },
     staffVisibleBeats: (state) => {
-      const measures = Math.max(1, Math.min(6, Math.round(2 / state.staffZoom)))
+      const measures = Math.max(1, Math.min(6, Math.round((1120 / (126 * state.staffZoom)) / 4)))
       return measures * 4
     },
     staffSequenceBeats() {
@@ -274,7 +275,12 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     setStaffZoom(value) {
-      this.staffZoom = Math.max(0.55, Math.min(1.6, Number(value) || 1))
+      this.staffZoom = Math.max(0.35, Math.min(2.25, Number(value) || 1))
+    },
+
+    setStaffVisibleBars(value) {
+      const bars = Math.max(1, Math.min(6, Math.round(Number(value) || 2)))
+      this.staffZoom = Math.max(0.35, Math.min(2.25, (1120 / 126) / (bars * 4)))
     },
 
     setVisibleObject(name, value) {

@@ -1,6 +1,6 @@
 <template>
   <section class="selector" aria-label="Pitch-class selector and playback control">
-    <div class="selector-header row items-center justify-between q-col-gutter-md q-mb-sm">
+    <div class="selector-toolbar">
       <div class="row items-center q-gutter-sm control-modes">
         <q-select
           :model-value="store.keyboardPreset"
@@ -54,55 +54,69 @@
           <q-tooltip v-if="store.tooltipsEnabled">Choose flat or sharp note-name spelling throughout the workspace.</q-tooltip>
         </q-btn-toggle>
       </div>
-    </div>
-
-    <div class="pitch-grid" :role="store.selectionMode === 'single' ? 'radiogroup' : 'group'">
-      <q-btn
-        label="All/None"
-        no-caps
-        dense
-        unelevated
-        class="pitch-button all-none-button"
-        :class="{ selected: store.isAllSelected }"
-        :aria-checked="store.isAllSelected"
-        @click="store.toggleAllNone"
-      >
-        <q-tooltip v-if="store.tooltipsEnabled">
-          If any notes are selected, clear them all. If none are selected, select all twelve pitch classes.
-        </q-tooltip>
-      </q-btn>
 
       <q-btn
-        v-for="(name, pitchClass) in store.noteNames"
-        :key="pitchClass"
-        no-caps
+        flat
         dense
-        unelevated
-        class="pitch-button"
-        :class="{
-          selected: store.isSelected(pitchClass) && !store.isAllSelected,
-          'in-key': store.isInCurrentKey(pitchClass),
-          tonic: store.scaleDegree(pitchClass) === 1
-        }"
-        :role="store.selectionMode === 'single' ? 'radio' : 'checkbox'"
-        :aria-checked="store.isSelected(pitchClass)"
-        draggable="true"
-        @dragstart="startPitchDrag($event, pitchClass)"
-        @dragend="store.clearStaffDragPayload"
-        @click="store.selectPitchClass(pitchClass)"
+        round
+        :icon="store.pitchPanelOpen ? 'expand_less' : 'piano'"
+        :aria-label="store.pitchPanelOpen ? 'Collapse note buttons' : 'Show note buttons'"
+        @click="store.pitchPanelOpen = !store.pitchPanelOpen"
       >
-        <span class="pitch-name">{{ name }}</span>
-        <span v-if="store.scaleDegree(pitchClass)" class="scale-degree">{{ store.scaleDegree(pitchClass) }}</span>
-        <q-tooltip v-if="store.tooltipsEnabled">
-          {{ name }}{{ store.scaleDegree(pitchClass) ? ` · degree ${store.scaleDegree(pitchClass)} of ${store.currentKey.label} ${store.currentMode}` : ` · outside ${store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major'}` }}.
-          Drag this note onto the staff to place it.
-        </q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">{{ store.pitchPanelOpen ? 'Collapse the twelve note buttons.' : 'Show the twelve note buttons.' }}</q-tooltip>
       </q-btn>
     </div>
 
-    <ChordPalette />
+    <q-slide-transition>
+      <div v-show="store.pitchPanelOpen" class="pitch-grid" :role="store.selectionMode === 'single' ? 'radiogroup' : 'group'">
+        <q-btn
+          label="All/None"
+          no-caps
+          dense
+          unelevated
+          class="pitch-button all-none-button"
+          :class="{ selected: store.isAllSelected }"
+          :aria-checked="store.isAllSelected"
+          @click="store.toggleAllNone"
+        >
+          <q-tooltip v-if="store.tooltipsEnabled">
+            If any notes are selected, clear them all. If none are selected, select all twelve pitch classes.
+          </q-tooltip>
+        </q-btn>
 
-    <PlaybackTransport class="q-mt-md" />
+        <q-btn
+          v-for="(name, pitchClass) in store.noteNames"
+          :key="pitchClass"
+          no-caps
+          dense
+          unelevated
+          class="pitch-button"
+          :class="{
+            selected: store.isSelected(pitchClass) && !store.isAllSelected,
+            'in-key': store.isInCurrentKey(pitchClass),
+            tonic: store.scaleDegree(pitchClass) === 1
+          }"
+          :role="store.selectionMode === 'single' ? 'radio' : 'checkbox'"
+          :aria-checked="store.isSelected(pitchClass)"
+          draggable="true"
+          @dragstart="startPitchDrag($event, pitchClass)"
+          @dragend="store.clearStaffDragPayload"
+          @click="store.selectPitchClass(pitchClass)"
+        >
+          <span class="pitch-name">{{ name }}</span>
+          <span v-if="store.scaleDegree(pitchClass)" class="scale-degree">{{ store.scaleDegree(pitchClass) }}</span>
+          <q-tooltip v-if="store.tooltipsEnabled">
+            {{ name }}{{ store.scaleDegree(pitchClass) ? ` · degree ${store.scaleDegree(pitchClass)} of ${store.currentKey.label} ${store.currentMode}` : ` · outside ${store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major'}` }}.
+            Drag this note onto the staff to place it.
+          </q-tooltip>
+        </q-btn>
+      </div>
+    </q-slide-transition>
+
+    <div class="selector-lower-row">
+      <ChordPalette />
+      <PlaybackTransport />
+    </div>
   </section>
 </template>
 
@@ -129,13 +143,18 @@ function startPitchDrag(event, pitchClass) {
   background: transparent;
   padding: 3px;
 }
-
+.selector-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
 .pitch-grid {
   display: grid;
   grid-template-columns: minmax(86px, 1.35fr) repeat(12, minmax(0, 1fr));
   gap: 5px;
 }
-
 .pitch-button {
   position: relative;
   min-width: 0;
@@ -144,20 +163,16 @@ function startPitchDrag(event, pitchClass) {
   background: #414141;
   border: 1px solid #5b5b5b;
 }
-
 .pitch-button.in-key {
   background: #35483a;
   border-color: #5f8968;
 }
-
 .pitch-button.in-key.tonic { box-shadow: inset 0 -3px 0 #8dffab; }
-
 .pitch-button.selected {
   color: white;
   background: var(--q-primary);
   border-color: #9dd4ff;
 }
-
 .pitch-name { line-height: 1; font-size: 22px; font-weight: 650; }
 .scale-degree {
   position: absolute;
@@ -173,6 +188,17 @@ function startPitchDrag(event, pitchClass) {
 .selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 44px; padding-inline: 16px; font-size: 17px; }
 .keyboard-select { width: 214px; }
 .keyboard-select :deep(.q-field__control) { min-height: 44px; }
+.selector-lower-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  margin-top: 8px;
+}
+
+@media (max-width: 1050px) {
+  .selector-lower-row { grid-template-columns: 1fr; align-items: stretch; }
+}
 
 @media (max-width: 900px) {
   .control-modes { width: 100%; justify-content: flex-end; }
@@ -183,8 +209,7 @@ function startPitchDrag(event, pitchClass) {
 
 @media (max-width: 600px) {
   .selector { padding: 7px; }
-  .selector-header { gap: 7px; margin-bottom: 7px; }
-  .selector-header > .text-subtitle1 { display: none; }
+  .selector-toolbar { align-items: flex-start; gap: 7px; margin-bottom: 7px; }
   .control-modes { width: 100%; justify-content: space-between; gap: 5px; }
   .keyboard-select { width: min(100%, 180px); }
   .selector :deep(.q-btn-toggle:first-of-type .q-btn) { min-height: 38px; padding-inline: 9px; font-size: 14px; }

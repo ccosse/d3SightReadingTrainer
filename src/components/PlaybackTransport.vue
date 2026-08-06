@@ -24,12 +24,21 @@
       </q-btn>
     </div>
 
-    <div class="tempo-control">
-      <span class="tempo-label">{{ store.srtTempo }} BPM</span>
-      <q-slider :model-value="store.srtTempo" :min="30" :max="220" :step="1" color="grey-5" @update:model-value="store.setSrtTempo">
-        <q-tooltip v-if="store.tooltipsEnabled">Tempo changes without moving the tape position.</q-tooltip>
-      </q-slider>
-    </div>
+    <q-knob
+      :model-value="store.srtTempo"
+      :min="30"
+      :max="220"
+      :step="1"
+      size="72px"
+      :thickness="0.16"
+      color="grey-4"
+      track-color="grey-8"
+      show-value
+      @update:model-value="store.setSrtTempo"
+    >
+      <div class="knob-value"><strong>{{ store.srtTempo }}</strong><span>BPM</span></div>
+      <q-tooltip v-if="store.tooltipsEnabled">Turn for tempo; the tape position does not move.</q-tooltip>
+    </q-knob>
   </section>
 </template>
 
@@ -50,21 +59,23 @@ function togglePlayPause() {
 
 <style scoped>
 .transport {
-  display: grid;
-  grid-template-columns: auto minmax(220px, 1fr);
+  display: flex;
   align-items: center;
-  gap: 16px;
-  min-height: 52px;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 76px;
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 4px 2px;
+  padding: 0;
+  white-space: nowrap;
 }
 .tape-controls { display: flex; gap: 4px; }
 .tape-controls :deep(.q-btn) { min-width: 46px; min-height: 44px; }
-.tempo-control { display: grid; grid-template-columns: auto minmax(120px, 1fr); align-items: center; gap: 10px; }
-.tempo-label { color: #eee; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.knob-value { display: grid; place-items: center; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.knob-value strong { font-size: 17px; }
+.knob-value span { margin-top: 2px; color: #cfcfcf; font-size: 10px; letter-spacing: .04em; }
 @media (max-width: 620px) {
-  .transport { grid-template-columns: 1fr; }
+  .transport { justify-content: flex-start; }
 }
 </style>

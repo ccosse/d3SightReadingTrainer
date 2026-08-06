@@ -112,14 +112,15 @@ async function audition() {
 <style scoped>
 .chord-palette {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(210px, auto);
+  grid-template-columns: minmax(300px, 560px) minmax(210px, 290px);
   gap: 9px;
   align-items: center;
-  margin-top: 8px;
+  justify-content: start;
+  min-width: 0;
   padding-top: 0;
   border-top: 0;
 }
-.chord-select { min-width: 0; }
+.chord-select { width: 100%; min-width: 0; }
 .chord-select :deep(.q-field__native),
 .chord-select :deep(.q-field__input) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chord-drag-button { min-height: 44px; border-color: #777 !important; background: #333; }

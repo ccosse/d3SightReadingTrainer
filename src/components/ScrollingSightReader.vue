@@ -61,20 +61,44 @@
           <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
         </div>
 
-        <div class="srt-slider-row">
-          <div class="gate-block">
-            <span>Hold {{ Math.round(store.srtGate * 100) }}%</span>
-            <q-slider :model-value="store.srtGate" :min="0.35" :max="1.2" :step="0.05" color="grey-5" @update:model-value="store.setSrtGate">
-              <q-tooltip v-if="store.tooltipsEnabled">Gate length for every note in the event, bass and treble alike.</q-tooltip>
-            </q-slider>
-          </div>
+        <div v-if="store.srtStyle === 'strato'" class="strato-guide">
+          <q-icon name="sports_score" size="18px" />
+          <span>{{ exerciseGuide }}</span>
+          <q-tooltip v-if="store.tooltipsEnabled">Read or play each target as it reaches the fixed scanline. Labels can be enabled temporarily as a check.</q-tooltip>
+        </div>
 
-          <div class="swing-block">
-            <span>Swing {{ Math.round(store.srtSwing * 100) }}%</span>
-            <q-slider :model-value="store.srtSwing" :min="0" :max="0.45" :step="0.05" color="grey-5" @update:model-value="store.setSrtSwing">
-              <q-tooltip v-if="store.tooltipsEnabled">Delays alternating pulses to create a long-short feel.</q-tooltip>
-            </q-slider>
-          </div>
+        <div class="srt-dial-row">
+          <q-knob
+            :model-value="Math.round(store.srtGate * 100)"
+            :min="25"
+            :max="140"
+            :step="5"
+            size="72px"
+            :thickness="0.16"
+            color="grey-4"
+            track-color="grey-8"
+            show-value
+            @update:model-value="store.setSrtGate(Number($event) / 100)"
+          >
+            <div class="dial-value"><strong>{{ Math.round(store.srtGate * 100) }}%</strong><span>Hold</span></div>
+            <q-tooltip v-if="store.tooltipsEnabled">Gate length for every note in the event, bass and treble alike.</q-tooltip>
+          </q-knob>
+
+          <q-knob
+            :model-value="Math.round(store.srtSwing * 100)"
+            :min="0"
+            :max="45"
+            :step="5"
+            size="72px"
+            :thickness="0.16"
+            color="grey-4"
+            track-color="grey-8"
+            show-value
+            @update:model-value="store.setSrtSwing(Number($event) / 100)"
+          >
+            <div class="dial-value"><strong>{{ Math.round(store.srtSwing * 100) }}%</strong><span>Swing</span></div>
+            <q-tooltip v-if="store.tooltipsEnabled">Delays alternating pulses to create a long-short feel.</q-tooltip>
+          </q-knob>
 
           <div class="srt-action-row">
             <ImageCheckbox v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
@@ -154,6 +178,7 @@
         </g>
 
         <g v-if="dropPreview" class="drop-preview" pointer-events="none">
+          <rect v-if="dropPreview.width" :x="dropPreview.x" y="45" :width="dropPreview.width" height="269" class="clip-drop-span" />
           <line :x1="dropPreview.x" :x2="dropPreview.x" y1="45" y2="314" class="drop-guide" />
           <g v-for="note in dropPreview.notes" :key="`preview-${note.midi}`">
             <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="preview-ledger" />
@@ -170,12 +195,21 @@
     </div>
 
     <div class="clip-toolbar">
-      <div class="zoom-control">
-        <span>{{ visibleBars }} visible bars</span>
-        <q-slider :model-value="store.staffZoom" :min="0.55" :max="1.6" :step="0.05" color="grey-5" @update:model-value="store.setStaffZoom">
-          <q-tooltip v-if="store.tooltipsEnabled">Zoom out to show more measures without shrinking staff symbols.</q-tooltip>
-        </q-slider>
-      </div>
+      <q-knob
+        :model-value="visibleBars"
+        :min="1"
+        :max="6"
+        :step="1"
+        size="68px"
+        :thickness="0.16"
+        color="grey-4"
+        track-color="grey-8"
+        show-value
+        @update:model-value="setVisibleBars"
+      >
+        <div class="dial-value"><strong>{{ visibleBars }}</strong><span>Bars</span></div>
+        <q-tooltip v-if="store.tooltipsEnabled">Turn right for more visible bars.</q-tooltip>
+      </q-knob>
       <q-input v-model="clipName" dark outlined dense label="Clip name" />
       <q-btn outline color="grey-5" icon="content_cut" label="Save selected region" no-caps :disable="!canSaveSelection" @click="saveSelection" />
       <q-btn outline color="grey-5" icon="playlist_add" label="Next 2 bars → staff" no-caps :disable="store.srtSource !== 'generated' || !events.length" @click="captureToStaff" />
@@ -184,10 +218,19 @@
 
     <div v-if="store.clips.length" class="clip-library">
       <div class="clip-library-title">Clip library</div>
-      <div v-for="clip in store.clips" :key="clip.id" class="clip-row">
+      <div
+        v-for="clip in store.clips"
+        :key="clip.id"
+        class="clip-row"
+        draggable="true"
+        @dragstart="startClipDrag($event, clip)"
+        @dragend="store.clearStaffDragPayload"
+      >
+        <q-icon name="drag_indicator" size="22px" class="clip-drag-icon" />
         <div><strong>{{ clip.name }}</strong><span>{{ clip.events.length }} events · {{ clip.tempo }} BPM</span></div>
         <q-btn flat color="grey-4" icon="edit_note" @click="store.loadClipToStaff(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Load this clip into the editable staff.</q-tooltip></q-btn>
         <q-btn flat color="grey-4" icon="delete" @click="store.removeClip(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Delete this saved clip.</q-tooltip></q-btn>
+        <q-tooltip v-if="store.tooltipsEnabled">Drag the clip onto the staff to insert it at that time position.</q-tooltip>
       </div>
     </div>
   </section>
@@ -211,7 +254,13 @@ const clipName = ref('')
 const dropPreview = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
-const visibleBars = computed(() => Math.max(1, Math.round((1120 / pixelsPerBeat.value) / 4)))
+const visibleBars = computed(() => Math.max(1, Math.min(6, Math.round((1120 / pixelsPerBeat.value) / 4))))
+const exerciseGuide = computed(() => ({
+  'mode-1': 'Mode 1 · locate one random target note at the scanline.',
+  'mode-2': 'Mode 2 · follow adjacent scale motion without losing position.',
+  'mode-3': 'Mode 3 · identify and play the displayed interval pair.',
+  'mode-4': 'Mode 4 · identify and play the displayed chord tones.'
+}[store.srtExerciseMode] || 'Play each target as it reaches the scanline.'))
 const leadInBeats = 4
 const horizonBeats = 28
 const historyBeats = 64
@@ -304,7 +353,15 @@ const signatureSymbols = computed(() => {
 
 function labelFor(list, value) { return list.find((item) => item.value === value)?.label || value }
 function mod4(value) { return ((value % 4) + 4) % 4 }
-function setOption(name, value) { store.setSrtOption(name, value) }
+function setOption(name, value) {
+  if (name === 'srtStyle' && value === 'strato') {
+    store.srtSource = 'generated'
+    store.srtEventSpacing = 1
+    store.srtClefMode = 'treble'
+  }
+  store.setSrtOption(name, value)
+}
+function setVisibleBars(value) { store.setStaffVisibleBars(value) }
 function accidentalSymbol(name) {
   if (String(name).includes('♯') || String(name).includes('#')) return '♯'
   if (String(name).includes('♭') || String(name).includes('b')) return '♭'
@@ -388,6 +445,10 @@ function localManualBeat(absoluteBeat) {
 }
 function payloadFromDragEvent(event) {
   if (store.staffDragPayload) return store.staffDragPayload
+  const clipRaw = event.dataTransfer?.getData('application/x-d3srt-clip')
+  if (clipRaw) {
+    try { return { type: 'clip', ...JSON.parse(clipRaw) } } catch { /* ignore */ }
+  }
   const chordRaw = event.dataTransfer?.getData('application/x-midi-chord')
   if (chordRaw) {
     try { return { type: 'chord', ...JSON.parse(chordRaw) } } catch { /* ignore */ }
@@ -398,8 +459,15 @@ function payloadFromDragEvent(event) {
     ? { type: 'pitch', pitchClass }
     : null
 }
+function clipLengthBeats(payload) {
+  return Math.max(0, ...(payload?.events || []).map((event) => Number(event.beat || 0) + Math.max(0.25, Number(event.duration) || 1)))
+}
 function previewNotesForPayload(payload, y) {
   if (!payload) return []
+  if (payload.type === 'clip') {
+    const first = (payload.events || []).find((event) => Array.isArray(event.midis) && event.midis.length)
+    return first ? [...new Set(first.midis.map(Number).filter(Number.isFinite))] : []
+  }
   if (payload.type === 'chord' && Array.isArray(payload.midis)) return shiftChordToPointer(payload.midis, y)
   if (payload.type === 'pitch') return [nearestMidiForPitchClass(payload.pitchClass, y)]
   return []
@@ -417,8 +485,9 @@ function updateDropPreview(event) {
   dropPreview.value = {
     x,
     beat,
+    width: payload.type === 'clip' ? Math.max(18, clipLengthBeats(payload) * pixelsPerBeat.value) : 0,
     beatLabel: String(Math.round(beat / store.staffQuantize) * store.staffQuantize + 1),
-    label: payload.type === 'chord' ? (payload.label || 'Chord') : displayLabelForMidi(midis[0]),
+    label: payload.type === 'clip' ? (payload.label || 'Clip') : payload.type === 'chord' ? (payload.label || 'Chord') : displayLabelForMidi(midis[0]),
     notes: midis.map((midi) => ({
       midi,
       x,
@@ -482,11 +551,32 @@ function placeChordAtPointer(event, payload) {
   refreshManualEvents()
   store.setFocus(`Added ${payload.label || 'chord'} to the manual staff`)
 }
+function placeClipAtPointer(event, payload) {
+  const absoluteBeat = beatForPointer(event)
+  if (absoluteBeat === null || !Array.isArray(payload?.events) || !payload.events.length) return
+  if (store.srtTransportState === 'playing') pause()
+  if (store.srtSource !== 'staff') {
+    store.srtSource = 'staff'
+    store.clearClipSelection()
+  }
+  const startBeat = localManualBeat(absoluteBeat)
+  for (const clipEvent of payload.events) {
+    const beat = startBeat + Math.max(0, Number(clipEvent.beat) || 0)
+    const duration = Math.max(0.25, Number(clipEvent.duration) || 1)
+    for (const midi of clipEvent.midis || []) store.addStaffNote({ midi, beat, duration })
+  }
+  refreshManualEvents()
+  store.setFocus(`Inserted ${payload.label || 'clip'} at beat ${Math.round(startBeat / store.staffQuantize) * store.staffQuantize + 1}`)
+}
 function dropPitch(event) {
   const payload = payloadFromDragEvent(event)
   dropPreview.value = null
   store.clearStaffDragPayload()
   if (!payload) return
+  if (payload.type === 'clip') {
+    placeClipAtPointer(event, payload)
+    return
+  }
   if (payload.type === 'chord' && Array.isArray(payload.midis)) {
     placeChordAtPointer(event, payload)
     return
@@ -821,6 +911,22 @@ function finishRangeSelection(event) {
   readerSvg.value?.releasePointerCapture?.(event.pointerId)
 }
 function cancelRangeSelection() { selecting = false }
+function startClipDrag(event, clip) {
+  const payload = {
+    type: 'clip',
+    label: clip.name,
+    events: (clip.events || []).map((item) => ({
+      beat: Number(item.beat) || 0,
+      duration: Math.max(0.25, Number(item.duration) || 1),
+      midis: [...new Set((item.midis || []).map(Number).filter(Number.isFinite))]
+    }))
+  }
+  store.setStaffDragPayload(payload)
+  event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('application/x-d3srt-clip', JSON.stringify(payload))
+  event.dataTransfer.setData('text/plain', clip.name)
+}
+
 function saveSelection() {
   if (!canSaveSelection.value) return
   const start = store.clipSelectionStart
@@ -852,11 +958,14 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .srt-config-header span { color: #aaa; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .srt-controls { display: grid; gap: 8px; padding: 5px 2px 8px; border: 0; border-radius: 0; background: transparent; }
 .srt-select-row { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; }
-.srt-slider-row { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)) auto; gap: 14px; align-items: center; padding-top: 3px; border-top: 0; }
-.srt-action-row { display: flex; gap: 14px; align-items: center; justify-content: flex-end; white-space: nowrap; }
+.strato-guide { display: flex; align-items: center; gap: 8px; min-height: 30px; color: #d8d8d8; font-size: 15px; }
+.srt-dial-row { display: flex; align-items: center; gap: 16px; padding-top: 3px; border-top: 0; }
+.srt-action-row { display: flex; gap: 14px; align-items: center; justify-content: flex-end; margin-left: auto; white-space: nowrap; }
+.dial-value { display: grid; place-items: center; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.dial-value strong { font-size: 15px; }
+.dial-value span { margin-top: 2px; color: #cfcfcf; font-size: 10px; letter-spacing: .04em; }
 .srt-action-row :deep(.image-checkbox) { min-width: 98px; }
 .srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native) { font-size: 17px; }
-.gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #e0e0e0; font-size: 17px; white-space: nowrap; }
 .scroll-stage { overflow: hidden; border: 0; border-radius: 5px; background: #202020; }
 .scroll-svg { width: 100%; height: auto; display: block; touch-action: none; }
 .stage-bg { fill: #232323; }
@@ -876,6 +985,7 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .note-accidental { fill: #f4f4f4; font-size: 23px; font-weight: 600; }
 .scroll-label { fill: #bfeaff; font-size: 17px; font-weight: 650; paint-order: stroke; stroke: #202020; stroke-width: 3px; stroke-linejoin: round; }
 .drop-guide { stroke: rgba(255,216,102,.75); stroke-width: 1.4; stroke-dasharray: 5 5; }
+.clip-drop-span { fill: rgba(255,216,102,.08); stroke: rgba(255,216,102,.58); stroke-width: 1.2; stroke-dasharray: 6 5; }
 .preview-head { fill: rgba(255,216,102,.72); stroke: #fff3b2; stroke-width: 1.8; }
 .preview-ledger { stroke: rgba(255,243,178,.8); stroke-width: 1.2; }
 .preview-accidental { fill: #fff3b2; font-size: 23px; }
@@ -885,13 +995,15 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .clip-selection { fill: rgba(215,169,40,.16); stroke: #ffd866; stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
-.clip-toolbar { display: grid; grid-template-columns: minmax(230px,1fr) minmax(170px,.6fr) auto auto auto; gap: 8px; align-items: center; padding: 6px 0 0; border: 0; border-radius: 0; background: transparent; }
+.clip-toolbar { display: grid; grid-template-columns: auto minmax(170px,.6fr) auto auto auto; gap: 10px; align-items: center; padding: 6px 0 0; border: 0; border-radius: 0; background: transparent; }
 .clip-toolbar :deep(.q-field__label), .clip-toolbar :deep(.q-field__native), .clip-toolbar :deep(.q-btn__content) { font-size: 16px; }
 .clip-library { display: grid; gap: 6px; border-top: 0; padding-top: 6px; }
 .clip-library-title { font-size: 20px; font-weight: 650; color: #ffd866; }
-.clip-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); }
+.clip-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); cursor: grab; }
+.clip-row:active { cursor: grabbing; }
+.clip-drag-icon { color: #aaa; }
 .clip-row strong { font-size: 18px; }
 .clip-row span { display: block; color: #bbb; font-size: 15px; }
-@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-slider-row { grid-template-columns: 1fr 1fr; } .srt-action-row { justify-content: flex-start; } .clip-toolbar { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row, .srt-slider-row { grid-template-columns: 1fr; } .srt-action-row { justify-content: space-between; } .clip-toolbar { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-dial-row { flex-wrap: wrap; } .srt-action-row { justify-content: flex-start; margin-left: 0; } .clip-toolbar { grid-template-columns: auto 1fr; } }
+@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row { grid-template-columns: 1fr; } .srt-dial-row { align-items: center; } .srt-action-row { width: 100%; justify-content: space-between; } .clip-toolbar { grid-template-columns: auto 1fr; } .clip-toolbar :deep(.q-btn) { grid-column: span 2; } }
 </style>
