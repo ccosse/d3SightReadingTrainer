@@ -1,7 +1,7 @@
 <template>
   <section class="selector" aria-label="Pitch-class selector and playback control">
     <div class="selector-toolbar">
-      <div class="row items-center q-gutter-sm control-modes">
+      <div class="selector-primary-row">
         <q-btn-toggle
           class="mode-toggle selection-toggle"
           :model-value="store.selectionMode"
@@ -36,18 +36,21 @@
         >
           <q-tooltip v-if="store.tooltipsEnabled">Choose flat or sharp note-name spelling throughout the workspace.</q-tooltip>
         </q-btn-toggle>
-      </div>
 
-      <q-btn
-        flat
-        dense
-        round
-        :icon="store.pitchPanelOpen ? 'expand_less' : 'piano'"
-        :aria-label="store.pitchPanelOpen ? 'Collapse note buttons' : 'Show note buttons'"
-        @click="store.pitchPanelOpen = !store.pitchPanelOpen"
-      >
-        <q-tooltip v-if="store.tooltipsEnabled">{{ store.pitchPanelOpen ? 'Collapse the twelve note buttons.' : 'Show the twelve note buttons.' }}</q-tooltip>
-      </q-btn>
+        <ChordPalette class="toolbar-chord-palette" />
+
+        <q-btn
+          flat
+          dense
+          round
+          class="pitch-panel-toggle"
+          :icon="store.pitchPanelOpen ? 'expand_less' : 'piano'"
+          :aria-label="store.pitchPanelOpen ? 'Collapse note buttons' : 'Show note buttons'"
+          @click="store.pitchPanelOpen = !store.pitchPanelOpen"
+        >
+          <q-tooltip v-if="store.tooltipsEnabled">{{ store.pitchPanelOpen ? 'Collapse the twelve note buttons.' : 'Show the twelve note buttons.' }}</q-tooltip>
+        </q-btn>
+      </div>
     </div>
 
     <q-slide-transition>
@@ -95,10 +98,6 @@
         </q-btn>
       </div>
     </q-slide-transition>
-
-    <div class="selector-lower-row">
-      <ChordPalette />
-    </div>
   </section>
 </template>
 
@@ -125,15 +124,38 @@ function startPitchDrag(event, pitchClass) {
 }
 .selector-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: center;
+  width: 100%;
 }
+.selector-primary-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(980px, 100%);
+  min-width: 0;
+}
+.mode-toggle { flex: 0 0 auto; }
+.mode-toggle :deep(.q-btn) {
+  width: 68px;
+  min-width: 68px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 4px !important;
+  font-size: 16px;
+}
+.accidental-toggle :deep(.q-btn) { font-size: 22px; }
+.toolbar-chord-palette {
+  flex: 1 1 480px;
+  min-width: 260px;
+  max-width: 620px;
+}
+.pitch-panel-toggle { flex: 0 0 40px; }
 .pitch-grid {
   display: grid;
   grid-template-columns: minmax(86px, 1.35fr) repeat(12, minmax(0, 1fr));
   gap: 5px;
+  margin-top: 8px;
 }
 .pitch-button {
   position: relative;
@@ -164,32 +186,21 @@ function startPitchDrag(event, pitchClass) {
 }
 .pitch-button.selected .scale-degree { color: #fff; }
 .all-none-button { font-size: 1.1rem; }
-.mode-toggle :deep(.q-btn) {
-  width: 78px;
-  min-width: 78px;
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 4px !important;
-  font-size: 17px;
-}
-.accidental-toggle :deep(.q-btn) { font-size: 23px; }
-.selector-lower-row {
-  display: block;
-  margin-top: 8px;
-}
 
 @media (max-width: 900px) {
-  .control-modes { width: 100%; justify-content: flex-end; }
+  .selector-primary-row { flex-wrap: wrap; }
+  .toolbar-chord-palette { order: 3; flex-basis: calc(100% - 48px); max-width: none; }
+  .pitch-panel-toggle { order: 4; }
   .pitch-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .all-none-button { grid-column: span 2; }
 }
 
 @media (max-width: 600px) {
-  .selector { padding: 7px; }
-  .selector-toolbar { align-items: flex-start; gap: 7px; margin-bottom: 7px; }
-  .control-modes { width: 100%; justify-content: space-between; gap: 5px; }
-  .mode-toggle :deep(.q-btn) { width: 62px; min-width: 62px; min-height: 38px; padding: 0 8px; font-size: 14px; }
+  .selector { padding: 5px; }
+  .selector-primary-row { gap: 5px; }
+  .mode-toggle :deep(.q-btn) { width: 60px; min-width: 60px; min-height: 38px; padding: 0 7px; font-size: 14px; }
   .accidental-toggle :deep(.q-btn) { font-size: 20px; }
+  .toolbar-chord-palette { min-width: 0; flex-basis: calc(100% - 43px); }
   .pitch-grid {
     display: flex;
     gap: 5px;

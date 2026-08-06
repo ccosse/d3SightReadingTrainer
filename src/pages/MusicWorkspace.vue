@@ -2,11 +2,6 @@
   <q-page class="music-workspace">
     <q-tab-panels v-model="store.activeTab" animated keep-alive class="workspace-panels">
       <q-tab-panel name="note-map" class="q-pa-none">
-        <div class="hud row items-center justify-between q-my-sm q-px-sm">
-          <div class="text-body1">{{ store.selectedSummary }}</div>
-          <div class="text-body1">{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }} · {{ store.keySignatureSummary }}</div>
-        </div>
-
         <div class="instrument-stack">
           <div
             v-for="item in orderedComponents"
@@ -140,11 +135,9 @@ function dropOn(targetId) {
 .component-shell:hover .component-drag-handle,
 .component-drag-handle:focus { opacity: 0.95; background: rgba(20, 20, 20, 0.86); }
 .component-drag-handle:active { cursor: grabbing; }
-.hud { min-height: 34px; font-size: 17px; background: transparent; border: 0; gap: 8px; color: #ddd; }
 .fifths-study { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; }
 
 @media (max-width: 880px) {
   .music-workspace { padding-inline: 8px; }
-  .hud { align-items: flex-start; padding-block: 5px; }
 }
 </style>

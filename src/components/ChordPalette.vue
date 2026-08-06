@@ -113,11 +113,11 @@ async function audition() {
 <style scoped>
 .chord-palette {
   display: grid;
-  grid-template-columns: minmax(280px, 720px) 46px;
+  grid-template-columns: minmax(220px, 1fr) 46px;
   gap: 8px;
   align-items: center;
   justify-content: start;
-  width: min(774px, 100%);
+  width: 100%;
   min-width: 0;
   padding-top: 0;
   border-top: 0;
