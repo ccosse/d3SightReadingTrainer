@@ -6,10 +6,11 @@
 
     <q-drawer
       v-model="store.leftDrawerOpen"
-      overlay
+      :overlay="leftDrawerOverlay"
+      :behavior="leftDrawerOverlay ? 'mobile' : 'desktop'"
       bordered
       :width="leftDrawerWidth"
-      :breakpoint="900"
+      :breakpoint="1180"
       class="dark-drawer text-white"
       style="background: #303030; color: #fff;"
     >
@@ -163,6 +164,9 @@ const leftDesktopWidth = 260
 const rightDockWidth = 520
 const stableWorkspaceWidth = 1080
 const leftDrawerWidth = computed(() => $q.screen.lt.sm ? Math.min(280, Math.round($q.screen.width * 0.88)) : leftDesktopWidth)
+// On desktop the workspace drawer occupies its own column. Phones and tablets
+// keep the slide-over behavior so the staff remains usable on small screens.
+const leftDrawerOverlay = computed(() => $q.screen.width < 1180)
 const showFifthsTools = computed(() => store.activeTab !== 'fifths')
 const canDock = computed(() => $q.screen.width >= stableWorkspaceWidth + rightDockWidth + 24)
 const rightDrawerOverlay = computed(() => !canDock.value || store.rightDrawerMode === 'overlay')
