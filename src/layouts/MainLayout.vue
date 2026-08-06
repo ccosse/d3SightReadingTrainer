@@ -179,10 +179,13 @@ const rightDrawerWidth = computed(() => {
   return Math.min(990, Math.round($q.screen.width * 0.68))
 })
 const leftEdgeTabStyle = computed(() => ({
-  left: store.leftDrawerOpen ? `${leftDrawerWidth.value + 10}px` : '10px'
+  // The tab begins exactly at the drawer edge and projects over the music area.
+  // No spacer column is reserved between the drawer and the instrument stack.
+  left: store.leftDrawerOpen ? `${Math.max(0, leftDrawerWidth.value - 1)}px` : '0px'
 }))
 const fifthsEdgeTabStyle = computed(() => ({
-  right: store.rightDrawerOpen ? `${rightDrawerWidth.value + 10}px` : '10px'
+  // Mirror the left tab: touch the theory drawer and overlap the staff area.
+  right: store.rightDrawerOpen ? `${Math.max(0, rightDrawerWidth.value - 1)}px` : '0px'
 }))
 
 const navigation = [

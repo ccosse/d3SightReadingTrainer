@@ -1,24 +1,5 @@
 <template>
   <section class="instrument-section compact-instrument">
-    <div class="keyboard-toolbar">
-      <q-select
-        :model-value="store.keyboardPreset"
-        :options="KEYBOARD_PRESETS"
-        option-label="label"
-        option-value="id"
-        emit-value
-        map-options
-        dense
-        outlined
-        dark
-        options-dense
-        label="Keyboard"
-        class="keyboard-select"
-        @update:model-value="store.setKeyboardPreset"
-      >
-        <q-tooltip v-if="store.tooltipsEnabled">Choose the displayed keyboard range.</q-tooltip>
-      </q-select>
-    </div>
     <div class="svg-frame keyboard-frame">
       <svg
         class="instrument-svg"
@@ -85,7 +66,7 @@
 <script setup>
 import { computed, onBeforeUnmount } from 'vue'
 import { PianoKeyboard as PianoKeyboardModel } from '../music/instruments/PianoKeyboard'
-import { KEYBOARD_PRESETS, keyboardPresetById } from '../music/keyboardPresets'
+import { keyboardPresetById } from '../music/keyboardPresets'
 import { startChord, stopChordVoices } from '../music/audio'
 import { midiLabel } from '../music/theory'
 import { useNoteMapStore } from '../stores/noteMap'
@@ -148,11 +129,6 @@ onBeforeUnmount(releasePreview)
 </script>
 
 <style scoped>
-.keyboard-toolbar { display: flex; justify-content: flex-start; align-items: center; padding: 0 3px 6px; }
-.keyboard-select { width: 246px; }
-.keyboard-select :deep(.q-field__control) { min-height: 44px; border-radius: 4px; background: #292929; }
-.keyboard-select :deep(.q-field__control::before) { border: 1px solid #676767 !important; }
-.keyboard-select :deep(.q-field__control::after) { border: 1px solid #bdbdbd !important; }
 .instrument-svg { width: 100%; height: auto; display: block; touch-action: none; }
 .svg-frame { border-radius: 8px; overflow: hidden; }
 .keyboard-frame { background: #202020; padding: 3px; }

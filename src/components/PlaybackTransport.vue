@@ -70,12 +70,31 @@
       >
         <q-tooltip v-if="store.tooltipsEnabled">Clear the selected time region.</q-tooltip>
       </q-btn>
+
+      <q-select
+        :model-value="store.keyboardPreset"
+        :options="KEYBOARD_PRESETS"
+        option-label="label"
+        option-value="id"
+        emit-value
+        map-options
+        dense
+        outlined
+        dark
+        options-dense
+        label="Keyboard"
+        class="transport-keyboard-select"
+        @update:model-value="store.setKeyboardPreset"
+      >
+        <q-tooltip v-if="store.tooltipsEnabled">Choose the keyboard range shown below the staff.</q-tooltip>
+      </q-select>
     </div>
   </section>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { KEYBOARD_PRESETS } from '../music/keyboardPresets'
 import { useNoteMapStore } from '../stores/noteMap'
 
 defineProps({
@@ -109,16 +128,21 @@ function togglePlayPause() {
 }
 .staff-dials { grid-column: 1; display: flex; align-items: center; gap: 9px; justify-self: start; }
 .tape-controls { grid-column: 2; display: flex; justify-content: center; gap: 5px; }
-.transport-actions { grid-column: 3; display: flex; justify-content: flex-end; min-width: 44px; }
+.transport-actions { grid-column: 3; display: flex; align-items: center; justify-content: flex-end; gap: 7px; min-width: 246px; }
 .tape-controls :deep(.q-btn) { min-width: 46px; min-height: 44px; }
 .knob-value { display: grid; place-items: center; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .knob-value strong { font-size: 16px; }
 .knob-value span { margin-top: 2px; color: #cfcfcf; font-size: 10px; letter-spacing: .04em; }
+.transport-keyboard-select { width: 236px; }
+.transport-keyboard-select :deep(.q-field__control) { min-height: 44px; border-radius: 4px; background: #292929; }
+.transport-keyboard-select :deep(.q-field__control::before) { border: 1px solid #676767 !important; }
+.transport-keyboard-select :deep(.q-field__control::after) { border: 1px solid #bdbdbd !important; }
 @media (max-width: 700px) {
   .transport { grid-template-columns: 1fr auto; gap: 8px; }
   .staff-dials { grid-column: 1; }
   .tape-controls { grid-column: 2; }
-  .transport-actions { grid-column: 1 / -1; justify-content: center; min-height: 0; }
+  .transport-actions { grid-column: 1 / -1; justify-content: center; min-height: 0; min-width: 0; }
+  .transport-keyboard-select { width: min(236px, 100%); }
   .staff-dials :deep(.q-knob) { transform: scale(.88); transform-origin: left center; }
 }
 </style>
