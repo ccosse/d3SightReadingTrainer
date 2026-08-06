@@ -2,7 +2,6 @@
   <section class="srt-shell">
     <div class="srt-config-header">
       <div>
-        <strong>Generation</strong>
         <span>{{ sourceSummary }}</span>
       </div>
       <q-btn
@@ -13,7 +12,7 @@
         :aria-label="store.srtConfigOpen ? 'Collapse generation controls' : 'Open generation controls'"
         @click="store.srtConfigOpen = !store.srtConfigOpen"
       >
-        <q-tooltip>{{ store.srtConfigOpen ? 'Collapse configuration and leave the player visible.' : 'Open generation and composition controls.' }}</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">{{ store.srtConfigOpen ? 'Collapse configuration and leave the player visible.' : 'Open generation and composition controls.' }}</q-tooltip>
       </q-btn>
     </div>
 
@@ -63,37 +62,30 @@
         </div>
 
         <div class="srt-slider-row">
-          <div class="tempo-block">
-            <span>{{ store.srtTempo }} BPM</span>
-            <q-slider :model-value="store.srtTempo" :min="30" :max="180" :step="1" color="positive" @update:model-value="store.setSrtTempo">
-              <q-tooltip>Tempo controls scrolling and held-note playback.</q-tooltip>
-            </q-slider>
-          </div>
-
           <div class="gate-block">
             <span>Hold {{ Math.round(store.srtGate * 100) }}%</span>
-            <q-slider :model-value="store.srtGate" :min="0.35" :max="1.2" :step="0.05" color="amber-6" @update:model-value="store.setSrtGate">
-              <q-tooltip>Gate length for every note in the event, bass and treble alike.</q-tooltip>
+            <q-slider :model-value="store.srtGate" :min="0.35" :max="1.2" :step="0.05" color="grey-5" @update:model-value="store.setSrtGate">
+              <q-tooltip v-if="store.tooltipsEnabled">Gate length for every note in the event, bass and treble alike.</q-tooltip>
             </q-slider>
           </div>
 
           <div class="swing-block">
             <span>Swing {{ Math.round(store.srtSwing * 100) }}%</span>
-            <q-slider :model-value="store.srtSwing" :min="0" :max="0.45" :step="0.05" color="pink-4" @update:model-value="store.setSrtSwing">
-              <q-tooltip>Delays alternating pulses to create a long-short feel.</q-tooltip>
+            <q-slider :model-value="store.srtSwing" :min="0" :max="0.45" :step="0.05" color="grey-5" @update:model-value="store.setSrtSwing">
+              <q-tooltip v-if="store.tooltipsEnabled">Delays alternating pulses to create a long-short feel.</q-tooltip>
             </q-slider>
           </div>
 
           <div class="srt-action-row">
-            <q-toggle v-model="store.srtShowLabels" color="light-blue-5" label="Labels" />
-            <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="light-blue-5" label="Loop" />
+            <q-toggle v-model="store.srtShowLabels" color="grey-5" label="Labels" />
+            <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="grey-5" label="Loop" />
             <q-btn
               flat
               :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
               color="grey-3"
               @click="resetOrReseed"
             >
-              <q-tooltip>
+              <q-tooltip v-if="store.tooltipsEnabled">
                 {{ store.srtSource === 'staff'
                   ? 'Clear the manual staff and return its tape to the beginning.'
                   : 'Reseed and regenerate the endless passage from the beginning.' }}
@@ -103,12 +95,6 @@
         </div>
       </div>
     </q-slide-transition>
-
-    <div class="srt-hud">
-      <span><strong>{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }}</strong> · {{ store.keySignatureSummary }}</span>
-      <span>{{ sourceSummary }}</span>
-      <span class="gold-copy">gold = currently sounding on staff, piano, and guitar</span>
-    </div>
 
     <div class="scroll-stage">
       <svg
@@ -186,22 +172,22 @@
     <div class="clip-toolbar">
       <div class="zoom-control">
         <span>{{ visibleBars }} visible bars</span>
-        <q-slider :model-value="store.staffZoom" :min="0.55" :max="1.6" :step="0.05" color="primary" @update:model-value="store.setStaffZoom">
-          <q-tooltip>Zoom out to show more measures without shrinking staff symbols.</q-tooltip>
+        <q-slider :model-value="store.staffZoom" :min="0.55" :max="1.6" :step="0.05" color="grey-5" @update:model-value="store.setStaffZoom">
+          <q-tooltip v-if="store.tooltipsEnabled">Zoom out to show more measures without shrinking staff symbols.</q-tooltip>
         </q-slider>
       </div>
       <q-input v-model="clipName" dark outlined dense label="Clip name" />
-      <q-btn outline color="amber-5" icon="content_cut" label="Save selected region" no-caps :disable="!canSaveSelection" @click="saveSelection" />
-      <q-btn outline color="light-blue-3" icon="playlist_add" label="Next 2 bars → staff" no-caps :disable="store.srtSource !== 'generated' || !events.length" @click="captureToStaff" />
-      <q-btn v-if="store.clipSelectionStart !== null" flat color="grey-4" icon="deselect" @click="store.clearClipSelection"><q-tooltip>Clear the selected time region.</q-tooltip></q-btn>
+      <q-btn outline color="grey-5" icon="content_cut" label="Save selected region" no-caps :disable="!canSaveSelection" @click="saveSelection" />
+      <q-btn outline color="grey-5" icon="playlist_add" label="Next 2 bars → staff" no-caps :disable="store.srtSource !== 'generated' || !events.length" @click="captureToStaff" />
+      <q-btn v-if="store.clipSelectionStart !== null" flat color="grey-4" icon="deselect" @click="store.clearClipSelection"><q-tooltip v-if="store.tooltipsEnabled">Clear the selected time region.</q-tooltip></q-btn>
     </div>
 
     <div v-if="store.clips.length" class="clip-library">
       <div class="clip-library-title">Clip library</div>
       <div v-for="clip in store.clips" :key="clip.id" class="clip-row">
         <div><strong>{{ clip.name }}</strong><span>{{ clip.events.length }} events · {{ clip.tempo }} BPM</span></div>
-        <q-btn flat color="light-blue-3" icon="edit_note" @click="store.loadClipToStaff(clip.id)"><q-tooltip>Load this clip into the editable staff.</q-tooltip></q-btn>
-        <q-btn flat color="negative" icon="delete" @click="store.removeClip(clip.id)"><q-tooltip>Delete this saved clip.</q-tooltip></q-btn>
+        <q-btn flat color="grey-4" icon="edit_note" @click="store.loadClipToStaff(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Load this clip into the editable staff.</q-tooltip></q-btn>
+        <q-btn flat color="grey-4" icon="delete" @click="store.removeClip(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Delete this saved clip.</q-tooltip></q-btn>
       </div>
     </div>
   </section>
@@ -862,18 +848,13 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .srt-shell { display: grid; gap: 10px; width: 100%; margin: 0; padding: 2px; color: white; }
 .srt-config-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; background: rgba(35,35,35,.68); }
 .srt-config-header > div { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
-.srt-config-header strong { color: #bfeaff; font-size: 18px; }
 .srt-config-header span { color: #aaa; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .srt-controls { display: grid; gap: 10px; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: rgba(35,35,35,.88); }
 .srt-select-row { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; }
-.srt-slider-row { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)) auto; gap: 14px; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
+.srt-slider-row { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)) auto; gap: 14px; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
 .srt-action-row { display: flex; gap: 12px; align-items: center; justify-content: flex-end; white-space: nowrap; }
 .srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native), .srt-controls :deep(.q-toggle__label) { font-size: 17px; }
-.tempo-block, .gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #8dffab; font-size: 17px; white-space: nowrap; }
-.gate-block { color: #ffd866; }
-.swing-block { color: #ff9fd4; }
-.srt-hud { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; padding: 8px 11px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: rgba(35,35,35,.62); color: #e0e0e0; font-size: 17px; }
-.gold-copy { color: #ffd866; }
+.gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #e0e0e0; font-size: 17px; white-space: nowrap; }
 .scroll-stage { overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; background: #202020; }
 .scroll-svg { width: 100%; height: auto; display: block; touch-action: none; }
 .stage-bg { fill: #232323; }

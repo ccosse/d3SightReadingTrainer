@@ -1,17 +1,12 @@
 <template>
-  <section class="object-order">
-    <div class="row items-center justify-between q-px-md q-pt-md q-pb-xs">
-      <div class="drawer-title">Arrange views</div>
-      <q-btn flat dense round size="sm" icon="restart_alt" @click="store.resetComponentOrder">
-        <q-tooltip>Restore the default control-panel, keyboard, fretboard, staff order.</q-tooltip>
+  <section class="object-order" aria-label="Arrange visible workspace components">
+    <div class="reset-row">
+      <q-btn flat dense round size="sm" icon="restart_alt" aria-label="Restore default component order" @click="store.resetComponentOrder">
+        <q-tooltip v-if="store.tooltipsEnabled">Restore control panel, player staff, piano, and guitar to the default order.</q-tooltip>
       </q-btn>
     </div>
 
-    <div class="text-caption text-grey-5 q-px-md q-pb-sm">
-      Drag a handle or use the arrows. Changes appear immediately.
-    </div>
-
-    <div class="order-list q-px-sm q-pb-md">
+    <div class="order-list">
       <div
         v-for="(id, index) in store.componentOrder"
         :key="id"
@@ -21,50 +16,33 @@
         @dragleave="overId = null"
         @drop.prevent="dropOn(id)"
       >
-        <div
-          class="drag-handle"
-          draggable="true"
-          @dragstart="startDrag($event, id)"
-          @dragend="finishDrag"
-        >
-          <q-icon name="drag_indicator" size="20px" />
-          <q-tooltip>Drag {{ metadata[id].label }} to a new position.</q-tooltip>
+        <div class="drag-handle" draggable="true" @dragstart="startDrag($event, id)" @dragend="finishDrag">
+          <q-icon name="drag_indicator" size="18px" />
+          <q-tooltip v-if="store.tooltipsEnabled">Drag {{ metadata[id].label }} to a new position.</q-tooltip>
         </div>
 
-        <q-icon :name="metadata[id].icon" size="18px" class="object-icon" />
-        <span class="object-label">{{ metadata[id].label }}</span>
-
-        <q-btn
-          flat
-          dense
-          round
-          size="sm"
-          icon="keyboard_arrow_up"
-          :disable="index === 0"
-          @click="store.moveComponentBy(id, -1)"
-        >
-          <q-tooltip>Move {{ metadata[id].label }} up.</q-tooltip>
-        </q-btn>
-        <q-btn
-          flat
-          dense
-          round
-          size="sm"
-          icon="keyboard_arrow_down"
-          :disable="index === store.componentOrder.length - 1"
-          @click="store.moveComponentBy(id, 1)"
-        >
-          <q-tooltip>Move {{ metadata[id].label }} down.</q-tooltip>
-        </q-btn>
+        <div class="object-icon-wrap">
+          <q-icon :name="metadata[id].icon" size="21px" class="object-icon" />
+          <q-tooltip v-if="store.tooltipsEnabled">{{ metadata[id].label }}</q-tooltip>
+        </div>
 
         <q-toggle
           :model-value="store.visibleObjects[id]"
           dense
           size="sm"
+          color="grey-5"
+          aria-label="Toggle component visibility"
           @update:model-value="store.setVisibleObject(id, $event)"
         >
-          <q-tooltip>Show or hide {{ metadata[id].label }}.</q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">Show or hide {{ metadata[id].label }}.</q-tooltip>
         </q-toggle>
+
+        <q-btn flat dense round size="sm" icon="keyboard_arrow_up" :disable="index === 0" aria-label="Move component up" @click="store.moveComponentBy(id, -1)">
+          <q-tooltip v-if="store.tooltipsEnabled">Move {{ metadata[id].label }} up.</q-tooltip>
+        </q-btn>
+        <q-btn flat dense round size="sm" icon="keyboard_arrow_down" :disable="index === store.componentOrder.length - 1" aria-label="Move component down" @click="store.moveComponentBy(id, 1)">
+          <q-tooltip v-if="store.tooltipsEnabled">Move {{ metadata[id].label }} down.</q-tooltip>
+        </q-btn>
       </div>
     </div>
   </section>
@@ -103,30 +81,28 @@ function dropOn(targetId) {
 </script>
 
 <style scoped>
-.object-order { color: #fff; }
-.drawer-title { color: #b9dfff; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
-.order-list { display: grid; gap: 5px; }
+.object-order { color: #fff; padding: 7px 6px 12px; }
+.reset-row { display: flex; justify-content: center; padding-bottom: 6px; }
+.order-list { display: grid; gap: 7px; }
 .order-row {
   display: grid;
-  grid-template-columns: 28px 24px minmax(0, 1fr) 30px 30px 38px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 30px 30px;
   align-items: center;
-  min-height: 42px;
+  justify-items: center;
+  min-height: 66px;
   border: 1px solid #4d4d4d;
   border-radius: 7px;
   background: #292929;
   transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
 }
-.order-row.drop-target { border-color: #77c4ff; background: #303b42; }
+.order-row.drop-target { border-color: #bdbdbd; background: #383838; }
 .order-row.dragging { opacity: 0.48; }
-.drag-handle {
-  display: grid;
-  place-items: center;
-  height: 100%;
-  color: #aeb6bc;
-  cursor: grab;
-  user-select: none;
-}
+.drag-handle { display: grid; place-items: center; width: 100%; height: 100%; color: #aeb6bc; cursor: grab; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
-.object-icon { color: #8fd0ff; }
-.object-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.object-icon-wrap { display: grid; place-items: center; width: 100%; height: 100%; }
+.object-icon { color: #e1e1e1; }
+.order-row :deep(.q-toggle) { justify-self: center; }
+.order-row :deep(.q-btn:nth-of-type(1)) { grid-column: 1; grid-row: 2; }
+.order-row :deep(.q-btn:nth-of-type(2)) { grid-column: 3; grid-row: 2; }
 </style>

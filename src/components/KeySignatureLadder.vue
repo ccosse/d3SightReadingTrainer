@@ -8,15 +8,15 @@
     >
       <button type="button" class="accidentals" @click="store.setKey(key.id, { mode: 'major' })">
         {{ accidentalText(key.signature) }}
-        <q-tooltip>Select {{ key.label }} major: {{ signatureLabel(key.signature) }}.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.label }} major: {{ signatureLabel(key.signature) }}.</q-tooltip>
       </button>
       <button type="button" class="major" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'major' }" @click="store.setKey(key.id, { mode: 'major' })">
         {{ key.label }} major
-        <q-tooltip>Select {{ key.label }} major.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.label }} major.</q-tooltip>
       </button>
       <button type="button" class="minor" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'minor' }" @click="store.setKey(key.id, { mode: 'minor' })">
         {{ key.relativeMinor }}
-        <q-tooltip>Select {{ key.relativeMinor }} while preserving this key signature.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.relativeMinor }} while preserving this key signature.</q-tooltip>
       </button>
     </div>
   </section>

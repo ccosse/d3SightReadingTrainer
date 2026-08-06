@@ -1,7 +1,6 @@
 <template>
   <section class="selector" aria-label="Pitch-class selector and playback control">
     <div class="selector-header row items-center justify-between q-col-gutter-md q-mb-sm">
-      <div class="text-subtitle1 text-weight-medium">Find note</div>
       <div class="row items-center q-gutter-sm control-modes">
         <q-select
           :model-value="store.keyboardPreset"
@@ -18,14 +17,14 @@
           class="keyboard-select"
           @update:model-value="store.setKeyboardPreset"
         >
-          <q-tooltip>Choose the displayed keyboard range. The Reface CP has 37 mini keys, E2 through E5.</q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">Choose the displayed keyboard range. The Reface CP has 37 mini keys, E2 through E5.</q-tooltip>
         </q-select>
 
         <q-btn-toggle
           :model-value="store.selectionMode"
           dense
           unelevated
-          toggle-color="primary"
+          toggle-color="grey-6"
           color="grey-9"
           text-color="white"
           :options="[
@@ -34,7 +33,7 @@
           ]"
           @update:model-value="store.setSelectionMode"
         >
-          <q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">
             Single selects one pitch class at a time. Multi lets you build chords and arbitrary note sets.
           </q-tooltip>
         </q-btn-toggle>
@@ -44,7 +43,7 @@
           class="accidental-toggle"
           dense
           unelevated
-          toggle-color="primary"
+          toggle-color="grey-6"
           color="grey-9"
           text-color="white"
           :options="[
@@ -52,7 +51,7 @@
             { label: '♯', value: 'sharp' }
           ]"
         >
-          <q-tooltip>Choose flat or sharp note-name spelling throughout the workspace.</q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">Choose flat or sharp note-name spelling throughout the workspace.</q-tooltip>
         </q-btn-toggle>
       </div>
     </div>
@@ -68,7 +67,7 @@
         :aria-checked="store.isAllSelected"
         @click="store.toggleAllNone"
       >
-        <q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">
           If any notes are selected, clear them all. If none are selected, select all twelve pitch classes.
         </q-tooltip>
       </q-btn>
@@ -94,7 +93,7 @@
       >
         <span class="pitch-name">{{ name }}</span>
         <span v-if="store.scaleDegree(pitchClass)" class="scale-degree">{{ store.scaleDegree(pitchClass) }}</span>
-        <q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">
           {{ name }}{{ store.scaleDegree(pitchClass) ? ` · degree ${store.scaleDegree(pitchClass)} of ${store.currentKey.label} ${store.currentMode}` : ` · outside ${store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major'}` }}.
           Drag this note onto the staff to place it.
         </q-tooltip>

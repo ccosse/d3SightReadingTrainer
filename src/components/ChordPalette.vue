@@ -2,35 +2,46 @@
   <div class="chord-palette">
     <q-select
       v-model="selectedId"
-      :options="visibleOptions"
+      :options="menuOptions"
       option-label="displayLabel"
       option-value="id"
+      :option-disable="option => option.separator === true"
       emit-value
       map-options
       dark
       dense
       outlined
       options-dense
-      label="Chord to drag"
+      hide-bottom-space
+      aria-label="Choose a chord"
+      popup-content-class="chord-options-menu"
       class="chord-select"
     >
       <template #option="scope">
-        <q-item v-bind="scope.itemProps">
+        <q-item v-if="scope.opt.separator" class="chord-menu-separator" dense disable>
+          <q-item-section><q-separator dark /></q-item-section>
+        </q-item>
+        <q-item
+          v-else
+          v-bind="scope.itemProps"
+          :class="['chord-option-row', scope.index % 2 ? 'chord-row-odd' : 'chord-row-even']"
+        >
           <q-item-section>
-            <q-item-label>{{ scope.opt.label }}</q-item-label>
-            <q-item-label caption class="text-grey-5">{{ scope.opt.notes.join(' · ') }}</q-item-label>
+            <q-item-label class="chord-option-line">
+              <span class="chord-option-name">{{ scope.opt.label }}</span>
+              <span class="chord-option-notes">{{ scope.opt.notes.join('–') }}</span>
+            </q-item-label>
           </q-item-section>
-          <q-item-section side><span class="category-copy">{{ scope.opt.category }}</span></q-item-section>
         </q-item>
       </template>
-      <q-tooltip>Choose a key-aware chord. Drag the gold chord button onto the staff at the desired time and register.</q-tooltip>
+      <q-tooltip v-if="store.tooltipsEnabled">Choose a key-aware chord. A plain separator divides the diatonic and extended choices.</q-tooltip>
     </q-select>
 
     <q-btn
       v-if="selectedChord"
       no-caps
-      unelevated
-      color="amber-9"
+      outline
+      color="grey-5"
       text-color="white"
       icon="drag_indicator"
       class="chord-drag-button"
@@ -41,12 +52,8 @@
     >
       <span class="chord-name">{{ selectedChord.chordName }}</span>
       <span class="chord-notes">{{ selectedChord.notes.join('–') }}</span>
-      <q-tooltip>Click to hear it. Drag it onto the staff to place the complete voicing.</q-tooltip>
+      <q-tooltip v-if="store.tooltipsEnabled">Click to hear it. Drag it onto the staff to place the complete voicing.</q-tooltip>
     </q-btn>
-
-    <q-toggle v-model="showAdvanced" dense color="amber-5" label="Advanced" class="advanced-toggle">
-      <q-tooltip>Show 6/9, 9th, 13th, altered dominant, and suspended chords.</q-tooltip>
-    </q-toggle>
   </div>
 </template>
 
@@ -57,14 +64,20 @@ import { buildChordPalette } from '../music/chords'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
-const showAdvanced = ref(false)
 const selectedId = ref('seventh-4')
 
 const palette = computed(() => buildChordPalette(store.currentKey, store.currentMode, store.accidentalMode))
-const visibleOptions = computed(() => palette.value
-  .filter((option) => showAdvanced.value || option.category !== 'Color and advanced')
-  .map((option) => ({ ...option, displayLabel: `${option.label} · ${option.notes.join('–')}` })))
-const selectedChord = computed(() => palette.value.find((option) => option.id === selectedId.value) || visibleOptions.value[0] || null)
+const menuOptions = computed(() => {
+  const basic = palette.value.filter((option) => option.category !== 'Color and advanced')
+  const advanced = palette.value.filter((option) => option.category === 'Color and advanced')
+  const mapOption = (option) => ({ ...option, displayLabel: `${option.label} · ${option.notes.join('–')}` })
+  return [
+    ...basic.map(mapOption),
+    { id: '__advanced_separator__', separator: true, displayLabel: '', disable: true },
+    ...advanced.map(mapOption)
+  ]
+})
+const selectedChord = computed(() => palette.value.find((option) => option.id === selectedId.value) || palette.value[0] || null)
 
 watch([() => store.currentKeyId, () => store.currentMode], () => {
   if (!palette.value.some((option) => option.id === selectedId.value)) selectedId.value = 'seventh-4'
@@ -99,7 +112,7 @@ async function audition() {
 <style scoped>
 .chord-palette {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(220px, auto) auto;
+  grid-template-columns: minmax(280px, 1fr) minmax(210px, auto);
   gap: 9px;
   align-items: center;
   margin-top: 10px;
@@ -107,15 +120,14 @@ async function audition() {
   border-top: 1px solid rgba(255,255,255,.12);
 }
 .chord-select { min-width: 0; }
-.chord-drag-button { min-height: 46px; border: 1px solid rgba(255,216,102,.64); }
-.chord-drag-button :deep(.q-btn__content) { gap: 8px; }
-.chord-name { font-size: 19px; font-weight: 700; }
-.chord-notes { font-size: 14px; opacity: .88; }
-.category-copy { color: #aaa; font-size: 12px; }
-.advanced-toggle { white-space: nowrap; }
+.chord-select :deep(.q-field__native),
+.chord-select :deep(.q-field__input) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chord-drag-button { min-height: 44px; border-color: #777 !important; background: #333; }
+.chord-drag-button :deep(.q-btn__content) { gap: 8px; min-width: 0; }
+.chord-name { font-size: 18px; font-weight: 700; }
+.chord-notes { font-size: 14px; opacity: .86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 760px) {
-  .chord-palette { grid-template-columns: 1fr auto; }
-  .chord-select { grid-column: 1 / -1; }
+  .chord-palette { grid-template-columns: 1fr; }
   .chord-notes { display: none; }
 }
 </style>

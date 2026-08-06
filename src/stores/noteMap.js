@@ -69,6 +69,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     rightDrawerOpen: true,
     rightDrawerMode: 'dock',
     fifthsFullscreenOpen: false,
+    tooltipsEnabled: true,
     focusText: 'Select a note on any linked view',
 
     scanPlaying: false,

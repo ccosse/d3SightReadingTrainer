@@ -17,7 +17,7 @@
         @click="store.selectPitchClass(scalePitchClasses[index])"
       >
         {{ index + 1 }} · {{ name }}
-        <q-tooltip>Select scale degree {{ index + 1 }}, {{ name }}, everywhere.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Select scale degree {{ index + 1 }}, {{ name }}, everywhere.</q-tooltip>
       </q-chip>
     </div>
   </section>

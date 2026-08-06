@@ -56,3 +56,43 @@ body { font-size: 18px; }
   backdrop-filter: blur(10px) saturate(108%);
   -webkit-backdrop-filter: blur(10px) saturate(108%);
 }
+
+/* Chord menu is teleported outside component-scoped styles. Keep every option on
+   one readable line and alternate quiet row shading for wide harmonic entries. */
+.chord-options-menu {
+  width: min(760px, calc(100vw - 24px));
+  max-width: min(760px, calc(100vw - 24px));
+  background: #242424 !important;
+  color: #fff;
+  border: 1px solid #555;
+}
+.chord-options-menu .chord-option-row { min-height: 42px; }
+.chord-options-menu .chord-row-even { background: #262626; }
+.chord-options-menu .chord-row-odd { background: #303030; }
+.chord-options-menu .chord-option-row:hover { background: #3a3a3a; }
+.chord-options-menu .chord-option-line {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.chord-options-menu .chord-option-name {
+  flex: 0 0 min(245px, 36%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.chord-options-menu .chord-option-notes {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #d0d0d0;
+}
+.chord-options-menu .chord-menu-separator { min-height: 16px; padding: 7px 10px; background: #1e1e1e; }
+
+/* Neutral Quasar field focus treatment for the cleanup pass. */
+.q-field--focused .q-field__label { color: #e0e0e0 !important; }
+.q-field--outlined.q-field--focused .q-field__control::after { border-color: #bdbdbd !important; }

@@ -9,13 +9,16 @@
     />
     <img class="checkbox-image unchecked" :src="checkboxOff" alt="" />
     <img class="checkbox-image checked" :src="checkboxOn" alt="" />
-    <q-tooltip v-if="tooltip">{{ tooltip }}</q-tooltip>
+    <q-tooltip v-if="tooltip && store.tooltipsEnabled">{{ tooltip }}</q-tooltip>
   </label>
 </template>
 
 <script setup>
 import checkboxOff from '../assets/checkbox-off.svg'
 import checkboxOn from '../assets/checkbox-on.svg'
+import { useNoteMapStore } from '../stores/noteMap'
+
+const store = useNoteMapStore()
 
 defineProps({
   modelValue: { type: Boolean, default: false },

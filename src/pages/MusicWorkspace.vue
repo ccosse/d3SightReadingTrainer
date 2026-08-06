@@ -3,9 +3,8 @@
     <q-tab-panels v-model="store.activeTab" animated keep-alive class="workspace-panels">
       <q-tab-panel name="note-map" class="q-pa-none">
         <div class="hud row items-center justify-between q-my-sm q-px-sm">
-          <div class="text-body1"><strong>Selection:</strong> {{ store.selectedSummary }}</div>
-          <div class="text-body1"><strong>Key:</strong> {{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }} · {{ store.keySignatureSummary }}</div>
-          <div class="text-body1 text-light-blue-2">{{ store.focusText }}</div>
+          <div class="text-body1">{{ store.selectedSummary }}</div>
+          <div class="text-body1">{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }} · {{ store.keySignatureSummary }}</div>
         </div>
 
         <div class="instrument-stack">
@@ -26,7 +25,7 @@
               @dragend="finishDrag"
             >
               <q-icon name="drag_indicator" size="18px" />
-              <q-tooltip>Drag to reorder {{ item.label }}. Arrow controls are also available in the left sidebar.</q-tooltip>
+              <q-tooltip v-if="store.tooltipsEnabled">Drag to reorder {{ item.label }}. Arrow controls are also available in the left sidebar.</q-tooltip>
             </div>
             <component :is="item.component" />
           </div>

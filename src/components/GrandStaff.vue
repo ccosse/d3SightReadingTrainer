@@ -152,10 +152,10 @@
             :step="0.05"
             snap
             dense
-            color="primary"
+            color="grey-5"
             @update:model-value="store.setStaffZoom"
           >
-            <q-tooltip>Change the time scale. Zoom out to show more measures at full readable staff size; zoom in to spread fewer measures wider.</q-tooltip>
+            <q-tooltip v-if="store.tooltipsEnabled">Change the time scale. Zoom out to show more measures at full readable staff size; zoom in to spread fewer measures wider.</q-tooltip>
           </q-slider>
         </div>
 
@@ -170,7 +170,7 @@
           :options="quantizeOptions"
           @update:model-value="store.setStaffQuantize"
         >
-          <q-tooltip>Quantize new notes to quarter-beat, half-beat, or whole-beat positions.</q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">Quantize new notes to quarter-beat, half-beat, or whole-beat positions.</q-tooltip>
         </q-select>
 
         <template v-if="store.selectedStaffCluster">
@@ -185,7 +185,7 @@
             :options="beatOptions"
             @update:model-value="moveSelectedCluster"
           >
-            <q-tooltip>Move the selected note or chord to another snapped beat.</q-tooltip>
+            <q-tooltip v-if="store.tooltipsEnabled">Move the selected note or chord to another snapped beat.</q-tooltip>
           </q-select>
 
           <q-select
@@ -199,11 +199,11 @@
             :options="durationOptions"
             @update:model-value="setSelectedDuration"
           >
-            <q-tooltip>Set one shared duration for every note in the selected cluster.</q-tooltip>
+            <q-tooltip v-if="store.tooltipsEnabled">Set one shared duration for every note in the selected cluster.</q-tooltip>
           </q-select>
 
-          <q-btn dense flat color="negative" icon="delete" @click="removeSelectedCluster">
-            <q-tooltip>Delete the selected note or chord cluster.</q-tooltip>
+          <q-btn dense flat color="grey-5" icon="delete" @click="removeSelectedCluster">
+            <q-tooltip v-if="store.tooltipsEnabled">Delete the selected note or chord cluster.</q-tooltip>
           </q-btn>
         </template>
 
@@ -217,7 +217,7 @@
           no-caps
           @click="store.clearStaffSequence"
         >
-          <q-tooltip>Remove all dropped staff notes and return to the linked note-map display.</q-tooltip>
+          <q-tooltip v-if="store.tooltipsEnabled">Remove all dropped staff notes and return to the linked note-map display.</q-tooltip>
         </q-btn>
       </div>
     </div>
