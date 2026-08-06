@@ -26,8 +26,7 @@ body {
   color: #fff !important;
 }
 
-.q-drawer.dark-drawer .q-item,
-.q-drawer.dark-drawer .q-toggle__label {
+.q-drawer.dark-drawer .q-item {
   color: #fff;
 }
 
@@ -36,8 +35,7 @@ body { font-size: 18px; }
 .q-field__native,
 .q-field__input,
 .q-field__label,
-.q-item__label,
-.q-toggle__label { font-size: 17px; }
+.q-item__label { font-size: 17px; }
 .q-tooltip { font-size: 15px; line-height: 1.35; max-width: 420px; }
 .q-toolbar__title { font-size: 22px; }
 .q-drawer .q-item { min-height: 54px; }

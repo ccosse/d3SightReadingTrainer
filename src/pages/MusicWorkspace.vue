@@ -101,8 +101,8 @@ function dropOn(targetId) {
 
 <style scoped>
 .music-workspace {
-  width: 100%;
-  max-width: 1380px;
+  width: min(1080px, 100%);
+  max-width: 1080px;
   margin: 0 auto;
   padding: 8px 10px 24px;
   background: #333;

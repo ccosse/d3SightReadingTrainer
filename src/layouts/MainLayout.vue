@@ -6,7 +6,7 @@
 
     <q-drawer
       v-model="store.leftDrawerOpen"
-      show-if-above
+      overlay
       bordered
       :width="leftDrawerWidth"
       :breakpoint="900"
@@ -36,7 +36,7 @@
           </div>
 
           <div class="brand-mark" aria-label="Asymptopia">
-            <img src="../assets/asymptopia-mark.svg" alt="Asymptopia logo" />
+            <img src="../assets/asymptopia_logo.png" alt="Asymptopia logo" />
             <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">Asymptopia</q-tooltip>
           </div>
         </div>
@@ -159,16 +159,20 @@ import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
 const $q = useQuasar()
-const desktopDrawerWidth = 300
-const leftDrawerWidth = computed(() => $q.screen.lt.sm ? Math.min(300, Math.round($q.screen.width * 0.88)) : desktopDrawerWidth)
+const leftDesktopWidth = 260
+const rightDockWidth = 520
+const stableWorkspaceWidth = 1080
+const leftDrawerWidth = computed(() => $q.screen.lt.sm ? Math.min(280, Math.round($q.screen.width * 0.88)) : leftDesktopWidth)
 const showFifthsTools = computed(() => store.activeTab !== 'fifths')
-const canDock = computed(() => $q.screen.width >= 1420)
+const canDock = computed(() => $q.screen.width >= stableWorkspaceWidth + rightDockWidth + 24)
 const rightDrawerOverlay = computed(() => !canDock.value || store.rightDrawerMode === 'overlay')
 const rightDrawerWidth = computed(() => {
   if ($q.screen.lt.sm) return $q.screen.width
-  if (!rightDrawerOverlay.value) return desktopDrawerWidth
-  if ($q.screen.lt.md) return Math.round($q.screen.width * 0.96)
-  return Math.min(1140, Math.round($q.screen.width * 0.78))
+  if (!rightDrawerOverlay.value) return rightDockWidth
+  if ($q.screen.lt.md) return Math.round($q.screen.width * 0.94)
+  // The slide-over theory view stays generous enough for the ladder and circle,
+  // but is about 75px narrower than the previous desktop overlay cap.
+  return Math.min(990, Math.round($q.screen.width * 0.68))
 })
 const leftEdgeTabStyle = computed(() => ({
   left: store.leftDrawerOpen ? `${leftDrawerWidth.value}px` : '0px'
@@ -195,16 +199,15 @@ const navigation = [
 .left-drawer-tools { flex: 1 1 auto; }
 .brand-mark {
   flex: 0 0 auto;
-  min-height: 92px;
   display: grid;
   place-items: center;
-  padding: 12px 24px 16px;
+  padding: 12px 22px 16px;
 }
 .brand-mark img {
   display: block;
-  width: min(112px, 58%);
-  max-height: 68px;
-  object-fit: contain;
+  width: 216px;
+  height: 80px;
+  max-width: 100%;
 }
 .active-nav { color: white; background: #4a4a4a; }
 .icon-nav-list { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 10px !important; gap: 4px; }

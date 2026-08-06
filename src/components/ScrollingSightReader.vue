@@ -77,8 +77,8 @@
           </div>
 
           <div class="srt-action-row">
-            <q-toggle v-model="store.srtShowLabels" color="grey-5" label="Labels" />
-            <q-toggle v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" color="grey-5" label="Loop" />
+            <ImageCheckbox v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
+            <ImageCheckbox v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" label="Loop" tooltip="Loop the manual staff sequence." />
             <q-btn
               flat
               :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
@@ -198,6 +198,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
 import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
+import ImageCheckbox from './ImageCheckbox.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
@@ -852,8 +853,9 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .srt-controls { display: grid; gap: 8px; padding: 5px 2px 8px; border: 0; border-radius: 0; background: transparent; }
 .srt-select-row { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; }
 .srt-slider-row { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)) auto; gap: 14px; align-items: center; padding-top: 3px; border-top: 0; }
-.srt-action-row { display: flex; gap: 12px; align-items: center; justify-content: flex-end; white-space: nowrap; }
-.srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native), .srt-controls :deep(.q-toggle__label) { font-size: 17px; }
+.srt-action-row { display: flex; gap: 14px; align-items: center; justify-content: flex-end; white-space: nowrap; }
+.srt-action-row :deep(.image-checkbox) { min-width: 98px; }
+.srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native) { font-size: 17px; }
 .gate-block, .swing-block, .zoom-control { display: grid; grid-template-columns: auto minmax(115px, 1fr); gap: 9px; align-items: center; color: #e0e0e0; font-size: 17px; white-space: nowrap; }
 .scroll-stage { overflow: hidden; border: 0; border-radius: 5px; background: #202020; }
 .scroll-svg { width: 100%; height: auto; display: block; touch-action: none; }
