@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
 import { keyboardPresetById } from '../music/keyboardPresets'
 import {
+  configureAudioEngine,
+  requestMidiOutputs,
+  setInstrumentProgram,
+  setMidiChannel,
+  setMidiOutput,
+  setSustain
+} from '../music/audio'
+import {
   FLAT_NAMES,
   MAJOR_KEYS,
   SHARP_NAMES,
@@ -57,6 +65,14 @@ export const useNoteMapStore = defineStore('noteMap', {
     showFretNumbers: true,
     fretboardZoom: 1,
     keyboardPreset: '88',
+    audioEngine: 'electric-piano',
+    audioEngineStatus: 'ready',
+    audioEngineError: '',
+    audioProgram: 4,
+    audioSustain: false,
+    midiOutputs: [],
+    midiOutputId: '',
+    midiChannel: 0,
     staffZoom: 1,
     pitchPanelOpen: true,
     visibleObjects: {
@@ -264,6 +280,69 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     setKeyboardPreset(id) {
       this.keyboardPreset = keyboardPresetById(id).id
+    },
+
+    async setAudioEngine(engine) {
+      this.audioEngine = engine
+      this.audioEngineStatus = 'loading'
+      this.audioEngineError = ''
+      try {
+        await configureAudioEngine(engine, {
+          program: this.audioProgram,
+          channel: this.midiChannel,
+          outputId: this.midiOutputId
+        })
+        if (engine === 'web-midi') await this.refreshMidiOutputs()
+        this.audioEngineStatus = 'ready'
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        this.audioEngine = 'electric-piano'
+        await configureAudioEngine('electric-piano', { program: this.audioProgram })
+        this.audioEngineStatus = 'error'
+        this.audioEngineError = `${message}. Using the internal electric piano instead.`
+      }
+    },
+
+    async setAudioProgram(program) {
+      this.audioProgram = Math.max(0, Math.min(127, Math.round(Number(program) || 0)))
+      this.audioEngineStatus = this.audioEngine === 'soundfont' ? 'loading' : this.audioEngineStatus
+      try {
+        await setInstrumentProgram(this.audioProgram)
+        if (this.audioEngine === 'soundfont') this.audioEngineStatus = 'ready'
+      } catch (error) {
+        this.audioEngineStatus = 'error'
+        this.audioEngineError = error instanceof Error ? error.message : String(error)
+      }
+    },
+
+    async refreshMidiOutputs() {
+      try {
+        this.midiOutputs = await requestMidiOutputs()
+        if (!this.midiOutputId && this.midiOutputs.length) {
+          this.midiOutputId = this.midiOutputs[0].value
+          setMidiOutput(this.midiOutputId)
+        }
+        if (this.audioEngine === 'web-midi') this.audioEngineStatus = 'ready'
+      } catch (error) {
+        this.midiOutputs = []
+        this.audioEngineStatus = 'error'
+        this.audioEngineError = error instanceof Error ? error.message : String(error)
+      }
+    },
+
+    setMidiOutputId(id) {
+      this.midiOutputId = String(id || '')
+      setMidiOutput(this.midiOutputId)
+    },
+
+    setMidiChannelValue(channel) {
+      this.midiChannel = Math.max(0, Math.min(15, Math.round(Number(channel) || 0)))
+      setMidiChannel(this.midiChannel)
+    },
+
+    setAudioSustain(value) {
+      this.audioSustain = Boolean(value)
+      setSustain(this.audioSustain)
     },
 
     setRightDrawerMode(mode) {

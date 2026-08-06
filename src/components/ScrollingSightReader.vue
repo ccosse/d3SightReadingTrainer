@@ -20,6 +20,45 @@
       <div v-show="store.srtConfigOpen" class="srt-controls">
         <div class="srt-select-row">
           <q-select dense dark outlined emit-value map-options label="Source" :model-value="store.srtSource" :options="options.source" @update:model-value="setOption('srtSource', $event)" />
+          <q-select
+            dense dark outlined emit-value map-options label="Sound"
+            :model-value="store.audioEngine" :options="AUDIO_ENGINE_OPTIONS"
+            @update:model-value="store.setAudioEngine"
+          >
+            <q-tooltip v-if="store.tooltipsEnabled">Choose the internal electric piano, a sample-based SoundFont instrument, the offline fallback synth, or a connected MIDI device.</q-tooltip>
+          </q-select>
+          <q-select
+            v-if="['soundfont', 'web-midi'].includes(store.audioEngine)"
+            dense dark outlined emit-value map-options label="Instrument"
+            :model-value="store.audioProgram" :options="GM_PROGRAM_OPTIONS"
+            @update:model-value="store.setAudioProgram"
+          />
+          <q-select
+            v-if="store.audioEngine === 'web-midi'"
+            dense dark outlined emit-value map-options label="MIDI out"
+            :model-value="store.midiOutputId" :options="store.midiOutputs"
+            :display-value="store.midiOutputs.find((item) => item.value === store.midiOutputId)?.label || 'Choose output'"
+            @popup-show="store.refreshMidiOutputs"
+            @update:model-value="store.setMidiOutputId"
+          />
+          <q-select
+            v-if="store.audioEngine === 'web-midi'"
+            dense dark outlined emit-value map-options label="Channel"
+            :model-value="store.midiChannel" :options="MIDI_CHANNEL_OPTIONS"
+            @update:model-value="store.setMidiChannelValue"
+          />
+          <q-btn
+            v-if="store.audioEngine === 'web-midi'"
+            flat round dense icon="refresh" color="grey-4"
+            aria-label="Refresh MIDI outputs"
+            @click="store.refreshMidiOutputs"
+          >
+            <q-tooltip v-if="store.tooltipsEnabled">Request MIDI permission and refresh connected outputs.</q-tooltip>
+          </q-btn>
+          <q-spinner v-if="store.audioEngineStatus === 'loading'" color="grey-4" size="20px" />
+          <q-icon v-else-if="store.audioEngineStatus === 'error'" name="warning" color="amber-5" size="20px">
+            <q-tooltip>{{ store.audioEngineError }}</q-tooltip>
+          </q-icon>
           <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
 
           <q-select
@@ -101,6 +140,7 @@
           </q-knob>
 
           <div class="srt-action-row">
+            <ImageCheckbox :model-value="store.audioSustain" label="Pedal" tooltip="Add a longer release tail internally, or send MIDI sustain pedal CC64 to the selected output." @update:model-value="store.setAudioSustain" />
             <ImageCheckbox v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
             <ImageCheckbox v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" label="Loop" tooltip="Loop the manual staff sequence." />
             <q-btn
@@ -241,7 +281,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
+import { AUDIO_ENGINE_OPTIONS, GM_PROGRAM_OPTIONS, MIDI_CHANNEL_OPTIONS, ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
 import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import ImageCheckbox from './ImageCheckbox.vue'
