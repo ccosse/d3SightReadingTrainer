@@ -96,3 +96,16 @@ body { font-size: 18px; }
 /* Neutral Quasar field focus treatment for the cleanup pass. */
 .q-field--focused .q-field__label { color: #e0e0e0 !important; }
 .q-field--outlined.q-field--focused .q-field__control::after { border-color: #bdbdbd !important; }
+
+/* Quiet control chrome: one border per major section, not around every field. */
+.music-workspace .q-field--outlined .q-field__control::before,
+.music-workspace .q-field--outlined.q-field--focused .q-field__control::after {
+  border-color: transparent !important;
+}
+.music-workspace .q-field--outlined .q-field__control {
+  background: #292929;
+  border-radius: 5px;
+}
+.music-workspace .q-field--outlined:hover .q-field__control {
+  background: #303030;
+}

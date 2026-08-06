@@ -48,10 +48,10 @@ function accidentalText(signature) {
   grid-template-columns: minmax(145px, 1.5fr) minmax(82px, 0.78fr) minmax(94px, 0.9fr);
   align-items: stretch;
   min-height: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 0;
   background: transparent;
 }
-.ladder-row:last-child { border-bottom: 0; }
+.ladder-row:nth-child(even) { background: rgba(255,255,255,.022); }
 .ladder-row:hover { background: rgba(255, 255, 255, 0.06); }
 .ladder-row.active { background: rgba(44, 143, 207, 0.19); box-shadow: inset 3px 0 0 var(--q-primary); }
 .ladder-row button {

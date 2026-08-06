@@ -115,9 +115,9 @@ async function audition() {
   grid-template-columns: minmax(280px, 1fr) minmax(210px, auto);
   gap: 9px;
   align-items: center;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255,255,255,.12);
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
 }
 .chord-select { min-width: 0; }
 .chord-select :deep(.q-field__native),

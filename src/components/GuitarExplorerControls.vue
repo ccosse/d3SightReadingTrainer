@@ -63,7 +63,7 @@ const signedHalfSteps = computed(() => store.halfStepsFromC > 0 ? `+${store.half
 </script>
 
 <style scoped>
-.controls { display: grid; gap: 12px; border-top: 1px solid rgba(255, 255, 255, 0.13); padding-top: 12px; }
+.controls { display: grid; gap: 10px; border-top: 0; padding-top: 4px; }
 .toggle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
 .slider-block { padding: 0 4px; }
 .control-heading, .slider-value { color: #e0e0e0; font-size: 18px; }

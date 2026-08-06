@@ -54,11 +54,11 @@ function togglePlayPause() {
   grid-template-columns: auto minmax(220px, 1fr);
   align-items: center;
   gap: 16px;
-  min-height: 58px;
-  border: 1px solid #565656;
-  border-radius: 9px;
-  background: rgba(35, 35, 35, 0.9);
-  padding: 7px 10px;
+  min-height: 52px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 2px;
 }
 .tape-controls { display: flex; gap: 4px; }
 .tape-controls :deep(.q-btn) { min-width: 46px; min-height: 44px; }

@@ -14,26 +14,32 @@
       style="background: #303030; color: #fff;"
     >
       <q-scroll-area class="fit dark-drawer-scroll">
-        <q-list padding dark class="icon-nav-list">
-          <q-item
-            v-for="item in navigation"
-            :key="item.name"
-            clickable
-            v-ripple
-            :active="store.activeTab === item.name"
-            active-class="active-nav"
-            :aria-label="item.label"
-            @click="store.activeTab = item.name"
-          >
-            <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">{{ item.tooltip }}</q-tooltip>
-            <q-item-section class="nav-icon-section"><q-icon :name="item.icon" size="25px" /></q-item-section>
-          </q-item>
-        </q-list>
+        <div class="left-drawer-column">
+          <div class="left-drawer-tools">
+            <q-list padding dark class="icon-nav-list">
+              <q-item
+                v-for="item in navigation"
+                :key="item.name"
+                clickable
+                v-ripple
+                :active="store.activeTab === item.name"
+                active-class="active-nav"
+                :aria-label="item.label"
+                @click="store.activeTab = item.name"
+              >
+                <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">{{ item.tooltip }}</q-tooltip>
+                <q-item-section class="nav-icon-section"><q-icon :name="item.icon" size="25px" /></q-item-section>
+              </q-item>
+            </q-list>
 
-        <template v-if="store.activeTab === 'note-map'">
-          <q-separator dark />
-          <ComponentOrderList />
-        </template>
+            <ComponentOrderList v-if="store.activeTab === 'note-map'" />
+          </div>
+
+          <div class="brand-mark" aria-label="Asymptopia">
+            <img src="../assets/asymptopia-mark.svg" alt="Asymptopia logo" />
+            <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">Asymptopia</q-tooltip>
+          </div>
+        </div>
       </q-scroll-area>
     </q-drawer>
 
@@ -153,18 +159,19 @@ import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
 const $q = useQuasar()
-const leftDrawerWidth = 86
+const desktopDrawerWidth = 300
+const leftDrawerWidth = computed(() => $q.screen.lt.sm ? Math.min(300, Math.round($q.screen.width * 0.88)) : desktopDrawerWidth)
 const showFifthsTools = computed(() => store.activeTab !== 'fifths')
 const canDock = computed(() => $q.screen.width >= 1420)
 const rightDrawerOverlay = computed(() => !canDock.value || store.rightDrawerMode === 'overlay')
 const rightDrawerWidth = computed(() => {
   if ($q.screen.lt.sm) return $q.screen.width
-  if (!rightDrawerOverlay.value) return Math.min(570, Math.round($q.screen.width * 0.34))
+  if (!rightDrawerOverlay.value) return desktopDrawerWidth
   if ($q.screen.lt.md) return Math.round($q.screen.width * 0.96)
   return Math.min(1140, Math.round($q.screen.width * 0.78))
 })
 const leftEdgeTabStyle = computed(() => ({
-  left: store.leftDrawerOpen ? `${leftDrawerWidth}px` : '0px'
+  left: store.leftDrawerOpen ? `${leftDrawerWidth.value}px` : '0px'
 }))
 const fifthsEdgeTabStyle = computed(() => ({
   right: store.rightDrawerOpen ? `${Math.max(0, rightDrawerWidth.value - 38)}px` : '0px'
@@ -180,17 +187,33 @@ const navigation = [
 
 <style scoped>
 .app-shell, .page-container { background: #333; color: white; }
-.app-header { background: #292929; border-bottom: 1px solid #4a4a4a; }
-.blank-header { height: 12px; }
+.app-header { background: #292929; border-bottom: 0; }
+.blank-header { height: 8px; }
 .dark-drawer { background: #303030 !important; color: white !important; }
 .dark-drawer-scroll { background: #303030; color: #fff; }
+.left-drawer-column { min-height: 100%; display: flex; flex-direction: column; }
+.left-drawer-tools { flex: 1 1 auto; }
+.brand-mark {
+  flex: 0 0 auto;
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  padding: 12px 24px 16px;
+}
+.brand-mark img {
+  display: block;
+  width: min(112px, 58%);
+  max-height: 68px;
+  object-fit: contain;
+}
 .active-nav { color: white; background: #4a4a4a; }
-.icon-nav-list :deep(.q-item) { min-height: 58px; padding: 0; justify-content: center; }
+.icon-nav-list { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 10px !important; gap: 4px; }
+.icon-nav-list :deep(.q-item) { min-height: 54px; padding: 0; justify-content: center; border-radius: 6px; }
 .nav-icon-section { min-width: 0 !important; align-items: center; justify-content: center; }
 .circle-overlay-body { position: relative; display: grid; gap: 10px; padding: 11px 15px 24px; min-height: 100%; }
 .expand-fifths { position: absolute; z-index: 6; top: 5px; right: 5px; background: rgba(28, 28, 28, 0.48); }
 .drawer-mode-toggle { position: absolute; z-index: 6; top: 5px; right: 45px; background: rgba(28, 28, 28, 0.48); }
-.fifths-overlay { background: rgba(18, 18, 18, 0.86) !important; color: white; box-shadow: -12px 0 36px rgba(0, 0, 0, 0.38); border-left-color: rgba(255, 255, 255, 0.16) !important; }
+.fifths-overlay { background: rgba(18, 18, 18, 0.86) !important; color: white; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.28); border-left-color: rgba(255, 255, 255, 0.10) !important; }
 .left-edge-tab,
 .fifths-edge-tab {
   position: fixed;

@@ -81,28 +81,25 @@ function dropOn(targetId) {
 </script>
 
 <style scoped>
-.object-order { color: #fff; padding: 7px 6px 12px; }
-.reset-row { display: flex; justify-content: center; padding-bottom: 6px; }
-.order-list { display: grid; gap: 7px; }
+.object-order { color: #fff; padding: 5px 10px 12px; }
+.reset-row { display: flex; justify-content: flex-end; padding: 2px 2px 5px; }
+.order-list { display: grid; gap: 2px; }
 .order-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 30px 30px;
+  grid-template-columns: 34px 1fr auto 34px 34px;
   align-items: center;
-  justify-items: center;
-  min-height: 66px;
-  border: 1px solid #4d4d4d;
-  border-radius: 7px;
-  background: #292929;
-  transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  transition: background 120ms ease, opacity 120ms ease;
 }
-.order-row.drop-target { border-color: #bdbdbd; background: #383838; }
+.order-row:hover { background: rgba(255,255,255,.055); }
+.order-row.drop-target { background: rgba(255,255,255,.12); }
 .order-row.dragging { opacity: 0.48; }
 .drag-handle { display: grid; place-items: center; width: 100%; height: 100%; color: #aeb6bc; cursor: grab; user-select: none; }
 .drag-handle:active { cursor: grabbing; }
-.object-icon-wrap { display: grid; place-items: center; width: 100%; height: 100%; }
+.object-icon-wrap { display: grid; place-items: start; width: 100%; padding-left: 7px; }
 .object-icon { color: #e1e1e1; }
 .order-row :deep(.q-toggle) { justify-self: center; }
-.order-row :deep(.q-btn:nth-of-type(1)) { grid-column: 1; grid-row: 2; }
-.order-row :deep(.q-btn:nth-of-type(2)) { grid-column: 3; grid-row: 2; }
 </style>

@@ -124,10 +124,10 @@ function startPitchDrag(event, pitchClass) {
 
 <style scoped>
 .selector {
-  border: 1px solid #555;
-  border-radius: 12px;
-  background: #2b2b2b;
-  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 3px;
 }
 
 .pitch-grid {

@@ -104,18 +104,18 @@ function dropOn(targetId) {
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
-  padding: 10px 14px 28px;
+  padding: 8px 10px 24px;
   background: #333;
   color: white;
 }
 .workspace-panels { background: transparent; color: white; }
-.instrument-stack { display: grid; gap: 12px; }
+.instrument-stack { display: grid; gap: 8px; }
 .component-shell {
   position: relative;
-  border: 1px solid #505050;
-  border-radius: 10px;
+  border: 1px solid #494949;
+  border-radius: 8px;
   background: #2b2b2b;
-  padding: 7px;
+  padding: 5px;
   transition: border-color 120ms ease, opacity 120ms ease, background 120ms ease;
 }
 .component-shell.drop-target { border-color: #77c4ff; background: #30383d; }
@@ -140,7 +140,7 @@ function dropOn(targetId) {
 .component-shell:hover .component-drag-handle,
 .component-drag-handle:focus { opacity: 0.95; background: rgba(20, 20, 20, 0.86); }
 .component-drag-handle:active { cursor: grabbing; }
-.hud { min-height: 44px; font-size: 18px; border-radius: 7px; background: #292929; border: 1px solid #4e4e4e; gap: 8px; }
+.hud { min-height: 34px; font-size: 17px; background: transparent; border: 0; gap: 8px; color: #ddd; }
 .fifths-study { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; }
 
 @media (max-width: 880px) {

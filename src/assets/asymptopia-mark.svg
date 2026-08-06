@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 250" role="img" aria-label="Asymptopia mark">
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e53528"/>
+      <stop offset="0.48" stop-color="#c91f16"/>
+      <stop offset="1" stop-color="#9f120d"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".42"/>
+      <stop offset=".34" stop-color="#fff" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-15%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <g filter="url(#soft)">
+    <path fill="url(#red)" d="M37 14c12-5 25 2 27 16l13 86c2 13-4 24-16 29l-8 3 8 54c2 15-8 31-22 34-13 3-24-7-26-22L1 154c-2-14 5-26 18-31l8-3-12-78C13 29 23 18 37 14Z"/>
+    <path fill="url(#red)" d="M63 112c6-32 21-63 43-82 16-14 36-22 51-14 12 6 17 20 14 38-3 19-14 38-25 55-9 14-18 27-23 41-5 13-7 26-4 42l6 30c3 13-5 25-17 28-13 3-24-5-27-18l-8-38c-4-21-2-41 5-60 7-18 18-34 29-50 8-12 15-24 17-33 1-4 0-6-1-7-2-1-6 1-10 4-13 11-25 32-30 52l-6 24c-3 13-15 21-28 18-13-3-21-15-18-28Z"/>
+    <path fill="url(#red)" d="M91 105c13-10 27-17 42-18 12-1 25 3 31 14 6 10 4 23-4 31-8 8-20 11-31 9-11-1-22-6-31-12-8-6-11-16-7-24Z"/>
+    <path fill="url(#shine)" d="M35 20c8-2 15 2 16 11l11 72c1 7-1 12-6 16L43 32c-1-6-4-10-8-12Zm78 15c17-13 35-18 44-10 5 4 7 11 6 19-8-10-18-10-31-3-12 6-24 18-34 31 4-15 9-27 15-37Z"/>
+  </g>
+</svg>

@@ -41,13 +41,13 @@ const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey, store
 
 <style scoped>
 .key-summary {
-  border: 1px solid #555;
-  border-radius: 10px;
-  background: #2b2b2b;
-  padding: 13px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 4px;
 }
 .key-summary.compact {
-  background: rgba(43, 43, 43, 0.72);
-  padding: 10px;
+  background: transparent;
+  padding: 7px 3px;
 }
 </style>
