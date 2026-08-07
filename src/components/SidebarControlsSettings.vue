@@ -1,42 +1,40 @@
 <template>
   <div class="sidebar-settings controls-settings" aria-label="Note and chord controls">
-    <q-btn-toggle
-      class="sidebar-toggle"
-      :model-value="store.selectionMode"
-      spread
-      no-caps
-      dense
-      unelevated
-      toggle-color="positive"
-      toggle-text-color="black"
-      color="grey-9"
-      text-color="white"
-      :options="[
-        { label: 'Single', value: 'single' },
-        { label: 'Multi', value: 'multi' }
-      ]"
-      @update:model-value="store.setSelectionMode"
-    >
-      <q-tooltip v-if="store.tooltipsEnabled">Single selects one pitch class; Multi builds note sets and chords.</q-tooltip>
-    </q-btn-toggle>
+    <div class="choice-row" role="radiogroup" aria-label="Note selection mode">
+      <div class="choice-caption">Selection</div>
+      <ImageCheckbox
+        class="choice-option"
+        :model-value="store.selectionMode === 'single'"
+        label="Single"
+        tooltip="Select one pitch class at a time."
+        @update:model-value="setSelectionMode('single', $event)"
+      />
+      <ImageCheckbox
+        class="choice-option"
+        :model-value="store.selectionMode === 'multi'"
+        label="Multi"
+        tooltip="Keep multiple pitch classes selected for note sets and chords."
+        @update:model-value="setSelectionMode('multi', $event)"
+      />
+    </div>
 
-    <q-btn-toggle
-      v-model="store.accidentalMode"
-      class="sidebar-toggle accidental-toggle"
-      spread
-      dense
-      unelevated
-      toggle-color="positive"
-      toggle-text-color="black"
-      color="grey-9"
-      text-color="white"
-      :options="[
-        { label: '♭', value: 'flat' },
-        { label: '♯', value: 'sharp' }
-      ]"
-    >
-      <q-tooltip v-if="store.tooltipsEnabled">Choose flat or sharp spelling throughout the linked views.</q-tooltip>
-    </q-btn-toggle>
+    <div class="choice-row" role="radiogroup" aria-label="Accidental spelling">
+      <div class="choice-caption">Spelling</div>
+      <ImageCheckbox
+        class="choice-option"
+        :model-value="store.accidentalMode === 'flat'"
+        label="♭ Flat"
+        tooltip="Prefer flat spellings in linked views where either enharmonic spelling is possible."
+        @update:model-value="setAccidentalMode('flat', $event)"
+      />
+      <ImageCheckbox
+        class="choice-option"
+        :model-value="store.accidentalMode === 'sharp'"
+        label="♯ Sharp"
+        tooltip="Prefer sharp spellings in linked views where either enharmonic spelling is possible."
+        @update:model-value="setAccidentalMode('sharp', $event)"
+      />
+    </div>
 
     <ChordPalette compact />
   </div>
@@ -44,14 +42,62 @@
 
 <script setup>
 import ChordPalette from './ChordPalette.vue'
+import ImageCheckbox from './ImageCheckbox.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
+
+function setSelectionMode(mode, checked) {
+  // Radio behavior: one choice is always active. Clicking the active choice leaves it active.
+  if (checked || store.selectionMode !== mode) store.setSelectionMode(mode)
+}
+
+function setAccidentalMode(mode, checked) {
+  // Radio behavior: one spelling preference is always active.
+  if (checked || store.accidentalMode !== mode) store.accidentalMode = mode
+}
 </script>
 
 <style scoped>
-.sidebar-settings { display: grid; gap: 8px; }
-.sidebar-toggle { width: 100%; }
-.sidebar-toggle :deep(.q-btn) { min-height: 38px; font-size: 14px; }
-.accidental-toggle :deep(.q-btn) { font-size: 20px; }
+.sidebar-settings {
+  display: grid;
+  gap: 8px;
+}
+
+.choice-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  min-height: 30px;
+}
+
+.choice-caption {
+  color: #d8d8d8;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.choice-option {
+  min-width: 0;
+}
+
+.choice-option :deep(.image-checkbox) {
+  grid-template-columns: minmax(0, 1fr) 22px;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.choice-option :deep(.image-checkbox-label) {
+  text-align: right;
+  font-size: 13px;
+}
+
+@media (max-width: 420px) {
+  .choice-row {
+    grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 7px;
+  }
+}
 </style>
