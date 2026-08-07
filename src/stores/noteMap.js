@@ -118,6 +118,17 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtGate: 0.92,
     srtSwing: 0,
     srtChordSize: 'seventh',
+    srtChordSizes: ['triad', 'seventh'],
+    // Independent note-group permissions for accompaniment hands.
+    // Bass staff maps to the left hand; treble staff maps to the right hand.
+    srtLeftHandSizes: ['single'],
+    srtRightHandSizes: ['triad', 'seventh'],
+    // Default hand placement: left hand in the low C1-C2 octave,
+    // right hand around middle C in the C4-C5 octave.
+    srtTrebleRegions: ['mid'],
+    srtBassRegions: ['low'],
+    srtTrebleAudio: true,
+    srtBassAudio: true,
     srtExerciseMode: 'mode-1',
     srtBassPattern: 'walk',
     srtProgression: 'auto',
@@ -582,6 +593,42 @@ export const useNoteMapStore = defineStore('noteMap', {
       if (!allowed.has(name)) return
       this[name] = value
       this.srtGenerationNonce += 1
+    },
+
+    setSrtChordSizes(values) {
+      // Legacy/global setter retained for compatibility with older saved UI state.
+      const allowed = new Set(['single', 'dyad', 'triad', 'seventh', 'ninth', 'thirteenth'])
+      const next = [...new Set((Array.isArray(values) ? values : []).filter((value) => allowed.has(value)))]
+      if (!next.length) return
+      this.srtChordSizes = next
+      this.srtChordSize = next[next.length - 1]
+      this.srtGenerationNonce += 1
+    },
+
+    setSrtHandSizes(hand, values) {
+      const allowed = new Set(['single', 'dyad', 'triad', 'seventh', 'ninth', 'thirteenth'])
+      const next = [...new Set((Array.isArray(values) ? values : []).filter((value) => allowed.has(value)))]
+      if (!next.length) return
+      if (hand === 'left' || hand === 'bass') this.srtLeftHandSizes = next
+      else if (hand === 'right' || hand === 'treble') this.srtRightHandSizes = next
+      else return
+      this.srtGenerationNonce += 1
+    },
+
+    setSrtRegion(clef, region, enabled) {
+      const property = clef === 'bass' ? 'srtBassRegions' : 'srtTrebleRegions'
+      const allowed = new Set(['low', 'mid', 'high'])
+      if (!allowed.has(region)) return
+      const next = new Set(this[property])
+      if (enabled) next.add(region)
+      else next.delete(region)
+      this[property] = ['low', 'mid', 'high'].filter((item) => next.has(item))
+      this.srtGenerationNonce += 1
+    },
+
+    setSrtStaffAudio(clef, enabled) {
+      if (clef === 'bass') this.srtBassAudio = Boolean(enabled)
+      else this.srtTrebleAudio = Boolean(enabled)
     },
 
     setSrtGate(value) {

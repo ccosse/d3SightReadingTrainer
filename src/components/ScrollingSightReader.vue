@@ -49,7 +49,7 @@
             <text v-if="event.isRest" :x="event.x" :y="event.restY" text-anchor="middle" class="rest-symbol">{{ event.restGlyph }}</text>
             <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
             <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
-              <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
+              <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
               <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="note-accidental">{{ note.accidental }}</text>
               <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="scroll-head" />
               <text v-if="store.srtShowLabels" :x="note.labelX" :y="note.labelY" :text-anchor="note.labelAnchor" class="scroll-label">{{ note.label }}</text>
@@ -61,7 +61,7 @@
           <rect v-if="dropPreview.width" :x="dropPreview.x" y="45" :width="dropPreview.width" height="269" class="clip-drop-span" />
           <line :x1="dropPreview.x" :x2="dropPreview.x" y1="45" y2="314" class="drop-guide" />
           <g v-for="note in dropPreview.notes" :key="`preview-${note.midi}`">
-            <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 16" :x2="note.x + 16" :y1="ledgerY" :y2="ledgerY" class="preview-ledger" />
+            <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="preview-ledger" />
             <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="preview-accidental">{{ note.accidental }}</text>
             <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="preview-head" />
           </g>
@@ -501,11 +501,16 @@ function generatedEvent() {
     rangeName: store.srtRange,
     style: store.srtStyle,
     chordSize: store.srtChordSize,
+    chordSizes: store.srtChordSizes,
+    leftHandSizes: store.srtLeftHandSizes,
+    rightHandSizes: store.srtRightHandSizes,
     bassPattern: store.srtBassPattern,
     exerciseMode: store.srtExerciseMode,
     progression: store.srtProgression,
     riffFlavor: store.srtRiffFlavor,
-    dynamics: store.srtDynamics
+    dynamics: store.srtDynamics,
+    trebleRegions: store.srtTrebleRegions,
+    bassRegions: store.srtBassRegions
   })
   const event = {
     ...generated,
@@ -654,15 +659,20 @@ function tick(now) {
     if (playBeat > previousBeat && playBeat <= currentBeat.value + 0.025) {
       playedIds.add(event.id)
       if (event.isRest || event.silent || !event.midis?.length) continue
+      const audibleMidis = event.midis.filter((midi) => {
+        const treble = noteY(midi) < 181
+        return treble ? store.srtTrebleAudio : store.srtBassAudio
+      })
+      if (!audibleMidis.length) continue
       // Gate/hold is deliberately evaluated at the instant of playback rather
       // than baked into generated events. The lower floor preserves short notes
       // instead of collapsing all low Hold settings into the same 240 ms blip.
       const holdSeconds = Math.max(0.075, event.duration * store.srtGate * beatMs / 1000)
       const releaseSeconds = Math.min(0.22, Math.max(0.07, holdSeconds * 0.16))
-      const token = store.beginPlaying(event.midis, 'srt')
+      const token = store.beginPlaying(audibleMidis, 'srt')
       const group = { token, voices: [], cancelled: false }
       activeVoiceGroups.push(group)
-      startChord(event.midis, event.velocity || (event.midis.length > 1 ? 0.095 : 0.16)).then((voices) => {
+      startChord(audibleMidis, event.velocity || (audibleMidis.length > 1 ? 0.095 : 0.16)).then((voices) => {
         group.voices = voices.filter(Boolean)
         if (group.cancelled) { stopChordVoices(group.voices, 0.05); return }
         const timer = window.setTimeout(() => {

@@ -76,7 +76,24 @@
       <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
       <q-select v-if="store.srtStyle === 'free'" dense dark outlined emit-value map-options label="Material" :model-value="store.srtMaterial" :options="options.material" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMaterial', $event)" />
       <q-select v-if="store.srtStyle === 'free'" dense dark outlined emit-value map-options label="Logic" :model-value="store.srtMotion" :options="options.motion" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMotion', $event)" />
-      <q-select v-if="accompanimentStyle" dense dark outlined emit-value map-options label="Chords" :model-value="store.srtChordSize" :options="options.chordSize" @update:model-value="setOption('srtChordSize', $event)" />
+      <q-select v-if="accompanimentStyle" dense dark outlined multiple emit-value map-options label="Left hand" :model-value="store.srtLeftHandSizes" :options="options.chordSize" :display-value="leftHandSizeSummary" @update:model-value="store.setSrtHandSizes('left', $event)" >
+        <template #option="scope">
+          <q-item v-bind="scope.itemProps" dense>
+            <q-item-section>{{ scope.opt.label }}</q-item-section>
+            <q-item-section side><q-icon :name="scope.selected ? 'check_box' : 'check_box_outline_blank'" :color="scope.selected ? 'positive' : 'grey-6'" /></q-item-section>
+          </q-item>
+        </template>
+        <q-tooltip v-if="store.tooltipsEnabled">Allowed bass/left-hand group sizes. The generator chooses among the checked items.</q-tooltip>
+      </q-select>
+      <q-select v-if="accompanimentStyle" dense dark outlined multiple emit-value map-options label="Right hand" :model-value="store.srtRightHandSizes" :options="options.chordSize" :display-value="rightHandSizeSummary" @update:model-value="store.setSrtHandSizes('right', $event)" >
+        <template #option="scope">
+          <q-item v-bind="scope.itemProps" dense>
+            <q-item-section>{{ scope.opt.label }}</q-item-section>
+            <q-item-section side><q-icon :name="scope.selected ? 'check_box' : 'check_box_outline_blank'" :color="scope.selected ? 'positive' : 'grey-6'" /></q-item-section>
+          </q-item>
+        </template>
+        <q-tooltip v-if="store.tooltipsEnabled">Allowed treble/right-hand group sizes. The generator chooses among the checked items independently of the left hand.</q-tooltip>
+      </q-select>
       <q-select v-if="store.srtStyle === 'walking-chords'" dense dark outlined emit-value map-options label="Bass" :model-value="store.srtBassPattern" :options="options.bassPattern" @update:model-value="setOption('srtBassPattern', $event)" />
       <q-select v-if="store.srtStyle === 'strato'" dense dark outlined emit-value map-options label="Exercise" :model-value="store.srtExerciseMode" :options="options.exerciseMode" @update:model-value="setOption('srtExerciseMode', $event)" />
       <div v-if="store.srtStyle === 'strato'" class="strato-guide"><q-icon name="sports_score" size="16px" /><span>{{ exerciseGuide }}</span></div>
@@ -88,10 +105,30 @@
       <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
     </div>
 
+    <div v-if="store.srtSource === 'generated'" class="region-controls">
+      <div class="region-row">
+        <div class="region-caption">Treble</div>
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('treble', 'low')" label="Low" tooltip="Allow generated treble notes from C3 through C4." @update:model-value="setRegion('treble', 'low', $event)" />
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('treble', 'mid')" label="Mid" tooltip="Allow generated treble notes from middle C (C4) through C5." @update:model-value="setRegion('treble', 'mid', $event)" />
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('treble', 'high')" label="High" tooltip="Allow generated treble notes from C5 through C6." @update:model-value="setRegion('treble', 'high', $event)" />
+      </div>
+      <div class="region-row">
+        <div class="region-caption">Bass</div>
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('bass', 'low')" label="Low" tooltip="Allow generated bass notes from C1 through C2." @update:model-value="setRegion('bass', 'low', $event)" />
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('bass', 'mid')" label="Mid" tooltip="Allow generated bass notes from C2 through C3." @update:model-value="setRegion('bass', 'mid', $event)" />
+        <ImageCheckbox class="compact-toggle" :model-value="regionEnabled('bass', 'high')" label="High" tooltip="Allow generated bass notes from C3 through middle C (C4)." @update:model-value="setRegion('bass', 'high', $event)" />
+      </div>
+    </div>
+
+    <div class="staff-audio-grid">
+      <ImageCheckbox class="compact-toggle" :model-value="store.srtTrebleAudio" label="Treble audio" tooltip="Mute or unmute treble-staff playback without changing the notation." @update:model-value="store.setSrtStaffAudio('treble', $event)" />
+      <ImageCheckbox class="compact-toggle" :model-value="store.srtBassAudio" label="Bass audio" tooltip="Mute or unmute bass-staff playback without changing the notation." @update:model-value="store.setSrtStaffAudio('bass', $event)" />
+    </div>
+
     <div class="toggle-list">
-      <ImageCheckbox :model-value="store.audioSustain" label="Pedal" tooltip="Add a longer release tail internally, or send MIDI sustain CC64 to the selected output." @update:model-value="store.setAudioSustain" />
-      <ImageCheckbox v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
-      <ImageCheckbox v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" label="Loop" tooltip="Loop the manual staff sequence." />
+      <ImageCheckbox class="compact-toggle" :model-value="store.audioSustain" label="Pedal" tooltip="Add a longer release tail internally, or send MIDI sustain CC64 to the selected output." @update:model-value="store.setAudioSustain" />
+      <ImageCheckbox class="compact-toggle" v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
+      <ImageCheckbox class="compact-toggle" v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" label="Loop" tooltip="Loop the manual staff sequence." />
     </div>
 
     <div class="staff-action-row">
@@ -149,12 +186,23 @@ const renameClipId = ref(null)
 const options = SIGHT_READING_OPTIONS
 const accompanimentStyle = computed(() => ['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle))
 const visibleBars = computed(() => Math.max(1, Math.min(6, Math.round(store.staffVisibleBeats / 4))))
+const handSizeNames = { single: '1', dyad: '2', triad: '3', seventh: '7', ninth: '9', thirteenth: '13' }
+const leftHandSizeSummary = computed(() => `LH · ${store.srtLeftHandSizes.map((value) => handSizeNames[value] || value).join(', ')}`)
+const rightHandSizeSummary = computed(() => `RH · ${store.srtRightHandSizes.map((value) => handSizeNames[value] || value).join(', ')}`)
 const exerciseGuide = computed(() => ({
   'mode-1': 'Locate each random target.',
   'mode-2': 'Follow adjacent scale motion.',
   'mode-3': 'Identify each interval pair.',
   'mode-4': 'Identify each chord-tone set.'
 }[store.srtExerciseMode] || 'Play each target at the scanline.'))
+
+function regionEnabled(clef, region) {
+  return (clef === 'bass' ? store.srtBassRegions : store.srtTrebleRegions).includes(region)
+}
+
+function setRegion(clef, region, enabled) {
+  store.setSrtRegion(clef, region, enabled)
+}
 
 function setOption(name, value) {
   if (name === 'srtStyle' && value === 'strato') {
@@ -215,9 +263,27 @@ function resetOrReseed() {
 .select-list { display: grid; gap: 5px; }
 .select-list :deep(.q-field__control) { min-height: 40px; background: #292929; }
 .select-list :deep(.q-field__label), .select-list :deep(.q-field__native), .select-list :deep(.q-field__input) { font-size: 14px; }
-.toggle-list { display: grid; gap: 2px; }
-.toggle-list :deep(.image-checkbox) { min-height: 25px; }
-.toggle-list :deep(.image-checkbox-label) { font-size: 14px; }
+.region-controls { display: grid; gap: 5px; padding: 2px 0; }
+.region-row { display: grid; grid-template-columns: 56px repeat(3, minmax(0, 1fr)); align-items: center; gap: 5px; }
+.region-caption { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; text-align: right; }
+.region-row :deep(.image-checkbox.compact-toggle),
+.staff-audio-grid :deep(.image-checkbox.compact-toggle),
+.toggle-list :deep(.image-checkbox.compact-toggle) {
+  width: max-content;
+  min-height: 23px;
+  grid-template-columns: auto 18px;
+  gap: 5px;
+  justify-self: center;
+}
+.region-row :deep(.checkbox-image),
+.staff-audio-grid :deep(.checkbox-image),
+.toggle-list :deep(.checkbox-image) { width: 18px; height: 18px; }
+.region-row :deep(.image-checkbox-label) { font-size: 12px; }
+.staff-audio-grid { display: grid; grid-template-columns: 1fr; justify-items: center; align-items: center; gap: 3px; padding-top: 1px; }
+.staff-audio-grid :deep(.image-checkbox.compact-toggle) { min-width: 132px; justify-self: center; }
+.staff-audio-grid :deep(.image-checkbox-label) { font-size: 13px; }
+.toggle-list { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3px 18px; }
+.toggle-list :deep(.image-checkbox-label) { font-size: 13px; }
 .strato-guide { display: flex; align-items: flex-start; gap: 6px; color: #d6d6d6; font-size: 13px; line-height: 1.3; }
 .staff-action-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
 .clip-library { display: grid; gap: 4px; padding-top: 3px; }

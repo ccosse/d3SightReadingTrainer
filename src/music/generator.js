@@ -19,9 +19,21 @@ const PROGRESSIONS = {
 }
 
 const RANGE_PRESETS = {
-  comfortable: { treble: [60, 79], bass: [40, 59] },
-  wide: { treble: [55, 86], bass: [33, 64] },
-  ledgers: { treble: [52, 91], bass: [28, 67] }
+  // Keep the useful global presets, but let the hand-region controls define
+  // musically obvious octave bands. Comfortable now includes the low bass
+  // octave and a right-hand range centered around middle C.
+  comfortable: { treble: [48, 76], bass: [24, 52] },
+  wide: { treble: [45, 84], bass: [24, 60] },
+  ledgers: { treble: [40, 91], bass: [21, 67] }
+}
+
+// Hand regions are intentionally simple octave landmarks:
+// bass Low = C1-C2, Mid = C2-C3, High = C3-C4
+// treble Low = C3-C4, Mid = C4-C5, High = C5-C6.
+// Adjacent enabled regions merge into one continuous range.
+const STAFF_REGIONS = {
+  treble: { low: [48, 60], mid: [60, 72], high: [72, 84] },
+  bass: { low: [24, 36], mid: [36, 48], high: [48, 60] }
 }
 
 const MATERIAL_WEIGHTS = [
@@ -97,6 +109,8 @@ function chordPitchClasses(key, degree, size = 3) {
 }
 
 function chordToneCount(chordSize) {
+  if (chordSize === 'single') return 1
+  if (chordSize === 'dyad') return 2
   if (chordSize === 'triad') return 3
   if (chordSize === 'ninth') return 5
   if (chordSize === 'thirteenth') return 6
@@ -150,10 +164,12 @@ export const SIGHT_READING_OPTIONS = Object.freeze({
     { label: 'd3Strato exercises', value: 'strato' }
   ],
   chordSize: [
-    { label: 'Triads', value: 'triad' },
-    { label: '7th chords', value: 'seventh' },
-    { label: '9th chords', value: 'ninth' },
-    { label: '13th chords', value: 'thirteenth' }
+    { label: 'Single note', value: 'single' },
+    { label: 'Dyad', value: 'dyad' },
+    { label: 'Triad', value: 'triad' },
+    { label: '7th chord', value: 'seventh' },
+    { label: '9th chord', value: 'ninth' },
+    { label: '13th chord', value: 'thirteenth' }
   ],
   bassPattern: [
     { label: 'Walking', value: 'walk' },
@@ -228,8 +244,10 @@ export class SightReadingGenerator {
     this.eventIndex = 0
     this.harmonyDegree = 0
     this.lastBar = -1
-    this.lastMidi = { treble: 67, bass: 48 }
-    this.lastChordCenter = { treble: 67, bass: 48 }
+    // Start each hand near the center of its default region: right hand
+    // around middle C, left hand in the C1-C2 bass octave.
+    this.lastMidi = { treble: 64, bass: 30 }
+    this.lastChordCenter = { treble: 64, bass: 30 }
     this.riffPattern = RIFF_PATTERNS['blues-hook']
     this.lastOutputMidis = []
   }
@@ -274,6 +292,73 @@ export class SightReadingGenerator {
 
   chooseMaterial(material) {
     return material === 'mixed' ? weightedPick(MATERIAL_WEIGHTS) : material
+  }
+
+  chooseAllowedChordSize(chordSizes, fallback = 'seventh') {
+    const allowed = Array.isArray(chordSizes) && chordSizes.length ? chordSizes : [fallback]
+    return pick(allowed)
+  }
+
+  makeSizedGroup({ key, clef, rangeName, regions, harmonyDegree, groupSize, motion = 'chord-tone' }) {
+    const range = this.rangeForClef(rangeName, clef, regions)
+    if (!range) return []
+    if (groupSize === 'single') return this.chooseSingle(key, clef, range, motion, harmonyDegree)
+    if (groupSize === 'dyad') return this.chooseDyad(key, clef, range, motion, harmonyDegree)
+    return this.chooseChord(key, clef, range, harmonyDegree, groupSize)
+  }
+
+  makeBassGroup({ key, degree, beatIndex, groupSize, bassPattern = 'walk', rangeName, bassRegions }) {
+    if (groupSize === 'single') {
+      const bass = this.bassNoteForBeat(key, degree, beatIndex, bassPattern, rangeName, bassRegions)
+      return Number.isFinite(bass) ? [bass] : []
+    }
+    return this.makeSizedGroup({
+      key,
+      clef: 'bass',
+      rangeName,
+      regions: bassRegions,
+      harmonyDegree: degree,
+      groupSize,
+      motion: 'chord-tone'
+    })
+  }
+
+  clefForHandGroups(left, right) {
+    if (left.length && right.length) return 'both'
+    if (left.length) return 'bass'
+    return 'treble'
+  }
+
+  rangeForClef(rangeName, clef, regions = ['low', 'mid', 'high']) {
+    const base = RANGE_PRESETS[rangeName]?.[clef] || RANGE_PRESETS.comfortable[clef]
+    const enabled = (Array.isArray(regions) ? regions : []).filter((region) => STAFF_REGIONS[clef]?.[region])
+    if (!enabled.length) return null
+    if (enabled.length === 3) return base
+
+    const choices = enabled.map((region) => {
+      const regionRange = STAFF_REGIONS[clef][region]
+      const minMidi = Math.max(base[0], regionRange[0])
+      const maxMidi = Math.min(base[1], regionRange[1])
+      return minMidi <= maxMidi ? [minMidi, maxMidi] : null
+    }).filter(Boolean)
+    if (!choices.length) return null
+
+    // Adjacent enabled regions behave like one wider region. Low + high with
+    // the middle disabled remains genuinely discontinuous and picks one side.
+    const adjacent = enabled.length === 2 && !(enabled.includes('low') && enabled.includes('high'))
+    if (adjacent && choices.length === 2) {
+      return [Math.min(choices[0][0], choices[1][0]), Math.max(choices[0][1], choices[1][1])]
+    }
+
+    if (choices.length === 1 || Math.random() < 0.78) {
+      const last = this.lastMidi[clef]
+      return choices.reduce((best, range) => {
+        const center = (range[0] + range[1]) / 2
+        const bestCenter = (best[0] + best[1]) / 2
+        return Math.abs(center - last) < Math.abs(bestCenter - last) ? range : best
+      }, choices[0])
+    }
+    return pick(choices)
   }
 
   chooseSingle(key, clef, range, motion, harmonyDegree) {
@@ -323,8 +408,9 @@ export class SightReadingGenerator {
     return notes
   }
 
-  makeForClef({ key, clef, material, motion, rangeName, harmonyDegree }) {
-    const range = RANGE_PRESETS[rangeName]?.[clef] || RANGE_PRESETS.comfortable[clef]
+  makeForClef({ key, clef, material, motion, rangeName, harmonyDegree, regions }) {
+    const range = this.rangeForClef(rangeName, clef, regions)
+    if (!range) return []
     const selectedMaterial = this.chooseMaterial(material)
     const effectiveMotion = motion === 'voice-led' && Math.random() < 0.34 ? 'stepwise' : motion
     if (selectedMaterial === 'triad') return this.chooseChord(key, clef, range, harmonyDegree, 'triad')
@@ -332,7 +418,7 @@ export class SightReadingGenerator {
     return this.chooseSingle(key, clef, range, effectiveMotion, harmonyDegree)
   }
 
-  bassNoteForBeat(key, degree, beatIndex, pattern = 'walk') {
+  bassNoteForBeat(key, degree, beatIndex, pattern = 'walk', rangeName = 'comfortable', bassRegions = ['low', 'mid', 'high']) {
     const scale = keyPitchClasses(key)
     const rootPc = scale[degree % 7]
     const fifthPc = scale[(degree + 4) % 7]
@@ -341,73 +427,94 @@ export class SightReadingGenerator {
     if (pattern === 'root-fifth') targetPc = beatIndex % 2 === 0 ? rootPc : fifthPc
     else if (pattern === 'chromatic' && beatIndex === 3) targetPc = mod12(rootPc - 1)
     else targetPc = [rootPc, thirdPc, fifthPc, scale[(degree + 5) % 7]][beatIndex % 4]
-    const chosen = nearest(candidatesForPitchClass(targetPc, 34, 55), this.lastMidi.bass + (beatIndex === 0 ? 0 : 2))
-    this.lastMidi.bass = chosen
+    const range = this.rangeForClef(rangeName, 'bass', bassRegions)
+    if (!range) return null
+    const chosen = nearest(candidatesForPitchClass(targetPc, range[0], range[1]), this.lastMidi.bass + (beatIndex === 0 ? 0 : 2))
+    if (chosen !== null) this.lastMidi.bass = chosen
     return chosen
   }
 
-  walkingChordEvent({ key, beat, duration, chordSize, bassPattern, progression }) {
+  walkingChordEvent({ key, beat, duration, leftHandSize, rightHandSize, bassPattern, progression, rangeName, trebleRegions, bassRegions }) {
     const beatIndex = Math.floor(beat) % 4
     const degree = this.harmonyForBeat(beat, progression)
-    const bass = this.bassNoteForBeat(key, degree, beatIndex, bassPattern)
-    const chord = beatIndex % 2 === 0
-      ? this.chooseChord(key, 'treble', [55, 87], degree, chordSize)
+    const left = this.makeBassGroup({ key, degree, beatIndex, groupSize: leftHandSize, bassPattern, rangeName, bassRegions })
+    const right = beatIndex % 2 === 0
+      ? this.makeSizedGroup({ key, clef: 'treble', rangeName, regions: trebleRegions, harmonyDegree: degree, groupSize: rightHandSize })
       : []
-    return { midis: [bass, ...chord], clef: 'both', harmonyDegree: degree, duration, isChord: chord.length > 0 }
+    const midis = [...left, ...right]
+    return { midis, clef: this.clefForHandGroups(left, right), harmonyDegree: degree, duration, isChord: midis.length > 1 }
   }
 
-  strideEvent({ key, beat, duration, chordSize, progression }) {
+  strideEvent({ key, beat, duration, leftHandSize, rightHandSize, progression, rangeName, trebleRegions, bassRegions }) {
     const beatIndex = Math.floor(beat) % 4
     const degree = this.harmonyForBeat(beat, progression)
-    let midis = []
-    if (beatIndex % 2 === 0) midis = [this.bassNoteForBeat(key, degree, beatIndex, 'root-fifth')]
-    else {
-      const leftChord = voicedChord(key, degree, [43, 65], 54, Math.min(4, chordToneCount(chordSize)))
-      const melody = this.chooseSingle(key, 'treble', [64, 88], 'chord-tone', degree)
-      midis = [...leftChord, ...melody]
-    }
-    return { midis, clef: 'both', harmonyDegree: degree, duration, isChord: midis.length > 1 }
+    const left = this.makeBassGroup({ key, degree, beatIndex, groupSize: leftHandSize, bassPattern: 'root-fifth', rangeName, bassRegions })
+    const right = beatIndex % 2 === 1
+      ? this.makeSizedGroup({ key, clef: 'treble', rangeName, regions: trebleRegions, harmonyDegree: degree, groupSize: rightHandSize })
+      : []
+    const midis = [...left, ...right]
+    return { midis, clef: this.clefForHandGroups(left, right), harmonyDegree: degree, duration, isChord: midis.length > 1 }
   }
 
-  jazzGuitarEvent({ key, beat, duration, chordSize, progression }) {
+  jazzGuitarEvent({ key, beat, duration, rightHandSize, progression, rangeName, trebleRegions }) {
     const degree = this.harmonyForBeat(beat, progression)
-    const chord = this.chooseChord(key, 'treble', [45, 79], degree, chordSize)
-    return { midis: chord, clef: 'treble', harmonyDegree: degree, duration: Math.max(duration, 1.4), isChord: true }
+    const right = this.makeSizedGroup({ key, clef: 'treble', rangeName, regions: trebleRegions, harmonyDegree: degree, groupSize: rightHandSize })
+    return { midis: right, clef: 'treble', harmonyDegree: degree, duration: Math.max(duration, 1.4), isChord: right.length > 1 }
   }
 
-  boogieEvent({ key, beat, duration, chordSize, progression }) {
+  boogieEvent({ key, beat, duration, leftHandSize, rightHandSize, progression, rangeName, trebleRegions, bassRegions }) {
     const degree = this.harmonyForBeat(beat, progression)
     const scale = keyPitchClasses(key)
     const rootPc = scale[degree]
     const halfIndex = Math.floor(beat * 2) % 8
     const pattern = [0, 7, 9, 7, 10, 9, 7, -1]
-    const bassPc = mod12(rootPc + pattern[halfIndex])
-    const bass = nearest(candidatesForPitchClass(bassPc, 34, 55), this.lastMidi.bass + (halfIndex < 4 ? 2 : -1))
-    this.lastMidi.bass = bass
-    const stab = [0, 3, 4, 7].includes(halfIndex)
-      ? this.chooseChord(key, 'treble', [60, 88], degree, chordSize)
+
+    let left = []
+    if (leftHandSize === 'single') {
+      const bassPc = mod12(rootPc + pattern[halfIndex])
+      const bassRange = this.rangeForClef(rangeName, 'bass', bassRegions)
+      const bass = bassRange ? nearest(candidatesForPitchClass(bassPc, bassRange[0], bassRange[1]), this.lastMidi.bass + (halfIndex < 4 ? 2 : -1)) : null
+      if (bass !== null) this.lastMidi.bass = bass
+      left = Number.isFinite(bass) ? [bass] : []
+    } else {
+      left = this.makeSizedGroup({ key, clef: 'bass', rangeName, regions: bassRegions, harmonyDegree: degree, groupSize: leftHandSize })
+    }
+
+    const right = [0, 3, 4, 7].includes(halfIndex)
+      ? this.makeSizedGroup({ key, clef: 'treble', rangeName, regions: trebleRegions, harmonyDegree: degree, groupSize: rightHandSize })
       : []
-    return { midis: [bass, ...stab], clef: 'both', harmonyDegree: degree, duration: Math.max(0.35, duration), isChord: stab.length > 0 }
+    const midis = [...left, ...right]
+    return { midis, clef: this.clefForHandGroups(left, right), harmonyDegree: degree, duration: Math.max(0.35, duration), isChord: midis.length > 1 }
   }
 
-  riffEvent({ key, beat, duration, chordSize, progression, riffFlavor }) {
+  riffEvent({ key, beat, duration, leftHandSize, rightHandSize, progression, riffFlavor, rangeName, trebleRegions, bassRegions }) {
     const degree = this.harmonyForBeat(beat, progression)
     const scale = keyPitchClasses(key)
     const pattern = RIFF_PATTERNS[riffFlavor] || RIFF_PATTERNS['blues-hook']
     const index = Math.floor(beat * 2) % pattern.length
     const targetDegree = (degree + pattern[index]) % 7
     const targetPc = scale[targetDegree]
-    const melody = nearest(candidatesForPitchClass(targetPc, 62, 91), this.lastMidi.treble + (index < 4 ? 2 : -2))
-    this.lastMidi.treble = melody
-    const chordStab = index === 0 || index === 5
-      ? this.chooseChord(key, 'treble', [55, 84], degree, chordSize)
+
+    let right = []
+    if (rightHandSize === 'single') {
+      const trebleRange = this.rangeForClef(rangeName, 'treble', trebleRegions)
+      const melody = trebleRange ? nearest(candidatesForPitchClass(targetPc, trebleRange[0], trebleRange[1]), this.lastMidi.treble + (index < 4 ? 2 : -2)) : null
+      if (melody !== null) this.lastMidi.treble = melody
+      right = Number.isFinite(melody) ? [melody] : []
+    } else {
+      right = this.makeSizedGroup({ key, clef: 'treble', rangeName, regions: trebleRegions, harmonyDegree: targetDegree, groupSize: rightHandSize, motion: 'voice-led' })
+    }
+
+    const left = index === 0
+      ? this.makeBassGroup({ key, degree, beatIndex: 0, groupSize: leftHandSize, bassPattern: 'root-fifth', rangeName, bassRegions })
       : []
-    const bass = index === 0 ? [this.bassNoteForBeat(key, degree, 0, 'root-fifth')] : []
-    return { midis: [...bass, ...chordStab, melody], clef: bass.length ? 'both' : 'treble', harmonyDegree: degree, duration, isChord: chordStab.length > 0 }
+    const midis = [...left, ...right]
+    return { midis, clef: this.clefForHandGroups(left, right), harmonyDegree: degree, duration, isChord: midis.length > 1 }
   }
 
-  stratoExerciseEvent({ key, duration, exerciseMode, rangeName, progression, beat }) {
-    const ranges = RANGE_PRESETS[rangeName] || RANGE_PRESETS.comfortable
+  stratoExerciseEvent({ key, duration, exerciseMode, rangeName, progression, beat, trebleRegions }) {
+    const trebleRange = this.rangeForClef(rangeName, 'treble', trebleRegions)
+    if (!trebleRange) return { midis: [], clef: 'treble', harmonyDegree: 0, duration, isChord: false }
     let material = 'single'
     let motion = 'random'
     if (exerciseMode === 'mode-2') motion = 'stepwise'
@@ -415,14 +522,23 @@ export class SightReadingGenerator {
     if (exerciseMode === 'mode-4') { material = 'triad'; motion = 'chord-tone' }
     const harmonyDegree = this.harmonyForBeat(beat, progression, motion)
     const midis = material === 'triad'
-      ? this.chooseChord(key, 'treble', ranges.treble, harmonyDegree, 'triad')
+      ? this.chooseChord(key, 'treble', trebleRange, harmonyDegree, 'triad')
       : material === 'dyad'
-        ? this.chooseDyad(key, 'treble', ranges.treble, motion, harmonyDegree)
-        : this.chooseSingle(key, 'treble', ranges.treble, motion, harmonyDegree)
+        ? this.chooseDyad(key, 'treble', trebleRange, motion, harmonyDegree)
+        : this.chooseSingle(key, 'treble', trebleRange, motion, harmonyDegree)
     return { midis, clef: 'treble', harmonyDegree, duration, isChord: midis.length > 1 }
   }
 
   decorateEvent(event, style, beat, duration) {
+    if (!event.midis?.length) {
+      return {
+        ...event,
+        midis: [],
+        isRest: true,
+        restClef: event.clef === 'bass' ? 'bass' : event.clef === 'treble' ? 'treble' : 'treble',
+        duration: Math.max(0.5, Number(duration) || 1)
+      }
+    }
     const phase = ((Number(beat) % 4) + 4) % 4
     const downbeat = phase < 0.001
     const restChance = style === 'free' ? 0.08 : style === 'riff' ? 0.06 : style === 'boogie' ? 0.035 : 0.02
@@ -453,14 +569,16 @@ export class SightReadingGenerator {
     return event
   }
 
-  generate({ key, beat, duration, material, motion, clefMode, rangeName, style = 'free', chordSize = 'seventh', bassPattern = 'walk', exerciseMode = 'mode-1', progression = 'auto', riffFlavor = 'blues-hook', dynamics = 'natural' }) {
+  generate({ key, beat, duration, material, motion, clefMode, rangeName, style = 'free', chordSize = 'seventh', chordSizes = null, leftHandSizes = null, rightHandSizes = null, bassPattern = 'walk', exerciseMode = 'mode-1', progression = 'auto', riffFlavor = 'blues-hook', dynamics = 'natural', trebleRegions = ['low', 'mid', 'high'], bassRegions = ['low', 'mid', 'high'] }) {
+    const selectedLeftHandSize = this.chooseAllowedChordSize(leftHandSizes || chordSizes, 'single')
+    const selectedRightHandSize = this.chooseAllowedChordSize(rightHandSizes || chordSizes, chordSize)
     let styled = null
-    if (style === 'walking-chords') styled = this.walkingChordEvent({ key, beat, duration, chordSize, bassPattern, progression })
-    else if (style === 'stride') styled = this.strideEvent({ key, beat, duration, chordSize, progression })
-    else if (style === 'boogie') styled = this.boogieEvent({ key, beat, duration, chordSize, progression })
-    else if (style === 'riff') styled = this.riffEvent({ key, beat, duration, chordSize, progression, riffFlavor })
-    else if (style === 'jazz-guitar') styled = this.jazzGuitarEvent({ key, beat, duration, chordSize, progression })
-    else if (style === 'strato') styled = this.stratoExerciseEvent({ key, beat, duration, exerciseMode, rangeName, progression })
+    if (style === 'walking-chords') styled = this.walkingChordEvent({ key, beat, duration, leftHandSize: selectedLeftHandSize, rightHandSize: selectedRightHandSize, bassPattern, progression, rangeName, trebleRegions, bassRegions })
+    else if (style === 'stride') styled = this.strideEvent({ key, beat, duration, leftHandSize: selectedLeftHandSize, rightHandSize: selectedRightHandSize, progression, rangeName, trebleRegions, bassRegions })
+    else if (style === 'boogie') styled = this.boogieEvent({ key, beat, duration, leftHandSize: selectedLeftHandSize, rightHandSize: selectedRightHandSize, progression, rangeName, trebleRegions, bassRegions })
+    else if (style === 'riff') styled = this.riffEvent({ key, beat, duration, leftHandSize: selectedLeftHandSize, rightHandSize: selectedRightHandSize, progression, riffFlavor, rangeName, trebleRegions, bassRegions })
+    else if (style === 'jazz-guitar') styled = this.jazzGuitarEvent({ key, beat, duration, rightHandSize: selectedRightHandSize, progression, rangeName, trebleRegions })
+    else if (style === 'strato') styled = this.stratoExerciseEvent({ key, beat, duration, exerciseMode, rangeName, progression, trebleRegions })
 
     if (styled) {
       this.eventIndex += 1
@@ -477,13 +595,21 @@ export class SightReadingGenerator {
     }
 
     const harmonyDegree = this.harmonyForBeat(beat, progression, motion)
-    const selectedClef = this.chooseClef(clefMode)
+    let selectedClef = this.chooseClef(clefMode)
+    const trebleAvailable = Array.isArray(trebleRegions) && trebleRegions.length > 0
+    const bassAvailable = Array.isArray(bassRegions) && bassRegions.length > 0
+    if (selectedClef === 'treble' && !trebleAvailable && bassAvailable) selectedClef = 'bass'
+    else if (selectedClef === 'bass' && !bassAvailable && trebleAvailable) selectedClef = 'treble'
+    else if (selectedClef === 'both') {
+      if (!trebleAvailable && bassAvailable) selectedClef = 'bass'
+      else if (!bassAvailable && trebleAvailable) selectedClef = 'treble'
+    }
     let midis = []
     if (selectedClef === 'both') {
-      const bass = this.makeForClef({ key, clef: 'bass', material: material === 'triad' ? 'single' : material === 'mixed' ? 'single' : material, motion, rangeName, harmonyDegree })
-      const treble = this.makeForClef({ key, clef: 'treble', material, motion, rangeName, harmonyDegree })
+      const bass = this.makeForClef({ key, clef: 'bass', material: material === 'triad' ? 'single' : material === 'mixed' ? 'single' : material, motion, rangeName, harmonyDegree, regions: bassRegions })
+      const treble = this.makeForClef({ key, clef: 'treble', material, motion, rangeName, harmonyDegree, regions: trebleRegions })
       midis = [...bass, ...treble]
-    } else midis = this.makeForClef({ key, clef: selectedClef, material, motion, rangeName, harmonyDegree })
+    } else midis = this.makeForClef({ key, clef: selectedClef, material, motion, rangeName, harmonyDegree, regions: selectedClef === 'bass' ? bassRegions : trebleRegions })
 
     this.eventIndex += 1
     return this.decorateEvent({
