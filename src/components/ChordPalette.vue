@@ -1,5 +1,5 @@
 <template>
-  <div class="chord-palette">
+  <div class="chord-palette" :class="{ compact: props.compact }">
     <q-select
       v-model="selectedId"
       :options="menuOptions"
@@ -63,6 +63,8 @@ import { computed, ref, watch } from 'vue'
 import { ensureAudioReady, playChord } from '../music/audio'
 import { buildChordPalette } from '../music/chords'
 import { useNoteMapStore } from '../stores/noteMap'
+
+const props = defineProps({ compact: { type: Boolean, default: false } })
 
 const store = useNoteMapStore()
 const selectedId = ref('seventh-4')
@@ -130,6 +132,9 @@ async function audition() {
 .chord-select :deep(.q-field__input) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chord-drag-button { width: 46px; min-width: 46px; height: 46px; min-height: 46px; padding: 0; border-color: #777 !important; border-radius: 4px; background: #333; }
 .chord-drag-button :deep(.q-icon) { font-size: 24px; }
+.chord-palette.compact { grid-template-columns: minmax(0, 1fr) 40px; gap: 6px; }
+.chord-palette.compact .chord-drag-button { width: 40px; min-width: 40px; height: 40px; min-height: 40px; }
+.chord-palette.compact .chord-select :deep(.q-field__control) { min-height: 40px; height: 40px; }
 @media (max-width: 520px) {
   .chord-palette { grid-template-columns: minmax(0, 1fr) 42px; width: 100%; }
   .chord-drag-button { width: 42px; min-width: 42px; height: 42px; min-height: 42px; }

@@ -1,165 +1,5 @@
 <template>
   <section class="srt-shell">
-    <div class="srt-config-header">
-      <div>
-        <span>{{ sourceSummary }}</span>
-      </div>
-      <q-btn
-        flat
-        dense
-        round
-        :icon="store.srtConfigOpen ? 'expand_less' : 'tune'"
-        :aria-label="store.srtConfigOpen ? 'Collapse generation controls' : 'Open generation controls'"
-        @click="store.srtConfigOpen = !store.srtConfigOpen"
-      >
-        <q-tooltip v-if="store.tooltipsEnabled">{{ store.srtConfigOpen ? 'Collapse configuration and leave the player visible.' : 'Open generation and composition controls.' }}</q-tooltip>
-      </q-btn>
-    </div>
-
-    <q-slide-transition>
-      <div v-show="store.srtConfigOpen" class="srt-controls">
-        <div class="srt-select-row">
-          <q-select dense dark outlined emit-value map-options label="Source" :model-value="store.srtSource" :options="options.source" @update:model-value="setOption('srtSource', $event)" />
-          <q-select
-            dense dark outlined emit-value map-options label="Sound"
-            :model-value="store.audioEngine" :options="AUDIO_ENGINE_OPTIONS"
-            @update:model-value="store.setAudioEngine"
-          >
-            <q-tooltip v-if="store.tooltipsEnabled">Choose the internal electric piano, a sample-based SoundFont instrument, the offline fallback synth, or a connected MIDI device.</q-tooltip>
-          </q-select>
-          <q-select
-            v-if="['soundfont', 'web-midi'].includes(store.audioEngine)"
-            dense dark outlined emit-value map-options label="Instrument"
-            :model-value="store.audioProgram" :options="GM_PROGRAM_OPTIONS"
-            @update:model-value="store.setAudioProgram"
-          />
-          <q-select
-            v-if="store.audioEngine === 'web-midi'"
-            dense dark outlined emit-value map-options label="MIDI out"
-            :model-value="store.midiOutputId" :options="store.midiOutputs"
-            :display-value="store.midiOutputs.find((item) => item.value === store.midiOutputId)?.label || 'Choose output'"
-            @popup-show="store.refreshMidiOutputs"
-            @update:model-value="store.setMidiOutputId"
-          />
-          <q-select
-            v-if="store.audioEngine === 'web-midi'"
-            dense dark outlined emit-value map-options label="Channel"
-            :model-value="store.midiChannel" :options="MIDI_CHANNEL_OPTIONS"
-            @update:model-value="store.setMidiChannelValue"
-          />
-          <q-btn
-            v-if="store.audioEngine === 'web-midi'"
-            flat round dense icon="refresh" color="grey-4"
-            aria-label="Refresh MIDI outputs"
-            @click="store.refreshMidiOutputs"
-          >
-            <q-tooltip v-if="store.tooltipsEnabled">Request MIDI permission and refresh connected outputs.</q-tooltip>
-          </q-btn>
-          <q-spinner v-if="store.audioEngineStatus === 'loading'" color="grey-4" size="20px" />
-          <q-icon v-else-if="store.audioEngineStatus === 'error'" name="warning" color="amber-5" size="20px">
-            <q-tooltip>{{ store.audioEngineError }}</q-tooltip>
-          </q-icon>
-          <q-select dense dark outlined emit-value map-options label="Style" :model-value="store.srtStyle" :options="options.style" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtStyle', $event)" />
-
-          <q-select
-            v-if="store.srtStyle === 'free'"
-            dense dark outlined emit-value map-options label="Material"
-            :model-value="store.srtMaterial" :options="options.material"
-            :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMaterial', $event)"
-          />
-          <q-select
-            v-if="store.srtStyle === 'free'"
-            dense dark outlined emit-value map-options label="Logic"
-            :model-value="store.srtMotion" :options="options.motion"
-            :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtMotion', $event)"
-          />
-          <q-select
-            v-if="['walking-chords', 'stride', 'boogie', 'riff', 'jazz-guitar'].includes(store.srtStyle)"
-            dense dark outlined emit-value map-options label="Chords"
-            :model-value="store.srtChordSize" :options="options.chordSize"
-            @update:model-value="setOption('srtChordSize', $event)"
-          />
-          <q-select
-            v-if="store.srtStyle === 'walking-chords'"
-            dense dark outlined emit-value map-options label="Bass"
-            :model-value="store.srtBassPattern" :options="options.bassPattern"
-            @update:model-value="setOption('srtBassPattern', $event)"
-          />
-          <q-select
-            v-if="store.srtStyle === 'strato'"
-            dense dark outlined emit-value map-options label="Exercise"
-            :model-value="store.srtExerciseMode" :options="options.exerciseMode"
-            @update:model-value="setOption('srtExerciseMode', $event)"
-          />
-
-          <q-select dense dark outlined emit-value map-options label="Clefs" :model-value="store.srtClefMode" :options="options.clefMode" :disable="store.srtSource === 'staff' || store.srtStyle !== 'free'" @update:model-value="setOption('srtClefMode', $event)" />
-          <q-select dense dark outlined emit-value map-options label="Range" :model-value="store.srtRange" :options="options.range" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtRange', $event)" />
-          <q-select dense dark outlined emit-value map-options label="New event" :model-value="store.srtEventSpacing" :options="options.spacing" :disable="store.srtSource === 'staff' || accompanimentStyle" @update:model-value="store.setSrtEventSpacing" />
-          <q-select dense dark outlined emit-value map-options label="Progression" :model-value="store.srtProgression" :options="options.progression" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtProgression', $event)" />
-          <q-select v-if="store.srtStyle === 'riff'" dense dark outlined emit-value map-options label="Riff flavor" :model-value="store.srtRiffFlavor" :options="options.riffFlavor" @update:model-value="setOption('srtRiffFlavor', $event)" />
-          <q-select dense dark outlined emit-value map-options label="Dynamics" :model-value="store.srtDynamics" :options="options.dynamics" :disable="store.srtSource === 'staff'" @update:model-value="setOption('srtDynamics', $event)" />
-        </div>
-
-        <div v-if="store.srtStyle === 'strato'" class="strato-guide">
-          <q-icon name="sports_score" size="18px" />
-          <span>{{ exerciseGuide }}</span>
-          <q-tooltip v-if="store.tooltipsEnabled">Read or play each target as it reaches the fixed scanline. Labels can be enabled temporarily as a check.</q-tooltip>
-        </div>
-
-        <div class="srt-dial-row">
-          <q-knob
-            :model-value="Math.round(store.srtGate * 100)"
-            :min="25"
-            :max="140"
-            :step="5"
-            size="72px"
-            :thickness="0.16"
-            color="grey-4"
-            track-color="grey-8"
-            show-value
-            @update:model-value="store.setSrtGate(Number($event) / 100)"
-          >
-            <div class="dial-value"><strong>{{ Math.round(store.srtGate * 100) }}%</strong><span>Hold</span></div>
-            <q-tooltip v-if="store.tooltipsEnabled">Gate length for every note in the event, bass and treble alike.</q-tooltip>
-          </q-knob>
-
-          <q-knob
-            :model-value="Math.round(store.srtSwing * 100)"
-            :min="0"
-            :max="45"
-            :step="5"
-            size="72px"
-            :thickness="0.16"
-            color="grey-4"
-            track-color="grey-8"
-            show-value
-            @update:model-value="store.setSrtSwing(Number($event) / 100)"
-          >
-            <div class="dial-value"><strong>{{ Math.round(store.srtSwing * 100) }}%</strong><span>Swing</span></div>
-            <q-tooltip v-if="store.tooltipsEnabled">Delays alternating pulses to create a long-short feel.</q-tooltip>
-          </q-knob>
-
-          <div class="srt-action-row">
-            <ImageCheckbox :model-value="store.audioSustain" label="Pedal" tooltip="Add a longer release tail internally, or send MIDI sustain pedal CC64 to the selected output." @update:model-value="store.setAudioSustain" />
-            <ImageCheckbox v-model="store.srtShowLabels" label="Labels" tooltip="Show or hide note-name labels on the staff." />
-            <ImageCheckbox v-if="store.srtSource === 'staff'" v-model="store.srtLoopManual" label="Loop" tooltip="Loop the manual staff sequence." />
-            <q-btn
-              flat
-              :icon="store.srtSource === 'staff' ? 'delete_sweep' : 'refresh'"
-              color="grey-3"
-              @click="resetOrReseed"
-            >
-              <q-tooltip v-if="store.tooltipsEnabled">
-                {{ store.srtSource === 'staff'
-                  ? 'Clear the manual staff and return its tape to the beginning.'
-                  : 'Reseed and regenerate the endless passage from the beginning.' }}
-              </q-tooltip>
-            </q-btn>
-          </div>
-        </div>
-      </div>
-    </q-slide-transition>
-
     <div class="scroll-stage">
       <svg
         ref="readerSvg"
@@ -234,79 +74,28 @@
       </svg>
     </div>
 
-    <PlaybackTransport class="staff-transport" :visible-bars="visibleBars" @update:visible-bars="setVisibleBars" />
+    <PlaybackTransport class="staff-transport" />
 
 
-    <div v-if="store.clips.length" class="clip-library">
-      <div class="clip-library-title">Clip library</div>
-      <div
-        v-for="clip in store.clips"
-        :key="clip.id"
-        class="clip-row"
-        draggable="true"
-        @dragstart="startClipDrag($event, clip)"
-        @dragend="store.clearStaffDragPayload"
-      >
-        <q-icon name="drag_indicator" size="22px" class="clip-drag-icon" />
-        <div><strong>{{ clip.name }}</strong><span>{{ clip.events.length }} events · {{ clip.tempo }} BPM</span></div>
-        <q-btn flat color="grey-4" icon="playlist_play" @click="store.loadClipToStaff(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Load this clip into the editable staff.</q-tooltip></q-btn>
-        <q-btn flat color="grey-4" icon="edit" @click="openRenameDialog(clip)"><q-tooltip v-if="store.tooltipsEnabled">Rename this clip.</q-tooltip></q-btn>
-        <q-btn flat color="grey-4" icon="delete" @click="store.removeClip(clip.id)"><q-tooltip v-if="store.tooltipsEnabled">Delete this saved clip.</q-tooltip></q-btn>
-        <q-tooltip v-if="store.tooltipsEnabled">Drag the clip onto the staff to insert it at that time position.</q-tooltip>
-      </div>
-    </div>
-
-    <q-dialog v-model="renameDialogOpen">
-      <q-card class="rename-card text-white">
-        <q-card-section class="text-h6">Rename clip</q-card-section>
-        <q-card-section>
-          <q-input
-            ref="renameInput"
-            v-model="renameValue"
-            dark
-            outlined
-            autofocus
-            label="Clip name"
-            @keyup.enter="commitRename"
-          />
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey-4" v-close-popup />
-          <q-btn flat label="Save" color="grey-2" :disable="!renameValue.trim()" @click="commitRename" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </section>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { AUDIO_ENGINE_OPTIONS, GM_PROGRAM_OPTIONS, MIDI_CHANNEL_OPTIONS, ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
-import { SIGHT_READING_OPTIONS, SightReadingGenerator } from '../music/generator'
+import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
+import { SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
-import ImageCheckbox from './ImageCheckbox.vue'
 import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
-const options = SIGHT_READING_OPTIONS
 const generator = new SightReadingGenerator()
 const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
 const dropPreview = ref(null)
-const renameDialogOpen = ref(false)
-const renameValue = ref('')
-const renameClipId = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
-const visibleBars = computed(() => Math.max(1, Math.min(6, Math.round((1120 / pixelsPerBeat.value) / 4))))
-const exerciseGuide = computed(() => ({
-  'mode-1': 'Mode 1 · locate one random target note at the scanline.',
-  'mode-2': 'Mode 2 · follow adjacent scale motion without losing position.',
-  'mode-3': 'Mode 3 · identify and play the displayed interval pair.',
-  'mode-4': 'Mode 4 · identify and play the displayed chord tones.'
-}[store.srtExerciseMode] || 'Play each target as it reaches the scanline.'))
 const leadInBeats = 4
 const horizonBeats = 28
 const historyBeats = 64
@@ -329,10 +118,6 @@ const accompanimentStyle = computed(() => ['walking-chords', 'stride', 'boogie',
 const effectiveSpacing = computed(() => {
   if (['boogie', 'riff'].includes(store.srtStyle)) return 0.5
   return accompanimentStyle.value ? 1 : store.srtEventSpacing
-})
-const sourceSummary = computed(() => {
-  if (store.srtSource === 'staff') return store.hasStaffSequence ? `manual staff · ${store.staffClusters.length} positions · ${store.srtLoopManual ? 'looping' : 'one pass'}` : 'manual staff · no notes yet'
-  return `${labelFor(options.style, store.srtStyle)} · ${labelFor(options.range, store.srtRange)} · endless`
 })
 const hasPlayableSource = computed(() => store.srtSource === 'generated' || store.hasStaffSequence)
 const canSaveSelection = computed(() => store.clipSelectionStart !== null && store.clipSelectionEnd !== null && selectedEvents.value.some((event) => event.midis?.length))
@@ -397,17 +182,7 @@ const signatureSymbols = computed(() => {
   ]).flat()
 })
 
-function labelFor(list, value) { return list.find((item) => item.value === value)?.label || value }
 function mod4(value) { return ((value % 4) + 4) % 4 }
-function setOption(name, value) {
-  if (name === 'srtStyle' && value === 'strato') {
-    store.srtSource = 'generated'
-    store.srtEventSpacing = 1
-    store.srtClefMode = 'treble'
-  }
-  store.setSrtOption(name, value)
-}
-function setVisibleBars(value) { store.setStaffVisibleBars(value) }
 function accidentalSymbol(name) {
   if (String(name).includes('♯') || String(name).includes('#')) return '♯'
   if (String(name).includes('♭') || String(name).includes('b')) return '♭'
@@ -854,27 +629,6 @@ function pause() {
 function stop() {
   freezeTransport('stopped')
 }
-function resetOrReseed() {
-  if (store.srtSource !== 'staff') {
-    regenerate()
-    store.setFocus('Reseeded the generated passage')
-    return
-  }
-
-  sessionToken += 1
-  cancelAnimation()
-  clearReleaseTimers()
-  store.setSrtTransportState('stopped')
-  store.clearStaffSequence()
-  store.clearClipSelection()
-  events.value = []
-  currentBeat.value = 0
-  previousBeat = -0.001
-  nextManualCycleBeat = 0
-  playedIds = new Set()
-  store.setFocus('Cleared the manual staff')
-}
-
 function regenerate() {
   const wasPlaying = store.srtTransportState === 'playing'
   sessionToken += 1
@@ -950,21 +704,6 @@ function finishRangeSelection(event) {
   readerSvg.value?.releasePointerCapture?.(event.pointerId)
 }
 function cancelRangeSelection() { selecting = false }
-function startClipDrag(event, clip) {
-  const payload = {
-    type: 'clip',
-    label: clip.name,
-    events: (clip.events || []).map((item) => ({
-      beat: Number(item.beat) || 0,
-      duration: Math.max(0.25, Number(item.duration) || 1),
-      midis: [...new Set((item.midis || []).map(Number).filter(Number.isFinite))]
-    }))
-  }
-  store.setStaffDragPayload(payload)
-  event.dataTransfer.effectAllowed = 'copy'
-  event.dataTransfer.setData('application/x-d3srt-clip', JSON.stringify(payload))
-  event.dataTransfer.setData('text/plain', clip.name)
-}
 
 function saveFromTransport() {
   let sourceEvents = []
@@ -997,20 +736,7 @@ function saveFromTransport() {
   store.clearClipSelection()
 }
 
-function openRenameDialog(clip) {
-  renameClipId.value = clip.id
-  renameValue.value = clip.name
-  renameDialogOpen.value = true
-}
 
-function commitRename() {
-  const name = renameValue.value.trim()
-  if (!renameClipId.value || !name) return
-  store.renameClip(renameClipId.value, name)
-  renameDialogOpen.value = false
-  renameClipId.value = null
-  renameValue.value = ''
-}
 
 watch(() => store.srtTransportNonce, () => {
   if (store.srtTransportCommand === 'play' || store.srtTransportCommand === 'start') play()
@@ -1029,19 +755,6 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 
 <style scoped>
 .srt-shell { display: grid; gap: 10px; width: 100%; margin: 0; padding: 2px; color: white; }
-.srt-config-header { display: flex; justify-content: flex-end; align-items: center; min-height: 30px; padding: 1px 2px; border: 0; border-radius: 0; background: transparent; }
-.srt-config-header > div { display: none; }
-.srt-config-header span { color: #aaa; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.srt-controls { display: grid; gap: 8px; padding: 5px 2px 8px; border: 0; border-radius: 0; background: transparent; }
-.srt-select-row { display: grid; grid-template-columns: repeat(6, minmax(145px, 1fr)); gap: 9px; align-items: center; }
-.strato-guide { display: flex; align-items: center; gap: 8px; min-height: 30px; color: #d8d8d8; font-size: 15px; }
-.srt-dial-row { display: flex; align-items: center; gap: 16px; padding-top: 3px; border-top: 0; }
-.srt-action-row { display: flex; gap: 14px; align-items: center; justify-content: flex-end; margin-left: auto; white-space: nowrap; }
-.dial-value { display: grid; place-items: center; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.dial-value strong { font-size: 15px; }
-.dial-value span { margin-top: 2px; color: #cfcfcf; font-size: 10px; letter-spacing: .04em; }
-.srt-action-row :deep(.image-checkbox) { min-width: 98px; }
-.srt-controls :deep(.q-field__label), .srt-controls :deep(.q-field__native) { font-size: 17px; }
 .scroll-stage { overflow: hidden; border: 0; border-radius: 5px; background: #202020; }
 .scroll-svg { width: 100%; height: auto; display: block; touch-action: none; }
 .stage-bg { fill: #232323; }
@@ -1072,14 +785,5 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
 .staff-transport { padding: 5px 0 2px; }
-.clip-library { display: grid; gap: 6px; border-top: 0; padding-top: 6px; }
-.clip-library-title { font-size: 20px; font-weight: 650; color: #ffd866; }
-.clip-row { display: grid; grid-template-columns: 28px 1fr auto auto auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 7px; background: rgba(30,30,30,.75); cursor: grab; }
-.clip-row:active { cursor: grabbing; }
-.clip-drag-icon { color: #aaa; }
-.clip-row strong { font-size: 18px; }
-.clip-row span { display: block; color: #bbb; font-size: 15px; }
-.rename-card { width: min(430px, calc(100vw - 32px)); background: #292929; }
-@media (max-width: 1200px) { .srt-select-row { grid-template-columns: repeat(3, minmax(150px,1fr)); } .srt-dial-row { flex-wrap: wrap; } .srt-action-row { justify-content: flex-start; margin-left: 0; } }
-@media (max-width: 700px) { .srt-config-header span { display: none; } .srt-shell { padding-inline: 0; } .srt-select-row { grid-template-columns: 1fr; } .srt-dial-row { align-items: center; } .srt-action-row { width: 100%; justify-content: space-between; } .clip-row { grid-template-columns: 24px minmax(0,1fr) auto auto auto; gap: 4px; } }
+@media (max-width: 700px) { .srt-shell { padding-inline: 0; } }
 </style>

@@ -69,7 +69,7 @@ function accidentalText(signature) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.accidentals { color: #28e45f !important; letter-spacing: 0.015em; }
+.accidentals { color: var(--asymptopia-green) !important; letter-spacing: 0.015em; }
 .major { color: #ef7eb8 !important; }
 .minor { color: #91b7ff !important; }
 .emphasized { font-weight: 800 !important; color: #fff !important; }

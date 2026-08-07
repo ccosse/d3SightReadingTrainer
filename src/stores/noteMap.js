@@ -74,7 +74,6 @@ export const useNoteMapStore = defineStore('noteMap', {
     midiOutputId: '',
     midiChannel: 0,
     staffZoom: 1,
-    pitchPanelOpen: true,
     visibleObjects: {
       controls: true,
       piano: true,
@@ -124,7 +123,6 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtProgression: 'auto',
     srtRiffFlavor: 'blues-hook',
     srtDynamics: 'natural',
-    srtConfigOpen: true,
     clipSelectionStart: null,
     clipSelectionEnd: null,
     clips: readSavedClips(),

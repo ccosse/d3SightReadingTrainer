@@ -134,8 +134,8 @@ onBeforeUnmount(releasePreview)
 .keyboard-frame { background: #202020; padding: 3px; }
 .white-key { fill: #fafafa; stroke: #111; stroke-width: 1.25; cursor: pointer; }
 .black-key { fill: #111; stroke: #000; stroke-width: 1.25; cursor: pointer; }
-.white-key.current-key { fill: #d9eadc; }
-.black-key.current-key { fill: #31553a; }
+.white-key.current-key { fill: #d9eadc; stroke: var(--asymptopia-green); }
+.black-key.current-key { fill: #31553a; stroke: var(--asymptopia-green); }
 .white-key.selected, .black-key.selected { fill: var(--q-primary); stroke: #d9efff; }
 .white-key.playing, .black-key.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2.2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.78)); }
 .white-label { fill: #171717; font-size: 22px; pointer-events: none; font-weight: 600; }

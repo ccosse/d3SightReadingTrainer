@@ -98,7 +98,7 @@
             <q-tooltip v-if="store.tooltipsEnabled">Expand the Circle, signature ladder, and linked controls over the whole workspace.</q-tooltip>
           </q-btn>
           <FifthsExplorer compact :stacked="!rightDrawerOverlay" />
-          <GuitarExplorerControls />
+          <TheoryControls />
         </div>
       </q-scroll-area>
     </q-drawer>
@@ -138,7 +138,7 @@
         <q-scroll-area class="fit">
           <div class="fullscreen-fifths-content">
             <FifthsExplorer />
-            <GuitarExplorerControls />
+            <TheoryControls />
           </div>
         </q-scroll-area>
       </q-card>
@@ -155,7 +155,7 @@ import { computed } from 'vue'
 import { useQuasar } from 'quasar'
 import ComponentOrderList from '../components/ComponentOrderList.vue'
 import FifthsExplorer from '../components/FifthsExplorer.vue'
-import GuitarExplorerControls from '../components/GuitarExplorerControls.vue'
+import TheoryControls from '../components/TheoryControls.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()

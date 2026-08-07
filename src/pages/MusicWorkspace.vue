@@ -39,7 +39,7 @@
       <q-tab-panel name="fifths" class="q-pa-none">
         <div class="fifths-study">
           <FifthsExplorer />
-          <GuitarExplorerControls />
+          <TheoryControls />
         </div>
       </q-tab-panel>
 
@@ -57,7 +57,7 @@
 import { computed, ref } from 'vue'
 import FeaturePlaceholder from '../components/FeaturePlaceholder.vue'
 import FifthsExplorer from '../components/FifthsExplorer.vue'
-import GuitarExplorerControls from '../components/GuitarExplorerControls.vue'
+import TheoryControls from '../components/TheoryControls.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import PitchClassSelector from '../components/PitchClassSelector.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'

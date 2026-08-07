@@ -215,14 +215,14 @@ onBeforeUnmount(releasePreview)
 .beyond-wood-number { fill: #d9efff; }
 .note-hit { fill: transparent; cursor: pointer; }
 .note-dot { cursor: pointer; stroke-width: 1; }
-.note-dot.selected { fill: #00f035; stroke: #b7ffc7; }
-.note-dot.current-key { fill: #00c72d; stroke: #72ff92; }
+.note-dot.selected { fill: var(--asymptopia-green); stroke: #d7ffd3; }
+.note-dot.current-key { fill: var(--asymptopia-green); stroke: #c8ffc3; opacity: .76; }
 .note-dot.neutral { fill: #bdbdbd; stroke: #e6e6e6; opacity: 0.68; }
 .note-dot.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.85)); }
 .note-dot.beyond-wood { stroke-dasharray: 2 1; }
 .note-label { fill: #fff; font-size: 16px; cursor: pointer; user-select: none; font-weight: 600; }
-.note-label.selected { fill: #0aff44; font-weight: 800; }
-.note-label.current-key { fill: #55ff79; }
+.note-label.selected { fill: var(--asymptopia-green); font-weight: 800; }
+.note-label.current-key { fill: var(--asymptopia-green); }
 .note-label.neutral { fill: #e2e2e2; opacity: 0.76; }
 .note-label.playing { fill: #ffd866; font-weight: 900; }
 .octave-label { fill: #ffeb84; font-size: 12px; pointer-events: none; }
