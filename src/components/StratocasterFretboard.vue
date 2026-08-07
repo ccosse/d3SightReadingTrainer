@@ -3,8 +3,7 @@
     <div class="svg-frame fretboard-frame">
       <svg
         class="instrument-svg"
-        :style="svgStyle"
-        :viewBox="fretboard.viewBox"
+        :viewBox="zoomedViewBox"
         role="img"
         aria-label="Scalable d3GuitarExplorer-style tapered Stratocaster fretboard with linked sounding-note highlights"
         @pointerleave="releasePreview"
@@ -141,7 +140,14 @@ import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
 const fretboard = new StratocasterFretboardModel({ fretCount: 24, woodFretCount: 22 })
-const svgStyle = computed(() => ({ width: `${store.fretboardZoom * 100}%` }))
+const zoomedViewBox = computed(() => {
+  const zoom = Math.max(0.75, Math.min(1.6, Number(store.fretboardZoom) || 1))
+  const width = fretboard.width / zoom
+  const height = fretboard.height / zoom
+  const x = (fretboard.width - width) / 2
+  const y = (fretboard.height - height) / 2
+  return `${x} ${y} ${width} ${height}`
+})
 let previewVoices = []
 let previewToken = null
 let previewRequest = 0
@@ -200,7 +206,7 @@ onBeforeUnmount(releasePreview)
 </script>
 
 <style scoped>
-.instrument-svg { min-width: 100%; height: auto; display: block; transition: width 140ms ease; touch-action: none; }
+.instrument-svg { width: 100%; height: auto; display: block; transition: none; touch-action: none; }
 .svg-frame { border-radius: 7px; }
 .fretboard-frame { overflow-x: auto; overflow-y: hidden; background: #666; padding: 3px 7px 0; scrollbar-color: #888 #444; }
 .board { stroke: #8e5d45; stroke-width: 1.6; }

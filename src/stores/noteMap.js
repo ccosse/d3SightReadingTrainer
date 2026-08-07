@@ -81,7 +81,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       staff: true
     },
     componentOrder: [...DEFAULT_COMPONENT_ORDER],
-    leftDrawerOpen: false,
+    leftDrawerOpen: true,
     rightDrawerOpen: true,
     rightDrawerMode: 'dock',
     fifthsFullscreenOpen: false,

@@ -1,63 +1,33 @@
 <template>
   <q-page class="music-workspace">
-    <q-tab-panels v-model="store.activeTab" animated keep-alive class="workspace-panels">
-      <q-tab-panel name="note-map" class="q-pa-none">
-        <div class="instrument-stack">
-          <div
-            v-for="item in orderedComponents"
-            v-show="store.visibleObjects[item.id]"
-            :key="item.id"
-            class="component-shell"
-            :class="{ dragging: draggingId === item.id, 'drop-target': overId === item.id }"
-            @dragover.prevent="overId = item.id"
-            @dragleave="overId = null"
-            @drop.prevent="dropOn(item.id)"
-          >
-            <div
-              class="component-drag-handle"
-              draggable="true"
-              @dragstart="startDrag($event, item.id)"
-              @dragend="finishDrag"
-            >
-              <q-icon name="drag_indicator" size="18px" />
-              <q-tooltip v-if="store.tooltipsEnabled">Drag to reorder {{ item.label }}. Arrow controls are also available in the left sidebar.</q-tooltip>
-            </div>
-            <component :is="item.component" />
-          </div>
+    <div class="instrument-stack">
+      <div
+        v-for="item in orderedComponents"
+        v-show="store.visibleObjects[item.id]"
+        :key="item.id"
+        class="component-shell"
+        :class="{ dragging: draggingId === item.id, 'drop-target': overId === item.id }"
+        @dragover.prevent="overId = item.id"
+        @dragleave="overId = null"
+        @drop.prevent="dropOn(item.id)"
+      >
+        <div
+          class="component-drag-handle"
+          draggable="true"
+          @dragstart="startDrag($event, item.id)"
+          @dragend="finishDrag"
+        >
+          <q-icon name="drag_indicator" size="18px" />
+          <q-tooltip v-if="store.tooltipsEnabled">Drag to reorder {{ item.label }}. Arrow controls are also available in the left sidebar.</q-tooltip>
         </div>
-
-      </q-tab-panel>
-
-
-      <q-tab-panel name="guitar-tab" class="q-pa-none">
-        <FeaturePlaceholder
-          title="Guitar TAB"
-          text="Scrolling tablature, position constraints, string/fret recognition, and keyboard correspondence will live here."
-        />
-      </q-tab-panel>
-
-      <q-tab-panel name="fifths" class="q-pa-none">
-        <div class="fifths-study">
-          <FifthsExplorer />
-          <TheoryControls />
-        </div>
-      </q-tab-panel>
-
-      <q-tab-panel name="composer" class="q-pa-none">
-        <FeaturePlaceholder
-          title="Composer"
-          text="Chord designer, progression timeline, save/playback, Web MIDI output, and generative accompaniment—including stride piano—will live here."
-        />
-      </q-tab-panel>
-    </q-tab-panels>
+        <component :is="item.component" />
+      </div>
+    </div>
   </q-page>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import FeaturePlaceholder from '../components/FeaturePlaceholder.vue'
-import FifthsExplorer from '../components/FifthsExplorer.vue'
-import TheoryControls from '../components/TheoryControls.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import PitchClassSelector from '../components/PitchClassSelector.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -103,7 +73,6 @@ function dropOn(targetId) {
   background: #333;
   color: white;
 }
-.workspace-panels { background: transparent; color: white; }
 .instrument-stack { display: grid; gap: 8px; }
 .component-shell {
   position: relative;
@@ -135,7 +104,6 @@ function dropOn(targetId) {
 .component-shell:hover .component-drag-handle,
 .component-drag-handle:focus { opacity: 0.95; background: rgba(20, 20, 20, 0.86); }
 .component-drag-handle:active { cursor: grabbing; }
-.fifths-study { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; }
 
 @media (max-width: 880px) {
   .music-workspace { padding-inline: 8px; }

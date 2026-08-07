@@ -1,12 +1,10 @@
 <template>
   <section class="key-summary" :class="{ compact }">
-    <div class="q-mb-sm">
-      <div :class="compact ? 'text-subtitle1' : 'text-h6'">{{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label + ' major' }}</div>
-      <div class="text-caption text-grey-5">
-        {{ store.keySignatureSummary }} · Relative {{ store.currentKey.relativeMinor }}
-      </div>
+    <div class="summary-line">
+      <strong>{{ activeKeyName }}</strong>
+      <span class="summary-meta">· {{ store.keySignatureSummary }} · Relative {{ relativeName }}</span>
     </div>
-    <div class="row q-gutter-xs">
+    <div class="degree-row">
       <q-chip
         v-for="(name, index) in store.activeScaleNames"
         :key="name"
@@ -37,6 +35,8 @@ defineProps({
 
 const store = useNoteMapStore()
 const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey, store.currentMode))
+const activeKeyName = computed(() => store.currentMode === 'minor' ? store.currentMinorLabel : `${store.currentKey.label} major`)
+const relativeName = computed(() => store.currentMode === 'minor' ? `${store.currentKey.label} major` : store.currentKey.relativeMinor)
 </script>
 
 <style scoped>
@@ -44,10 +44,28 @@ const scalePitchClasses = computed(() => keyPitchClasses(store.currentKey, store
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 8px 4px;
+  padding: 7px 4px 8px;
+  text-align: center;
 }
-.key-summary.compact {
-  background: transparent;
-  padding: 7px 3px;
+.key-summary.compact { padding: 6px 3px 7px; }
+.summary-line {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+  font-size: 15px;
 }
+.summary-line strong { font-size: 16px; font-weight: 750; }
+.summary-meta { color: #bdbdbd; font-size: 13px; }
+.degree-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+.degree-row :deep(.q-chip) { margin: 0; }
 </style>

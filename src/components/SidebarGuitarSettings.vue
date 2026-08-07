@@ -14,7 +14,7 @@
         @update:model-value="store.setFretboardZoom(Number($event) / 100)"
       >
         <div class="dial-value"><strong>{{ Math.round(store.fretboardZoom * 100) }}%</strong><span>Zoom</span></div>
-        <q-tooltip v-if="store.tooltipsEnabled">Scale the SVG fretboard horizontally.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Zoom the fretboard around its center in both directions.</q-tooltip>
       </q-knob>
     </div>
 

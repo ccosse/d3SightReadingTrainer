@@ -24,8 +24,8 @@
 
           <button class="section-name" type="button" @click="toggleSettings(id)">
             <span>{{ metadata[id].label }}</span>
-            <q-icon :name="expandedId === id ? 'expand_less' : 'expand_more'" size="18px" />
-            <q-tooltip v-if="store.tooltipsEnabled">{{ expandedId === id ? 'Close' : 'Open' }} {{ metadata[id].label }} settings.</q-tooltip>
+            <q-icon :name="isExpanded(id) ? 'expand_less' : 'expand_more'" size="18px" />
+            <q-tooltip v-if="store.tooltipsEnabled">{{ isExpanded(id) ? 'Close' : 'Open' }} {{ metadata[id].label }} settings.</q-tooltip>
           </button>
 
           <ImageCheckbox
@@ -45,7 +45,7 @@
         </div>
 
         <q-slide-transition>
-          <div v-show="expandedId === id" class="settings-slot">
+          <div v-show="isExpanded(id)" class="settings-slot">
             <SidebarControlsSettings v-if="id === 'controls'" />
             <SidebarStaffSettings v-else-if="id === 'staff'" />
             <SidebarPianoSettings v-else-if="id === 'piano'" />
@@ -69,7 +69,7 @@ import { useNoteMapStore } from '../stores/noteMap'
 const store = useNoteMapStore()
 const draggingId = ref(null)
 const overId = ref(null)
-const expandedId = ref('controls')
+const expandedIds = ref(new Set(['staff']))
 
 const metadata = {
   controls: { label: 'Controls' },
@@ -78,8 +78,15 @@ const metadata = {
   guitar: { label: 'Guitar' }
 }
 
+function isExpanded(id) {
+  return expandedIds.value.has(id)
+}
+
 function toggleSettings(id) {
-  expandedId.value = expandedId.value === id ? null : id
+  const next = new Set(expandedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expandedIds.value = next
 }
 
 function startDrag(event, id) {

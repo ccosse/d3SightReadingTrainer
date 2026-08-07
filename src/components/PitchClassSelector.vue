@@ -76,8 +76,12 @@ function startPitchDrag(event, pitchClass) {
   background: #414141;
   border: 1px solid #5b5b5b;
 }
-.pitch-button.in-key { background: #35483a; border-color: var(--asymptopia-green); }
-.pitch-button.in-key.tonic { box-shadow: inset 0 -3px 0 var(--asymptopia-green); }
+.pitch-button.in-key {
+  background: #414141;
+  border-color: #5b5b5b;
+  box-shadow: inset 0 -2px 0 rgba(72, 254, 58, 0.78);
+}
+.pitch-button.in-key.tonic { box-shadow: inset 0 -4px 0 var(--asymptopia-green); }
 .pitch-button.selected { color: white; background: var(--q-primary); border-color: #9dd4ff; }
 .pitch-name { line-height: 1; font-size: 21px; font-weight: 650; }
 .scale-degree { position: absolute; right: 4px; bottom: 2px; color: var(--asymptopia-green); font-size: 14px; line-height: 1; }

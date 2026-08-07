@@ -17,23 +17,8 @@
       <q-scroll-area class="fit dark-drawer-scroll">
         <div class="left-drawer-column">
           <div class="left-drawer-tools">
-            <q-list padding dark class="icon-nav-list">
-              <q-item
-                v-for="item in navigation"
-                :key="item.name"
-                clickable
-                v-ripple
-                :active="store.activeTab === item.name"
-                active-class="active-nav"
-                :aria-label="item.label"
-                @click="store.activeTab = item.name"
-              >
-                <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">{{ item.tooltip }}</q-tooltip>
-                <q-item-section class="nav-icon-section"><q-icon :name="item.icon" size="25px" /></q-item-section>
-              </q-item>
-            </q-list>
+            <ComponentOrderList />
 
-            <ComponentOrderList v-if="store.activeTab === 'note-map'" />
           </div>
 
           <div class="brand-mark" aria-label="Asymptopia">
@@ -53,7 +38,7 @@
       @click="store.leftDrawerOpen = !store.leftDrawerOpen"
     >
       <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">
-        {{ store.leftDrawerOpen ? 'Collapse the workspace sidebar.' : 'Open navigation and view arrangement.' }}
+        {{ store.leftDrawerOpen ? 'Collapse the workspace sidebar.' : 'Open workspace controls and view arrangement.' }}
       </q-tooltip>
     </q-btn>
 
@@ -160,23 +145,20 @@ import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
 const $q = useQuasar()
-const leftDesktopWidth = 260
-const rightDockWidth = 520
-const stableWorkspaceWidth = 1080
-const leftDrawerWidth = computed(() => $q.screen.lt.sm ? Math.min(280, Math.round($q.screen.width * 0.88)) : leftDesktopWidth)
+const desktopDrawerWidth = 350
+const stableWorkspaceWidth = 900
+const drawerWidth = computed(() => $q.screen.lt.sm ? Math.min(340, Math.round($q.screen.width * 0.92)) : desktopDrawerWidth)
+const leftDrawerWidth = drawerWidth
 // On desktop the workspace drawer occupies its own column. Phones and tablets
 // keep the slide-over behavior so the staff remains usable on small screens.
-const leftDrawerOverlay = computed(() => $q.screen.width < 1180)
-const showFifthsTools = computed(() => store.activeTab !== 'fifths')
-const canDock = computed(() => $q.screen.width >= stableWorkspaceWidth + rightDockWidth + 24)
+const leftDrawerOverlay = computed(() => $q.screen.width < 1100)
+const showFifthsTools = computed(() => true)
+const reservedLeftWidth = computed(() => store.leftDrawerOpen && !leftDrawerOverlay.value ? desktopDrawerWidth : 0)
+const canDock = computed(() => $q.screen.width >= stableWorkspaceWidth + desktopDrawerWidth + reservedLeftWidth.value + 16)
 const rightDrawerOverlay = computed(() => !canDock.value || store.rightDrawerMode === 'overlay')
 const rightDrawerWidth = computed(() => {
-  if ($q.screen.lt.sm) return $q.screen.width
-  if (!rightDrawerOverlay.value) return rightDockWidth
-  if ($q.screen.lt.md) return Math.round($q.screen.width * 0.94)
-  // The slide-over theory view stays generous enough for the ladder and circle,
-  // but is about 75px narrower than the previous desktop overlay cap.
-  return Math.min(990, Math.round($q.screen.width * 0.68))
+  if (!rightDrawerOverlay.value) return desktopDrawerWidth
+  return drawerWidth.value
 })
 const leftEdgeTabStyle = computed(() => ({
   // The tab begins exactly at the drawer edge and projects over the music area.
@@ -188,12 +170,6 @@ const fifthsEdgeTabStyle = computed(() => ({
   right: store.rightDrawerOpen ? `${Math.max(0, rightDrawerWidth.value - 1)}px` : '0px'
 }))
 
-const navigation = [
-  { name: 'note-map', label: 'Note Map', icon: 'grid_on', tooltip: 'Explore notes across keyboard, fretboard, staff, keys, and Circle of Fifths.' },
-  { name: 'guitar-tab', label: 'Guitar TAB', icon: 'linear_scale', tooltip: 'Open the linked guitar-tablature workspace.' },
-  { name: 'fifths', label: 'Circle of Fifths', icon: 'donut_large', tooltip: 'Open the Circle, key-signature ladder, and linked controls in a full-width study view.' },
-  { name: 'composer', label: 'Composer', icon: 'edit_note', tooltip: 'Open the chord, playback, and accompaniment workspace.' }
-]
 </script>
 
 <style scoped>
@@ -216,10 +192,6 @@ const navigation = [
   height: 80px;
   max-width: 100%;
 }
-.active-nav { color: white; background: #4a4a4a; }
-.icon-nav-list { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 10px !important; gap: 4px; }
-.icon-nav-list :deep(.q-item) { min-height: 54px; padding: 0; justify-content: center; border-radius: 6px; }
-.nav-icon-section { min-width: 0 !important; align-items: center; justify-content: center; }
 .circle-overlay-body { position: relative; display: grid; gap: 10px; padding: 11px 15px 24px; min-height: 100%; }
 .expand-fifths { position: absolute; z-index: 6; top: 5px; right: 5px; background: rgba(28, 28, 28, 0.48); }
 .drawer-mode-toggle { position: absolute; z-index: 6; top: 5px; right: 45px; background: rgba(28, 28, 28, 0.48); }
