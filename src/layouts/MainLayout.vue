@@ -21,10 +21,16 @@
 
           </div>
 
-          <div class="brand-mark" aria-label="Asymptopia">
+          <a
+            class="brand-mark"
+            href="https://www.asymptopia.com/"
+            target="_blank"
+            rel="author noopener noreferrer"
+            aria-label="Open Asymptopia Software in a new tab"
+          >
             <img src="../assets/asymptopia_logo.png" alt="Asymptopia logo" />
-            <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">Asymptopia</q-tooltip>
-          </div>
+            <q-tooltip v-if="store.tooltipsEnabled" anchor="center right" self="center left">Open asymptopia.com</q-tooltip>
+          </a>
         </div>
       </q-scroll-area>
     </q-drawer>
@@ -185,7 +191,11 @@ const fifthsEdgeTabStyle = computed(() => ({
   display: grid;
   place-items: center;
   padding: 12px 22px 16px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
 }
+.brand-mark:visited { color: inherit; }
 .brand-mark img {
   display: block;
   width: 216px;

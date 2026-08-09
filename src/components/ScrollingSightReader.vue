@@ -4,7 +4,7 @@
       <svg
         ref="readerSvg"
         class="scroll-svg"
-        viewBox="0 0 1120 360"
+        viewBox="0 0 1120 380"
         role="img"
         aria-label="Common scrolling grand staff with fixed scanline, clip selection, and linked instrument playback"
         @dragenter.stop.prevent="updateDropPreview"
@@ -18,16 +18,16 @@
         @pointercancel="cancelRangeSelection"
         @pointerleave="finishRangeSelection"
       >
-        <rect x="0" y="0" width="1120" height="360" class="stage-bg" />
+        <rect x="0" y="0" width="1120" height="380" class="stage-bg" />
         <defs>
           <clipPath id="moving-note-clip">
-            <rect x="176" y="40" width="916" height="278" />
+            <rect x="176" y="20" width="916" height="342" />
           </clipPath>
         </defs>
 
         <g class="moving-grid">
           <g v-for="marker in timelineMarkers" :key="marker.key">
-            <line :x1="marker.x" :x2="marker.x" y1="44" y2="314" :class="marker.isBar ? 'bar-line' : 'beat-line'" />
+            <line :x1="marker.x" :x2="marker.x" y1="44" y2="334" :class="marker.isBar ? 'bar-line' : 'beat-line'" />
             <text v-if="marker.isBar" :x="marker.x + 6" y="31" class="measure-label">{{ marker.measure }}</text>
           </g>
         </g>
@@ -58,8 +58,8 @@
         </g>
 
         <g v-if="dropPreview" class="drop-preview" pointer-events="none">
-          <rect v-if="dropPreview.width" :x="dropPreview.x" y="45" :width="dropPreview.width" height="269" class="clip-drop-span" />
-          <line :x1="dropPreview.x" :x2="dropPreview.x" y1="45" y2="314" class="drop-guide" />
+          <rect v-if="dropPreview.width" :x="dropPreview.x" y="45" :width="dropPreview.width" height="289" class="clip-drop-span" />
+          <line :x1="dropPreview.x" :x2="dropPreview.x" y1="45" y2="334" class="drop-guide" />
           <g v-for="note in dropPreview.notes" :key="`preview-${note.midi}`">
             <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="preview-ledger" />
             <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="preview-accidental">{{ note.accidental }}</text>
@@ -68,8 +68,8 @@
           <text :x="dropPreview.x + 14" y="56" class="preview-label">{{ dropPreview.label }} · beat {{ dropPreview.beatLabel }}</text>
         </g>
 
-        <rect v-if="selectionVisual" :x="selectionVisual.x" y="42" :width="selectionVisual.width" height="274" class="clip-selection" />
-        <line :x1="scanX" :x2="scanX" y1="34" y2="318" class="fixed-scanline" />
+        <rect v-if="selectionVisual" :x="selectionVisual.x" y="42" :width="selectionVisual.width" height="294" class="clip-selection" />
+        <line :x1="scanX" :x2="scanX" y1="34" y2="338" class="fixed-scanline" />
         <polygon :points="`${scanX - 7},34 ${scanX + 7},34 ${scanX},46`" class="scan-marker" />
       </svg>
     </div>
@@ -235,7 +235,7 @@ function pointerInViewBox(event) {
   if (!rect?.width || !rect?.height) return null
   return {
     x: (event.clientX - rect.left) / rect.width * 1120,
-    y: (event.clientY - rect.top) / rect.height * 360
+    y: (event.clientY - rect.top) / rect.height * 380
   }
 }
 function nearestMidiForPitchClass(pitchClass, y) {
@@ -299,7 +299,7 @@ function updateDropPreview(event) {
   const absoluteBeat = beatForPointer(event)
   const payload = payloadFromDragEvent(event)
   if (!point || absoluteBeat === null || !payload) return
-  const midis = previewNotesForPayload(payload, Math.max(48, Math.min(310, point.y)))
+  const midis = previewNotesForPayload(payload, Math.max(48, Math.min(330, point.y)))
   if (!midis.length) return
   const beat = localManualBeat(absoluteBeat)
   const x = xForBeat(currentManualCycleStart() + beat)
