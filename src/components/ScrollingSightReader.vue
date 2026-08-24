@@ -161,7 +161,7 @@ const visibleTies = computed(() => {
       const startX = prior.x + 11
       const endX = note.x - 11
       if (endX <= startX) continue
-      const arch = note.y < 181 ? -18 : 18
+      const arch = note.clef === 'treble' ? -18 : 18
       const controlX = (startX + endX) / 2
       const controlY = note.y + arch
       result.push({ key: `${previous.id}-${current.id}-${note.midi}`, path: `M ${startX} ${note.y} Q ${controlX} ${controlY} ${endX} ${note.y}` })
@@ -210,17 +210,41 @@ function accidentalForMidi(midi) {
 function displayLabelForMidi(midi) {
   return `${spellingForMidi(midi)}${midiOctave(midi)}`
 }
-function diatonicStepFromC4(midi) {
+function diatonicIndex(midi) {
   const spelling = spellingForMidi(midi)
   const octave = midiOctave(midi)
-  return (octave - 4) * 7 + letterOrder.indexOf(String(spelling)[0])
+  return octave * 7 + letterOrder.indexOf(String(spelling)[0])
 }
-function noteY(midi) { return 181 - diatonicStepFromC4(midi) * 7 }
-function ledgerLines(y) {
+
+// The scrolling reader deliberately leaves a large visual gap between the two
+// staves, so a single continuous Y mapping cannot be musically correct for both
+// clefs. Anchor each clef to its actual bottom staff line instead:
+//   treble bottom line = E4 at y=134
+//   bass bottom line   = G2 at y=284
+const trebleBottomLineIndex = 4 * 7 + letterOrder.indexOf('E')
+const bassBottomLineIndex = 2 * 7 + letterOrder.indexOf('G')
+function noteY(midi, clef = 'treble') {
+  const index = diatonicIndex(midi)
+  return clef === 'bass'
+    ? 284 - (index - bassBottomLineIndex) * 7
+    : 134 - (index - trebleBottomLineIndex) * 7
+}
+function clefForPointerY(y) { return y < 181 ? 'treble' : 'bass' }
+function clefForEventMidi(event, midi) {
+  if (event?.clef === 'treble' || event?.clef === 'bass') return event.clef
+  // Combined/generated and manual events need a deterministic split. Middle C
+  // defaults to treble; lower notes default to bass.
+  return Number(midi) >= 60 ? 'treble' : 'bass'
+}
+function ledgerLines(y, clef) {
   const values = []
-  if (Math.abs(y - 181) < 1) values.push(181)
-  for (let line = 64; line >= y; line -= 14) values.push(line)
-  for (let line = 298; line <= y; line += 14) values.push(line)
+  if (clef === 'bass') {
+    for (let line = 214; line >= y; line -= 14) values.push(line)
+    for (let line = 298; line <= y; line += 14) values.push(line)
+  } else {
+    for (let line = 64; line >= y; line -= 14) values.push(line)
+    for (let line = 148; line <= y; line += 14) values.push(line)
+  }
   return values
 }
 function xForBeat(beat) { return scanX + (beat - currentBeat.value) * pixelsPerBeat.value }
@@ -239,11 +263,12 @@ function pointerInViewBox(event) {
   }
 }
 function nearestMidiForPitchClass(pitchClass, y) {
+  const clef = clefForPointerY(y)
   let bestMidi = 60 + mod12(pitchClass)
   let bestDistance = Infinity
   for (let midi = 24; midi <= 96; midi += 1) {
     if (mod12(midi) !== mod12(pitchClass)) continue
-    const distance = Math.abs(noteY(midi) - y)
+    const distance = Math.abs(noteY(midi, clef) - y)
     if (distance < bestDistance) {
       bestMidi = midi
       bestDistance = distance
@@ -309,13 +334,18 @@ function updateDropPreview(event) {
     width: payload.type === 'clip' ? Math.max(18, clipLengthBeats(payload) * pixelsPerBeat.value) : 0,
     beatLabel: String(Math.round(beat / store.staffQuantize) * store.staffQuantize + 1),
     label: payload.type === 'clip' ? (payload.label || 'Clip') : payload.type === 'chord' ? (payload.label || 'Chord') : displayLabelForMidi(midis[0]),
-    notes: midis.map((midi) => ({
-      midi,
-      x,
-      y: noteY(midi),
-      accidental: accidentalForMidi(midi),
-      ledgerLines: ledgerLines(noteY(midi))
-    }))
+    notes: midis.map((midi) => {
+      const clef = clefForPointerY(point.y)
+      const y = noteY(midi, clef)
+      return {
+        midi,
+        x,
+        y,
+        clef,
+        accidental: accidentalForMidi(midi),
+        ledgerLines: ledgerLines(y, clef)
+      }
+    })
   }
 }
 function clearDropPreview(event) {
@@ -345,10 +375,11 @@ function shiftChordToPointer(midis, y) {
   if (!source.length) return []
   let best = source
   let bestDistance = Infinity
+  const clef = clefForPointerY(y)
   for (let shift = -48; shift <= 48; shift += 12) {
     const candidate = source.map((midi) => midi + shift)
     if (candidate.some((midi) => midi < 24 || midi > 96)) continue
-    const averageY = candidate.reduce((sum, midi) => sum + noteY(midi), 0) / candidate.length
+    const averageY = candidate.reduce((sum, midi) => sum + noteY(midi, clef), 0) / candidate.length
     const distance = Math.abs(averageY - y)
     if (distance < bestDistance) {
       best = candidate
@@ -434,7 +465,8 @@ function buildVisualEvent(event) {
   let previousY = null
   let alternate = false
   const rawNotes = event.midis.map((midi) => {
-    const y = noteY(midi)
+    const clef = clefForEventMidi(event, midi)
+    const y = noteY(midi, clef)
     if (previousY !== null && Math.abs(previousY - y) <= 8) alternate = !alternate
     else alternate = false
     previousY = y
@@ -443,21 +475,22 @@ function buildVisualEvent(event) {
       midi,
       x,
       y,
+      clef,
       label: displayLabelForMidi(midi),
       accidental: accidentalForMidi(midi),
-      ledgerLines: ledgerLines(y)
+      ledgerLines: ledgerLines(y, clef)
     }
   })
 
   const groups = [
-    rawNotes.filter((note) => note.y < 181).sort((a, b) => a.y - b.y),
-    rawNotes.filter((note) => note.y >= 181).sort((a, b) => a.y - b.y)
+    rawNotes.filter((note) => note.clef === 'treble').sort((a, b) => a.y - b.y),
+    rawNotes.filter((note) => note.clef === 'bass').sort((a, b) => a.y - b.y)
   ]
   for (const group of groups) {
     group.forEach((note, index) => {
       const placeRight = index % 2 === 1
       note.labelX = note.x + (placeRight ? 17 : -17)
-      note.labelY = note.y + (note.y < 181 ? -12 : 20)
+      note.labelY = note.y + (note.clef === 'treble' ? -12 : 20)
       note.labelAnchor = placeRight ? 'start' : 'end'
     })
   }
@@ -660,8 +693,8 @@ function tick(now) {
       playedIds.add(event.id)
       if (event.isRest || event.silent || !event.midis?.length) continue
       const audibleMidis = event.midis.filter((midi) => {
-        const treble = noteY(midi) < 181
-        return treble ? store.srtTrebleAudio : store.srtBassAudio
+        const clef = clefForEventMidi(event, midi)
+        return clef === 'treble' ? store.srtTrebleAudio : store.srtBassAudio
       })
       if (!audibleMidis.length) continue
       // Gate/hold is deliberately evaluated at the instant of playback rather
