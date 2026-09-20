@@ -33,7 +33,6 @@
           :y="sector.majorY"
           text-anchor="middle"
           class="major-label"
-          @click="choose(sector.entry, 'major')"
         >{{ sector.entry.label }}</text>
 
         <text
@@ -41,13 +40,11 @@
           :y="sector.minorY"
           text-anchor="middle"
           class="minor-label"
-          @click="choose(sector.entry, 'minor')"
         >{{ sector.entry.minor }}</text>
 
         <g
           class="mini-signature"
           :transform="`translate(${sector.signatureX} ${sector.signatureY})`"
-          @click="choose(sector.entry, 'major')"
         >
           <line v-for="lineY in [-6, -3, 0, 3, 6]" :key="lineY" x1="-20" x2="20" :y1="lineY" :y2="lineY" />
           <text
@@ -187,9 +184,9 @@ function choose(entry, mode = 'major') {
 .major-sector.active { fill: rgba(239, 92, 186, 0.98); stroke: #fff; filter: drop-shadow(0 0 4px rgba(239, 92, 186, 0.62)); }
 .minor-sector.active { fill: rgba(62, 139, 235, 0.98); stroke: #e8f4ff; }
 .signature-sector.active { fill: rgba(211, 243, 255, 0.98); stroke: #fff; }
-.major-label { fill: #fff; font-size: 18px; font-weight: 700; cursor: pointer; paint-order: stroke; stroke: rgba(43, 22, 42, 0.5); stroke-width: 1.4px; }
-.minor-label { fill: #fff; font-size: 15px; font-weight: 600; cursor: pointer; paint-order: stroke; stroke: rgba(28, 40, 74, 0.55); stroke-width: 1.2px; }
-.mini-signature { cursor: pointer; }
+.major-label { fill: #fff; font-size: 18px; font-weight: 700; paint-order: stroke; stroke: rgba(43, 22, 42, 0.5); stroke-width: 1.4px; }
+.minor-label { fill: #fff; font-size: 15px; font-weight: 600; paint-order: stroke; stroke: rgba(28, 40, 74, 0.55); stroke-width: 1.2px; }
+.major-label, .minor-label, .mini-signature, .mini-signature * { pointer-events: none; }
 .mini-signature line { stroke: rgba(33, 33, 33, 0.76); stroke-width: 0.7; }
 .signature-mark { fill: #202020; font-size: 12px; font-weight: 700; }
 .natural-signature { fill: #555; font-size: 12px; }

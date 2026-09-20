@@ -175,7 +175,7 @@ const signatureSymbols = computed(() => {
   const count = Math.abs(signature)
   const char = signature > 0 ? '♯' : '♭'
   const treble = signature > 0 ? [85, 106, 78, 99, 120, 92, 113] : [113, 92, 120, 99, 127, 106, 134]
-  const bass = signature > 0 ? [235, 256, 228, 249, 270, 242, 263] : [263, 242, 270, 249, 277, 256, 284]
+  const bass = signature > 0 ? [249, 270, 242, 263, 284, 256, 277] : [277, 256, 284, 263, 291, 270, 298]
   return Array.from({ length: count }, (_, index) => [
     { clef: 'treble', index, x: 93 + index * 17, y: treble[index], char },
     { clef: 'bass', index, x: 93 + index * 17, y: bass[index], char }
