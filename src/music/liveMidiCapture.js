@@ -24,6 +24,15 @@ export function startLiveCapture(bpm = 72) {
   liveCapture.take += 1
 }
 
+export function clearLiveCapture() {
+  liveCapture.recording = false
+  liveCapture.startedAt = 0
+  liveCapture.events = []
+  liveCapture.notes = []
+  liveCapture.held = new Map()
+  liveCapture.durationMs = 0
+}
+
 export function stopLiveCapture() {
   if (!liveCapture.recording) return
   const elapsed = performance.now() - liveCapture.startedAt

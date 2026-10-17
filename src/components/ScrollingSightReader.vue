@@ -61,6 +61,7 @@
             <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
             <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="note-accidental">{{ note.accidental }}</text>
             <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" class="capture-head" />
+            <text v-if="store.srtShowLabels" :x="note.x + 15" :y="note.y + 5" class="capture-label">{{ note.label }}</text>
           </g>
         </g>
 
@@ -85,7 +86,9 @@
       <strong>Live MIDI → Grand Staff</strong>
       <button type="button" :disabled="liveCapture.recording" @click="beginCapture">● Record</button>
       <button type="button" :disabled="!liveCapture.recording" @click="endCapture">■ Stop</button>
+      <button type="button" :disabled="!liveCapture.notes.length && !liveCapture.events.length" @click="clearCapture">Clear Take</button>
       <button type="button" :disabled="!liveCapture.events.length" @click="exportLiveCapture">Export raw take</button>
+      <label class="capture-option"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
       <label v-if="!liveCapture.recording && liveCapture.notes.length" class="review-slider">Review
         <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
       </label>
@@ -104,13 +107,15 @@ import { SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { liveCapture, startLiveCapture, stopLiveCapture, exportLiveCapture } from '../music/liveMidiCapture'
+import { liveCapture, startLiveCapture, stopLiveCapture, clearLiveCapture, exportLiveCapture } from '../music/liveMidiCapture'
+import { prepareCaptureMetronome, startCaptureMetronome, stopCaptureMetronome } from '../music/captureMetronome'
 
 const store = useNoteMapStore()
 const generator = new SightReadingGenerator()
 const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
+const metronomeOn = ref(false)
 const dropPreview = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
@@ -172,17 +177,30 @@ const capturedVisualEvents = computed(() => liveCapture.notes.map((note, index) 
   const clef = note.midi < 60 ? 'bass' : 'treble'
   const y = noteY(note.midi, clef)
   const x = xForBeat(beat)
-  return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef) }] }
+  return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef), label: displayLabelForMidi(note.midi) }] }
 }).filter(e => e.notes[0].x > -50 && e.notes[0].x < 1150))
-function beginCapture() {
+async function beginCapture() {
   if (store.srtTransportState === 'playing') pause()
+  // Prewarm the audio context on the user's click before starting the take.
+  if (metronomeOn.value) {
+    // AudioContext resume is user-gesture gated. See captureMetronome.
+    try { await prepareCaptureMetronome() } catch (error) { console.warn('Metronome unavailable', error) }
+  }
   startLiveCapture(store.srtTempo)
   currentBeat.value = 0
+  if (metronomeOn.value) startCaptureMetronome(liveCapture.startedAt, liveCapture.bpm).catch(console.warn)
   startCaptureTicker()
 }
 function endCapture() {
   stopLiveCapture()
+  stopCaptureMetronome()
   stopCaptureTicker()
+}
+function clearCapture() {
+  stopCaptureMetronome()
+  stopCaptureTicker()
+  clearLiveCapture()
+  currentBeat.value = 0
 }
 let captureFrame = 0
 function startCaptureTicker() {
@@ -542,7 +560,7 @@ function buildVisualEvent(event) {
     group.forEach((note, index) => {
       const placeRight = index % 2 === 1
       note.labelX = note.x + (placeRight ? 17 : -17)
-      note.labelY = note.y + (note.clef === 'treble' ? -12 : 20)
+      note.labelY = note.y + 5
       note.labelAnchor = placeRight ? 'start' : 'end'
     })
   }
@@ -845,7 +863,7 @@ watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
 onMounted(() => { prepareSession(); store.setSrtTransportState('stopped') })
-onBeforeUnmount(() => { stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+onBeforeUnmount(() => { stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>
@@ -881,6 +899,8 @@ onBeforeUnmount(() => { stopCaptureTicker(); stopLiveCapture(); sessionToken += 
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
 .staff-transport { padding: 5px 0 2px; }
 .capture-head { fill: #5be1c0; stroke: #ffffff; stroke-width: 1.3; }
+.capture-label { fill: #bfeaff; font-size: 13px; font-weight: 600; paint-order: stroke; stroke: #202020; stroke-width: 3px; text-anchor: start; dominant-baseline: central; }
+.capture-option { display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
 .capture-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:9px; font-size:12px; padding:7px; background:#203643; border-radius:7px; }
 .capture-bar button { background:#315470; border:1px solid #6d96ae; color:white; padding:6px 9px; border-radius:5px; cursor:pointer; }
 .capture-bar button:disabled { opacity:.4; cursor:default; }
