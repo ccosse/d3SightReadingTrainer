@@ -99,7 +99,7 @@
       <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
         <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
       </label>
-      <span>{{ takePlaying ? 'Playing take' : liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · {{ liveCapture.bpm }} BPM</span>
+      <span>{{ takePlaying ? 'Playing take' : liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · Recorded {{ liveCapture.bpm }} BPM<span v-if="takePlaying"> · Playback {{ store.srtTempo }} BPM ({{ (store.srtTempo / liveCapture.bpm).toFixed(2) }}×)</span></span>
       <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
     </div>
     <PlaybackTransport class="staff-transport" />
@@ -133,7 +133,8 @@ const takeFileInput = ref(null)
 const takePlaying = ref(false)
 const takeMessage = ref('')
 let takeFrame = 0
-let takeStart = 0
+let takeLastFrame = 0
+let takeElapsedMs = 0
 let takeIndex = 0
 let takeGeneration = 0
 const takeVoices = new Map()
@@ -154,7 +155,10 @@ async function loadTakeFile(event) {
     if (file.size>16000000) throw new Error('JSON file exceeds 16 MB')
     const count=importLiveCaptureJson(JSON.parse(await file.text()))
     currentBeat.value=0
-    takeMessage.value=`Loaded ${file.name} · ${count} notes`
+    // A loaded take starts at its original tempo; the Staff BPM dial can then
+    // slow down or speed up playback without modifying its raw MIDI timestamps.
+    store.setSrtTempo(liveCapture.bpm)
+    takeMessage.value=`Loaded ${file.name} · ${count} notes · recorded at ${liveCapture.bpm} BPM`
   } catch (error) { takeMessage.value=`Import failed: ${error.message}` }
   finally { event.target.value='' }
 }
@@ -188,18 +192,27 @@ async function playTake() {
   stopTake()
   const generation=takeGeneration
   takeIndex=0; currentBeat.value=0
-  takeStart=performance.now(); takePlaying.value=true
-  takeMessage.value='Playing recorded MIDI through the selected instrument'
-  const tick=()=>{
+  // Keep one virtual timeline expressed in ORIGINAL take milliseconds. The Staff
+  // BPM dial determines how quickly that timeline progresses in real time.
+  // Accumulating delta per frame also allows tempo changes DURING playback
+  // without skipping or replaying MIDI events.
+  takeElapsedMs=0
+  takeLastFrame=performance.now()
+  takePlaying.value=true
+  takeMessage.value=`Playing at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
+  const tick=(frameNow)=>{
     if(!takePlaying.value || generation!==takeGeneration)return
-    const elapsed=performance.now()-takeStart
+    const now=Number.isFinite(frameNow)?frameNow:performance.now()
+    const delta=Math.max(0,now-takeLastFrame)
+    takeLastFrame=now
+    takeElapsedMs+=delta*(store.srtTempo/liveCapture.bpm)
     const events=liveCapture.events
-    while(takeIndex<events.length && events[takeIndex].atMs<=elapsed + audioLeadMs.value) {
+    while(takeIndex<events.length && events[takeIndex].atMs<=takeElapsedMs+audioLeadMs.value) {
       playMidiEvent(events[takeIndex].bytes,generation)
       ++takeIndex
     }
-    currentBeat.value=Math.min(elapsed,liveCapture.durationMs)/(60000/liveCapture.bpm)
-    if(elapsed>=liveCapture.durationMs && takeIndex>=events.length){stopTake();takeMessage.value='Take playback complete';return}
+    currentBeat.value=Math.min(takeElapsedMs,liveCapture.durationMs)/(60000/liveCapture.bpm)
+    if(takeElapsedMs>=liveCapture.durationMs && takeIndex>=events.length){stopTake();takeMessage.value='Take playback complete';return}
     takeFrame=requestAnimationFrame(tick)
   }
   takeFrame=requestAnimationFrame(tick)
