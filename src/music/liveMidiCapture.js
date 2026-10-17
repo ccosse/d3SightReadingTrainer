@@ -87,3 +87,57 @@ export function exportLiveCapture() {
   anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// Import the exact JSON format written by exportLiveCapture. Never quantize or
+// overwrite raw event timing; the staff and playback derive from this data.
+export function importLiveCaptureJson(payload) {
+  if (!payload || payload.format !== 'd3srt-raw-midi-take' || payload.version !== 1 || !Array.isArray(payload.events)) {
+    throw new Error('Not a supported d3SRT raw MIDI take (version 1).')
+  }
+  if (payload.events.length > 250000) throw new Error('Take is too large to import safely.')
+  const bpm = Number(payload.bpm)
+  const duration = Number(payload.durationMs)
+  if (!Number.isFinite(bpm) || bpm <= 0 || bpm > 400 || !Number.isFinite(duration) || duration < 0 || duration > 12 * 3600000) {
+    throw new Error('Invalid tempo or take duration.')
+  }
+  const events = payload.events.map(item => {
+    if (!item || !Number.isFinite(item.atMs) || item.atMs < 0 || item.atMs > duration + 1000 ||
+        !Array.isArray(item.bytes) || item.bytes.length < 1 || item.bytes.length > 3 ||
+        !item.bytes.every(b => Number.isInteger(b) && b >= 0 && b <= 255)) {
+      throw new Error('Invalid MIDI event in take.')
+    }
+    return { atMs: item.atMs, bytes: [...item.bytes] }
+  }).sort((a,b) => a.atMs-b.atMs)
+  // Regenerate staff notes from events, avoiding trust in derived fields.
+  const notes = []
+  const held = new Map()
+  for (const { atMs, bytes } of events) {
+    const [status=0, pitch=0, velocity=0] = bytes
+    const kind = status & 0xf0, channel = status & 0x0f
+    const key = `${channel}:${pitch}`
+    if (kind===0x90 && velocity > 0) {
+      const previous=held.get(key)
+      if (previous) previous.durationMs=Math.max(1,atMs-previous.atMs)
+      const note={midi:pitch,channel,velocity,atMs,durationMs:null}
+      notes.push(note); held.set(key,note)
+    } else if(kind===0x80 || (kind===0x90 && velocity===0)) {
+      const note=held.get(key)
+      if(note) note.durationMs=Math.max(1,atMs-note.atMs)
+      held.delete(key)
+    } else if(kind===0xb0 && (pitch===120||pitch===123)) {
+      for (const [key,note] of held) if(note.channel===channel) {
+        note.durationMs=Math.max(1,atMs-note.atMs); held.delete(key)
+      }
+    }
+  }
+  for(const note of held.values()) note.durationMs=Math.max(1,duration-note.atMs)
+  liveCapture.recording=false
+  liveCapture.startedAt=0
+  liveCapture.bpm=bpm
+  liveCapture.events=events
+  liveCapture.notes=notes
+  liveCapture.held=new Map()
+  liveCapture.durationMs=duration
+  liveCapture.take+=1
+  return notes.length
+}

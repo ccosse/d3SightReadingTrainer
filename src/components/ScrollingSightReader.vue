@@ -84,15 +84,20 @@
 
     <div class="capture-bar">
       <strong>Live MIDI → Grand Staff</strong>
-      <button type="button" :disabled="liveCapture.recording" @click="beginCapture">● Record</button>
+      <button type="button" :disabled="liveCapture.recording || takePlaying" @click="beginCapture">● Record</button>
       <button type="button" :disabled="!liveCapture.recording" @click="endCapture">■ Stop</button>
       <button type="button" :disabled="!liveCapture.notes.length && !liveCapture.events.length" @click="clearCapture">Clear Take</button>
-      <button type="button" :disabled="!liveCapture.events.length" @click="exportLiveCapture">Export raw take</button>
+      <button type="button" :disabled="!liveCapture.events.length || liveCapture.recording || takePlaying" @click="exportLiveCapture">Export raw take</button>
+      <button type="button" :disabled="liveCapture.recording || takePlaying" @click="selectTakeFile">Load take (JSON)</button>
+      <input ref="takeFileInput" type="file" accept=".json,application/json" hidden @change="loadTakeFile" />
+      <button type="button" :disabled="liveCapture.recording || !liveCapture.events.length || takePlaying" @click="playTake">▶ Play take</button>
+      <button type="button" :disabled="!takePlaying" @click="stopTake">■ Stop take</button>
       <label class="capture-option"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
-      <label v-if="!liveCapture.recording && liveCapture.notes.length" class="review-slider">Review
+      <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
         <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
       </label>
-      <span>{{ liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · {{ liveCapture.bpm }} BPM</span>
+      <span>{{ takePlaying ? 'Playing take' : liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · {{ liveCapture.bpm }} BPM</span>
+      <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
     </div>
     <PlaybackTransport class="staff-transport" />
 
@@ -102,12 +107,12 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ensureAudioReady, startChord, stopChordVoices } from '../music/audio'
+import { ensureAudioReady, startChord, stopChordVoices, startMidi, stopMidiVoice } from '../music/audio'
 import { SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { liveCapture, startLiveCapture, stopLiveCapture, clearLiveCapture, exportLiveCapture } from '../music/liveMidiCapture'
+import { liveCapture, startLiveCapture, stopLiveCapture, clearLiveCapture, exportLiveCapture, importLiveCaptureJson } from '../music/liveMidiCapture'
 import { prepareCaptureMetronome, startCaptureMetronome, stopCaptureMetronome } from '../music/captureMetronome'
 
 const store = useNoteMapStore()
@@ -116,6 +121,81 @@ const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
 const metronomeOn = ref(false)
+const takeFileInput = ref(null)
+const takePlaying = ref(false)
+const takeMessage = ref('')
+let takeFrame = 0
+let takeStart = 0
+let takeIndex = 0
+let takeGeneration = 0
+const takeVoices = new Map()
+function stopTake() {
+  ++takeGeneration
+  if (takeFrame) cancelAnimationFrame(takeFrame)
+  takeFrame=0
+  takePlaying.value=false
+  for (const voice of takeVoices.values()) if (voice && !voice.pending) stopMidiVoice(voice, 0.05)
+  takeVoices.clear()
+}
+function selectTakeFile() { takeFileInput.value?.click() }
+async function loadTakeFile(event) {
+  const file=event.target.files?.[0]
+  if (!file) return
+  stopTake()
+  try {
+    if (file.size>16000000) throw new Error('JSON file exceeds 16 MB')
+    const count=importLiveCaptureJson(JSON.parse(await file.text()))
+    currentBeat.value=0
+    takeMessage.value=`Loaded ${file.name} · ${count} notes`
+  } catch (error) { takeMessage.value=`Import failed: ${error.message}` }
+  finally { event.target.value='' }
+}
+function playMidiEvent(bytes, generation) {
+  const [status=0,pitch=0,velocity=0]=bytes
+  const kind=status&0xf0,channel=status&0x0f,key=`${channel}:${pitch}`
+  if (kind===0x90 && velocity>0) {
+    const prior=takeVoices.get(key)
+    if(prior && !prior.pending) stopMidiVoice(prior,0.03)
+    const pending={pending:true}
+    takeVoices.set(key,pending)
+    startMidi(pitch, Math.max(0.02,Math.min(0.22,velocity/127*0.17))).then(voice=>{
+      if(generation!==takeGeneration || takeVoices.get(key)!==pending) stopMidiVoice(voice,0.03)
+      else takeVoices.set(key,voice)
+    }).catch(error=>{takeMessage.value=`Playback audio: ${error.message}`;takeVoices.delete(key)})
+  } else if(kind===0x80 || (kind===0x90 && velocity===0)) {
+    const voice=takeVoices.get(key)
+    takeVoices.delete(key)
+    if(voice && !voice.pending) stopMidiVoice(voice,0.08)
+  } else if(kind===0xb0 && (pitch===120 || pitch===123)) {
+    for(const voice of takeVoices.values()) if(voice && !voice.pending) stopMidiVoice(voice,0.05)
+    takeVoices.clear()
+  }
+}
+async function playTake() {
+  if(liveCapture.recording || !liveCapture.events.length || takePlaying.value) return
+  if(store.audioEngine==='web-midi') {takeMessage.value='Choose an internal or SoundFont instrument for take playback.';return}
+  try { await ensureAudioReady() }
+  catch(error) {takeMessage.value=`Audio unavailable: ${error.message}`;return}
+  // Start from the beginning, preserving each raw event's relative timestamp.
+  stopTake()
+  const generation=takeGeneration
+  takeIndex=0; currentBeat.value=0
+  takeStart=performance.now(); takePlaying.value=true
+  takeMessage.value='Playing recorded MIDI through the selected instrument'
+  const tick=()=>{
+    if(!takePlaying.value || generation!==takeGeneration)return
+    const elapsed=performance.now()-takeStart
+    const events=liveCapture.events
+    while(takeIndex<events.length && events[takeIndex].atMs<=elapsed) {
+      playMidiEvent(events[takeIndex].bytes,generation)
+      ++takeIndex
+    }
+    currentBeat.value=Math.min(elapsed,liveCapture.durationMs)/(60000/liveCapture.bpm)
+    if(elapsed>=liveCapture.durationMs && takeIndex>=events.length){stopTake();takeMessage.value='Take playback complete';return}
+    takeFrame=requestAnimationFrame(tick)
+  }
+  takeFrame=requestAnimationFrame(tick)
+}
 const dropPreview = ref(null)
 const scanX = 560
 const pixelsPerBeat = computed(() => 126 * store.staffZoom)
@@ -180,6 +260,7 @@ const capturedVisualEvents = computed(() => liveCapture.notes.map((note, index) 
   return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef), label: displayLabelForMidi(note.midi) }] }
 }).filter(e => e.notes[0].x > -50 && e.notes[0].x < 1150))
 async function beginCapture() {
+  stopTake()
   if (store.srtTransportState === 'playing') pause()
   // Prewarm the audio context on the user's click before starting the take.
   if (metronomeOn.value) {
@@ -197,6 +278,8 @@ function endCapture() {
   stopCaptureTicker()
 }
 function clearCapture() {
+  stopTake()
+  takeMessage.value=''
   stopCaptureMetronome()
   stopCaptureTicker()
   clearLiveCapture()
@@ -863,7 +946,7 @@ watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
 onMounted(() => { prepareSession(); store.setSrtTransportState('stopped') })
-onBeforeUnmount(() => { stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+onBeforeUnmount(() => { stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>
