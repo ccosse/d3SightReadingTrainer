@@ -106,6 +106,7 @@ function midiMessage(event) {
   if ([0xfe, 0xf8, 0xfa, 0xfc].includes(statusByte)) return
   recentEvent.value = `MIDI: ${bytes.map(v => v.toString(16).padStart(2, '0')).join(' ')} · ${Math.round(event.timeStamp)} ms`
   ingestLiveMidi(bytes, event.timeStamp)
+  monitorMidi(bytes)
   publish('midi', { bytes, timestamp: event.timeStamp })
 }
 function selectInput() {
