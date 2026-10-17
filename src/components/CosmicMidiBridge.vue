@@ -17,6 +17,7 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
+import { ingestLiveMidi } from '../music/liveMidiCapture'
 
 const store = useNoteMapStore()
 const midiAvailable = typeof navigator !== 'undefined' && !!navigator.requestMIDIAccess
@@ -54,6 +55,7 @@ function midiMessage(event) {
   const statusByte = bytes[0] || 0
   if ([0xfe, 0xf8, 0xfa, 0xfc].includes(statusByte)) return
   recentEvent.value = `MIDI: ${bytes.map(v => v.toString(16).padStart(2, '0')).join(' ')} · ${Math.round(event.timeStamp)} ms`
+  ingestLiveMidi(bytes, event.timeStamp)
   publish('midi', { bytes, timestamp: event.timeStamp })
 }
 function selectInput() {

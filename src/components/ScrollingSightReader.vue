@@ -38,14 +38,14 @@
         <text x="42" y="292" class="bass-clef">𝄢</text>
         <g v-for="symbol in signatureSymbols" :key="`${symbol.clef}-${symbol.index}`"><text :x="symbol.x" :y="symbol.y" class="signature-symbol">{{ symbol.char }}</text></g>
 
-        <g v-if="!hasPlayableSource" class="empty-state">
+        <g v-if="!hasPlayableSource && !liveCapture.notes.length" class="empty-state">
           <text x="560" y="165" text-anchor="middle">The manual staff is empty.</text>
           <text x="560" y="194" text-anchor="middle" class="empty-sub">Add notes on Note Map, or switch Source to Generated.</text>
         </g>
 
         <g clip-path="url(#moving-note-clip)">
           <path v-for="tie in visibleTies" :key="tie.key" :d="tie.path" class="note-tie" />
-          <g v-for="event in visibleEvents" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
+          <g v-for="event in (liveCapture.notes.length ? [] : visibleEvents)" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
             <text v-if="event.isRest" :x="event.x" :y="event.restY" text-anchor="middle" class="rest-symbol">{{ event.restGlyph }}</text>
             <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
             <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
@@ -54,6 +54,13 @@
               <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" :transform="`rotate(-18 ${note.x} ${note.y})`" class="scroll-head" />
               <text v-if="store.srtShowLabels" :x="note.labelX" :y="note.labelY" :text-anchor="note.labelAnchor" class="scroll-label">{{ note.label }}</text>
             </g>
+          </g>
+        </g>
+        <g v-for="event in capturedVisualEvents" :key="event.id" class="captured-event">
+          <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
+            <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
+            <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="note-accidental">{{ note.accidental }}</text>
+            <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" class="capture-head" />
           </g>
         </g>
 
@@ -74,6 +81,16 @@
       </svg>
     </div>
 
+    <div class="capture-bar">
+      <strong>Live MIDI → Grand Staff</strong>
+      <button type="button" :disabled="liveCapture.recording" @click="beginCapture">● Record</button>
+      <button type="button" :disabled="!liveCapture.recording" @click="endCapture">■ Stop</button>
+      <button type="button" :disabled="!liveCapture.events.length" @click="exportLiveCapture">Export raw take</button>
+      <label v-if="!liveCapture.recording && liveCapture.notes.length" class="review-slider">Review
+        <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
+      </label>
+      <span>{{ liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · {{ liveCapture.bpm }} BPM</span>
+    </div>
     <PlaybackTransport class="staff-transport" />
 
 
@@ -87,6 +104,7 @@ import { SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
 import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
+import { liveCapture, startLiveCapture, stopLiveCapture, exportLiveCapture } from '../music/liveMidiCapture'
 
 const store = useNoteMapStore()
 const generator = new SightReadingGenerator()
@@ -147,6 +165,40 @@ const timelineMarkers = computed(() => {
   return result
 })
 const visualEvents = computed(() => events.value.map(buildVisualEvent))
+// Preview is deliberately unquantized. Raw MIDI note-on time determines x;
+// meter grid is currently 4/4 at the tempo captured when Record was pressed.
+const capturedVisualEvents = computed(() => liveCapture.notes.map((note, index) => {
+  const beat = note.atMs / (60000 / liveCapture.bpm)
+  const clef = note.midi < 60 ? 'bass' : 'treble'
+  const y = noteY(note.midi, clef)
+  const x = xForBeat(beat)
+  return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef) }] }
+}).filter(e => e.notes[0].x > -50 && e.notes[0].x < 1150))
+function beginCapture() {
+  if (store.srtTransportState === 'playing') pause()
+  startLiveCapture(store.srtTempo)
+  currentBeat.value = 0
+  startCaptureTicker()
+}
+function endCapture() {
+  stopLiveCapture()
+  stopCaptureTicker()
+}
+let captureFrame = 0
+function startCaptureTicker() {
+  if (captureFrame) window.cancelAnimationFrame(captureFrame)
+  const frame = () => {
+    if (!liveCapture.recording) return
+    liveCapture.durationMs = Math.max(liveCapture.durationMs, performance.now() - liveCapture.startedAt)
+    currentBeat.value = liveCapture.durationMs / (60000 / liveCapture.bpm)
+    captureFrame = window.requestAnimationFrame(frame)
+  }
+  captureFrame = window.requestAnimationFrame(frame)
+}
+function stopCaptureTicker() {
+  if (captureFrame) window.cancelAnimationFrame(captureFrame)
+  captureFrame = 0
+}
 const visibleEvents = computed(() => visualEvents.value.filter((event) => event.x > -90 && event.x < 1210))
 const visibleTies = computed(() => {
   const result = []
@@ -793,7 +845,7 @@ watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
 onMounted(() => { prepareSession(); store.setSrtTransportState('stopped') })
-onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+onBeforeUnmount(() => { stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>
@@ -828,5 +880,11 @@ onBeforeUnmount(() => { sessionToken += 1; cancelAnimation(); clearReleaseTimers
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
 .staff-transport { padding: 5px 0 2px; }
+.capture-head { fill: #5be1c0; stroke: #ffffff; stroke-width: 1.3; }
+.capture-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:9px; font-size:12px; padding:7px; background:#203643; border-radius:7px; }
+.capture-bar button { background:#315470; border:1px solid #6d96ae; color:white; padding:6px 9px; border-radius:5px; cursor:pointer; }
+.capture-bar button:disabled { opacity:.4; cursor:default; }
+.review-slider { display:flex; align-items:center; gap:6px; }
+.review-slider input { width:130px; }
 @media (max-width: 700px) { .srt-shell { padding-inline: 0; } }
 </style>
