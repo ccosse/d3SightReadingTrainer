@@ -38,14 +38,14 @@
         <text x="42" y="292" class="bass-clef">𝄢</text>
         <g v-for="symbol in signatureSymbols" :key="`${symbol.clef}-${symbol.index}`"><text :x="symbol.x" :y="symbol.y" class="signature-symbol">{{ symbol.char }}</text></g>
 
-        <g v-if="!hasPlayableSource && !liveCapture.notes.length" class="empty-state">
+        <g v-if="!captureDisplayActive && !hasPlayableSource" class="empty-state">
           <text x="560" y="165" text-anchor="middle">The manual staff is empty.</text>
           <text x="560" y="194" text-anchor="middle" class="empty-sub">Add notes on Note Map, or switch Source to Generated.</text>
         </g>
 
         <g clip-path="url(#moving-note-clip)">
           <path v-for="tie in visibleTies" :key="tie.key" :d="tie.path" class="note-tie" />
-          <g v-for="event in (liveCapture.notes.length ? [] : visibleEvents)" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
+          <g v-for="event in (captureDisplayActive ? [] : visibleEvents)" :key="event.id" class="scroll-event" :class="{ crossing: event.crossing }">
             <text v-if="event.isRest" :x="event.x" :y="event.restY" text-anchor="middle" class="rest-symbol">{{ event.restGlyph }}</text>
             <line v-for="(stem, stemIndex) in event.stems" :key="`${event.id}-stem-${stemIndex}`" :x1="stem.x" :x2="stem.x" :y1="stem.y1" :y2="stem.y2" class="note-stem" />
             <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
@@ -56,12 +56,13 @@
             </g>
           </g>
         </g>
-        <g v-for="event in capturedVisualEvents" :key="event.id" class="captured-event">
+        <g v-for="event in (captureDisplayActive ? capturedVisualEvents : [])" :key="event.id" class="captured-event">
           <g v-for="note in event.notes" :key="`${event.id}-${note.midi}`">
             <line v-for="ledgerY in note.ledgerLines" :key="ledgerY" :x1="note.x - 18" :x2="note.x + 18" :y1="ledgerY" :y2="ledgerY" class="ledger-line" />
             <text v-if="note.accidental" :x="note.x - 19" :y="note.y + 7" text-anchor="middle" class="note-accidental">{{ note.accidental }}</text>
             <ellipse :cx="note.x" :cy="note.y" rx="10" ry="7" class="capture-head" />
-            <text v-if="store.srtShowLabels" :x="note.x + 15" :y="note.y + 5" class="capture-label">{{ note.label }}</text>
+            <path v-if="store.srtShowLabels && note.labelY !== note.y + 5" :d="`M${note.x + 11} ${note.y} L${note.x + 14} ${note.labelY - 4}`" class="capture-label-guide" />
+            <text v-if="store.srtShowLabels" :x="note.labelX" :y="note.labelY" class="capture-label">{{ note.label }}</text>
           </g>
         </g>
 
@@ -93,6 +94,8 @@
       <button type="button" :disabled="liveCapture.recording || !liveCapture.events.length || takePlaying" @click="playTake">▶ Play take</button>
       <button type="button" :disabled="!takePlaying" @click="stopTake">■ Stop take</button>
       <label class="capture-option"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
+      <label class="capture-option"><input v-model="captureOnlyView" type="checkbox" /> Capture only</label>
+      <label class="capture-option">Audio offset <input v-model.number="audioLeadMs" type="range" min="-750" max="750" step="25" /> {{ audioLeadMs > 0 ? '+' : '' }}{{ audioLeadMs }} ms</label>
       <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
         <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
       </label>
@@ -121,6 +124,11 @@ const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
 const metronomeOn = ref(false)
+// A dedicated capture layer prevents residual generated notes from appearing in takes.
+const captureOnlyView = ref(true)
+const captureDisplayActive = computed(() => captureOnlyView.value || liveCapture.recording || liveCapture.notes.length > 0)
+// Positive values advance audio relative to the score; negative values delay it.
+const audioLeadMs = ref(0)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
 const takeMessage = ref('')
@@ -186,7 +194,7 @@ async function playTake() {
     if(!takePlaying.value || generation!==takeGeneration)return
     const elapsed=performance.now()-takeStart
     const events=liveCapture.events
-    while(takeIndex<events.length && events[takeIndex].atMs<=elapsed) {
+    while(takeIndex<events.length && events[takeIndex].atMs<=elapsed + audioLeadMs.value) {
       playMidiEvent(events[takeIndex].bytes,generation)
       ++takeIndex
     }
@@ -252,13 +260,36 @@ const timelineMarkers = computed(() => {
 const visualEvents = computed(() => events.value.map(buildVisualEvent))
 // Preview is deliberately unquantized. Raw MIDI note-on time determines x;
 // meter grid is currently 4/4 at the tempo captured when Record was pressed.
-const capturedVisualEvents = computed(() => liveCapture.notes.map((note, index) => {
-  const beat = note.atMs / (60000 / liveCapture.bpm)
-  const clef = note.midi < 60 ? 'bass' : 'treble'
-  const y = noteY(note.midi, clef)
-  const x = xForBeat(beat)
-  return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef), label: displayLabelForMidi(note.midi) }] }
-}).filter(e => e.notes[0].x > -50 && e.notes[0].x < 1150))
+const capturedVisualEvents = computed(() => {
+  // The raw performance remains untouched. Only its label layout is adjusted.
+  const visible = liveCapture.notes.map((note, index) => {
+    const beat = note.atMs / (60000 / liveCapture.bpm)
+    const clef = note.midi < 60 ? 'bass' : 'treble'
+    const y = noteY(note.midi, clef)
+    const x = xForBeat(beat)
+    return { id: `live-${index}`, notes: [{ midi: note.midi, x, y, clef, accidental: accidentalForMidi(note.midi), ledgerLines: ledgerLines(y, clef), label: displayLabelForMidi(note.midi), labelX: x+16, labelY: y+5 }] }
+  }).filter(e => e.notes[0].x > -50 && e.notes[0].x < 1150)
+  // Dense chord labels need collision avoidance. Within each clef and x-column,
+  // space labels at least 15 pixels apart; a fine guide identifies the notehead.
+  const groups = new Map()
+  for (const event of visible) {
+    const n=event.notes[0]
+    const key = n.clef + ':' + Math.round(n.x/35)
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(n)
+  }
+  for (const notes of groups.values()) {
+    notes.sort((a,b)=>a.y-b.y)
+    const minSpacing=16
+    for (let i=1;i<notes.length;i++) {
+      if (notes[i].labelY < notes[i-1].labelY+minSpacing) notes[i].labelY=notes[i-1].labelY+minSpacing
+    }
+    // Avoid shifting the whole group systematically down.
+    const averageShift=notes.reduce((sum,n)=>sum+n.labelY-(n.y+5),0)/notes.length
+    for (const n of notes) n.labelY -= averageShift
+  }
+  return visible
+})
 async function beginCapture() {
   stopTake()
   if (store.srtTransportState === 'playing') pause()
@@ -981,9 +1012,11 @@ onBeforeUnmount(() => { stopTake(); stopCaptureMetronome(); stopCaptureTicker();
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
 .staff-transport { padding: 5px 0 2px; }
+.capture-label-guide { stroke: #bfeaff; stroke-width: 0.8; opacity: .75; fill: none; pointer-events: none; }
 .capture-head { fill: #5be1c0; stroke: #ffffff; stroke-width: 1.3; }
 .capture-label { fill: #bfeaff; font-size: 13px; font-weight: 600; paint-order: stroke; stroke: #202020; stroke-width: 3px; text-anchor: start; dominant-baseline: central; }
 .capture-option { display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+.capture-option input[type="range"] { width:90px; }
 .capture-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:9px; font-size:12px; padding:7px; background:#203643; border-radius:7px; }
 .capture-bar button { background:#315470; border:1px solid #6d96ae; color:white; padding:6px 9px; border-radius:5px; cursor:pointer; }
 .capture-bar button:disabled { opacity:.4; cursor:default; }

@@ -109,7 +109,7 @@
               :y="note.y + 4.8"
               text-anchor="middle"
               class="note-label"
-              :class="noteClass(note)"
+              :class="[noteClass(note), { 'on-dot': store.notesAsDots }]"
               @mouseenter="focusNote(string, note)"
               @pointerdown.prevent="pressNote(note)"
               @pointerup.prevent="releasePreview"
@@ -229,6 +229,8 @@ onBeforeUnmount(releasePreview)
 .note-label { fill: #fff; font-size: 16px; cursor: pointer; user-select: none; font-weight: 600; }
 .note-label.selected { fill: var(--asymptopia-green); font-weight: 800; }
 .note-label.current-key { fill: var(--asymptopia-green); }
+/* Name-only stays green; names over filled markers require contrasting ink. */
+.note-label.on-dot, .note-label.on-dot.current-key, .note-label.on-dot.selected { fill: #10253e; stroke: rgba(255,255,255,.85); stroke-width: .35; paint-order: stroke; font-weight: 850; }
 .note-label.neutral { fill: #e2e2e2; opacity: 0.76; }
 .note-label.playing { fill: #ffd866; font-weight: 900; }
 .octave-label { fill: #ffeb84; font-size: 12px; pointer-events: none; }
