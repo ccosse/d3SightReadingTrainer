@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cosmic Harmony v1.1 — Blues Moons</title><style>
+:root{color-scheme:dark;--bg:#101522;--surface:#1a2233;--surface2:#253149;--ink:#edf2fa;--muted:#aab9d0;--gold:#ffd17d;--blue:#85caff;--purple:#c0a7ff;--green:#7ce3ba;--red:#f79b9e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}header{padding:20px 24px 8px;max-width:1300px;margin:auto}h1{font-size:26px;margin:0 0 4px}header p{color:var(--muted);margin:0 0 12px}.layout{max-width:1300px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:0 20px 28px}.panel{background:var(--surface);border:1px solid #34415a;border-radius:15px;padding:14px}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}.toolbar label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}select,button{background:var(--surface2);color:var(--ink);border:1px solid #485673;border-radius:8px;padding:8px 11px;font:inherit;cursor:pointer}button:hover{border-color:var(--blue)}button:focus-visible,select:focus-visible,.node:focus-visible{outline:3px solid var(--gold);outline-offset:3px}button.primary{background:#245b7b}.switch{accent-color:var(--gold)}.viewport{width:100%;overflow:hidden}svg{display:block;width:100%;height:auto;max-height:760px}svg text{font-family:system-ui,sans-serif;text-anchor:middle;pointer-events:none}.node{cursor:pointer;outline:none}.node circle{stroke-width:2.2}.outer circle{stroke-width:3.1}.inner circle{stroke-width:2.6}.crossed circle{stroke-width:2.8}.node:hover circle,.node:focus circle{stroke:var(--gold);stroke-width:4}.node.allowed circle{stroke:var(--green);stroke-width:3.3}.node.selected circle{stroke:var(--gold);stroke-width:4.2}.node.dimmed{opacity:.32}.orbit{fill:none;stroke:#33435e;stroke-dasharray:5 9}.planet circle{fill:#273d55;stroke:#6598c5}.sun circle{fill:#684e28;stroke:#eabf69}.outer circle{fill:#2a3154;stroke:#b996ff}.inner circle{fill:#1f4a46;stroke:#4fe0c8}.crossed circle{fill:#463039;stroke:#f08ea2}.chord{font-weight:700;fill:#fff;font-size:17px}.role{font-size:12px;fill:#d1dcee}.tiny{font-size:10.5px;fill:#d1dcee}.smallChord{font-size:12.5px;fill:#fff;font-weight:650}.arrow{fill:none;stroke:var(--gold);stroke-width:3;stroke-linecap:round}.side h2{font-size:16px;margin:2px 0 10px}.side h3{font-size:13px;color:var(--muted);margin:20px 0 8px;text-transform:uppercase;letter-spacing:.04em}.hint{color:var(--muted);line-height:1.48;font-size:13px}.pill{display:inline-block;background:#31445d;color:#d8e8f8;padding:3px 7px;border-radius:6px;margin:3px 4px 3px 0;font-size:13px}.history{min-height:64px;line-height:1.8}.savedrow{padding:8px;border:1px solid #42516c;border-radius:8px;margin-bottom:7px}.savedrow button{margin:4px 5px 0 0;font-size:12px;padding:5px 7px}.savedrow .subtle{line-height:1.4;overflow-wrap:anywhere}.feedback{min-height:60px;color:var(--green);font-size:13px;line-height:1.45}.buttons{display:flex;flex-wrap:wrap;gap:7px}.buttons button{font-size:13px}.subtle{color:var(--muted);font-size:12px}.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:12px;padding:6px 2px 0}.dot{display:inline-block;border-radius:50%;width:11px;height:11px;margin-right:4px;vertical-align:middle}body.practice .practice-hide{visibility:hidden}#notes{font-size:13px;color:var(--muted);line-height:1.5}footer{max-width:1300px;margin:0 auto;padding:0 24px 26px;color:var(--muted);font-size:12px}kbd{color:#fff;background:#364358;padding:2px 5px;border-radius:3px}@media(max-width:860px){.layout{grid-template-columns:1fr;padding:0 10px 20px}.side{order:2}header{padding:16px 14px 9px}h1{font-size:22px}}@media(max-width:520px){.panel{padding:8px}.toolbar{gap:8px}svg{min-width:0}}
+
+.bluesPractice{margin:9px 0 14px;padding:12px;border:1px solid #415676;border-radius:12px;background:#142135}.bluesHead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.bluesBars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:9px}.bluesBars button{min-width:0;padding:10px 4px;text-align:center;background:#273b55}.bluesBars button:hover{background:#31516b}.bluesBars button small{display:block;color:#aab9d0;font-size:10px;margin-bottom:3px}.midiPanel{border:1px solid #4e6785;border-radius:10px;padding:11px;background:#182b3d;margin:10px 0}.midiPanel h3{margin:0 0 9px}.midiRow{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:8px 0}.midiRow label{font-size:12px;color:var(--muted)}.midiRow input[type=range]{width:100px}.midiRow select{max-width:200px;min-width:125px}.midiReadout{font-size:13px;line-height:1.5;overflow-wrap:anywhere}.midiReadout strong{color:var(--gold)}.midiSmall{color:var(--muted);font-size:11px}.midiTip{font-size:11px;color:#b4c6dc;line-height:1.45;margin:4px 0 8px}.midiRow select#recognitionMode{min-width:138px}
+</style></head><body><header><h1>☀ Cosmic Harmony <small style="font-size:13px;color:#aab9d0;font-weight:400">Major, minor & blues laboratory · v1.1</small></h1><p>Explore the gravitational relationships in Randy Halberstadt's harmonic astronomy—then hide the answers and navigate by function.</p></header><main class="layout"><section class="panel"><div class="toolbar"><label>Mode <select id="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="blues">Blues</option></select></label><label>Sun / key <select id="key"></select></label><label><input class="switch" type="checkbox" id="practice"> Mental mode (hide chord names)</label><label><input class="switch" type="checkbox" id="crossed"> Show ♭II7 (×) moons</label></div><div class="viewport"><svg id="chart" viewBox="0 0 860 775" role="img" aria-label="Interactive cosmic harmony diagram with sun, planets, and inner and outer moons"><defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#ffd17d"/></marker><radialGradient id="sunGradient"><stop offset="0" stop-color="#947239"/><stop offset="1" stop-color="#53432d"/></radialGradient></defs><circle class="orbit" cx="425" cy="380" r="253"/><circle class="orbit" cx="425" cy="380" r="312"/><g id="paths"></g><g id="nodes"></g></svg></div><div id="bluesPractice" class="bluesPractice" hidden><div class="bluesHead"><strong>12-bar blues · I7–IV7–V7</strong><button id="loadBlues">Trace all 12 bars</button></div><div id="bluesBars" class="bluesBars"></div><div class="subtle">Traditional quick-free form (no quick IV): bars 1–4 I7; 5–6 IV7; 7–8 I7; 9 V7; 10 IV7; 11 I7; 12 V7 turnaround. Select a bar to trace up to it. The moons add ii–V approaches, secondary dominants, leading-tone diminished chords, and chromatic ♭II7 substitutions (toggle ×). I7 remains a stable tonic. This Blues model is exploratory, not one of Randy’s original Cosmic diagrams.</div></div><div class="legend"><span><i class="dot" style="background:#eabf69"></i>Sun</span><span><i class="dot" style="background:#6598c5"></i>Planet</span><span><i class="dot" style="background:#65baab"></i>Close moon</span><span><i class="dot" style="background:#9986d1"></i>Distant moon (ii)</span><span><i class="dot" style="background:#c27a8a"></i>♭II7 alternative</span></div></section><aside class="panel side"><h2>Navigation</h2><p class="hint">Click a chord to begin. Green outlines show allowable next moves according to the basic Cosmic rules. A move to any planet/moon is allowed from the Sun or a planet.</p><h3>Current position</h3><div id="current" style="font-size:22px;font-weight:750;color:var(--gold)">Cmaj7 · Sun</div><p id="notes">Select a node to see its function and chord tones.</p><h3>Path</h3><div id="history" class="history"></div><div class="buttons"><button id="back">↶ Back</button><button id="reset">Reset to Sun</button><button id="save">Save path</button><button id="copy">Copy path</button></div><label for="saveName" style="display:block;margin-top:10px">Path name <input id="saveName" type="text" maxlength="120" placeholder="e.g. Autumn Leaves (Em)" style="width:100%;box-sizing:border-box;margin-top:5px;background:#142239;border:1px solid #526077;border-radius:6px;padding:9px;color:#f4f6fa" /></label><h3>Saved paths</h3><p class="subtle">Name a path above when saving, or rename it later. Paths are saved as key-independent Cosmic positions. Load one in the selected key; changing the key then transposes the entire path. Reset also archives a nonempty path.</p><div id="saved"></div><div class="buttons"><button id="export">Export paths (JSON)</button><button id="clearSaved">Clear saved paths</button></div><section class="midiPanel" aria-label="Live MIDI input"><h3>🎹 Live MIDI · experimental</h3><div class="midiRow"><button id="midiConnect" class="primary">Connect MIDI</button><select id="midiDevice" aria-label="MIDI input"><option value="">Choose input…</option></select></div><div id="midiStatus" class="midiSmall">Not connected. Chrome on localhost required.</div><div class="midiRow"><label>Chord grouping <input id="midiDelay" type="range" min="100" max="700" value="250" step="25"> <span id="midiDelayValue">250 ms</span></label></div><div class="midiRow"><label for="recognitionMode">Recognition <select id="recognitionMode"><option value="strict">Strict · four tones</option><option value="jazz" selected>Jazz · shells</option><option value="contextual">Contextual · rootless</option></select></label></div><div id="recognitionHelp" class="midiTip">Jazz: allows omitted fifths and clear root–third–seventh shells. Sus4 chords stay distinct.</div><div class="midiRow"><label><input type="checkbox" id="midiTrace"> Auto-trace unambiguous, permitted chords</label></div><div class="midiRow"><label><input type="checkbox" id="midiShowRaw"> Show raw MIDI events</label> <button id="midiPanic">Clear held notes</button></div><div class="midiReadout"><div>Held keys: <strong id="midiHeld">—</strong></div><div>Recognized: <strong id="midiChord">—</strong></div><div id="midiCandidates" class="midiSmall">Play a chord to test note grouping.</div><div id="midiEvents" class="midiSmall" style="display:none;max-height:120px;overflow:auto;white-space:pre-wrap"></div></div></section><h3>Ear & theory practice</h3><p class="hint">Choose a destination in your head before clicking. In mental mode, Roman numerals remain visible but chord names disappear. Reveal a selected chord below to check yourself.</p><div class="buttons"><button id="reveal" class="primary">Reveal selected chord</button><button id="example">Load example path</button></div><p id="feedback" class="feedback"></p><h3>Quick rules</h3><div class="hint">Sun or planet → any planet or moon.<br>Distant moon (ii) → a close moon of its planet.<br>Close moon → its planet, or another chord sharing that planet's root.<br><br>Major and minor Cosmic maps follow Randy’s diagrams. Blues is an experimental I7–IV7–V7 system with functional moons; its orbit rules differ from major/minor. The ♭II7 alternatives are marked ×, not prohibited.</div><h3>Important distinction</h3><p class="hint">A green step indicates a movement permitted by the model, <em>not</em> necessarily the smoothest or most musical voicing. Try playing the same path with different inversions and rhythms.</p></aside></main><footer>Standalone educational adaptation based on the rules discussed from <em>Metaphors for the Musician</em>. The diagram is a new interactive arrangement, not a reproduction of the book's graphic. ♭II7 moons are chromatic alternatives marked × in the source. MIDI recognition is an aid, not a substitute for listening. Local saves use this browser’s storage; export a backup if desired.</footer><script>
+(()=>{'use strict';
+const sharp=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'],flat=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const keys=[['C',0,false],['G',7,false],['D',2,false],['A',9,false],['E',4,false],['B',11,false],['F♯',6,false],['G♭',6,true],['D♭',1,true],['A♭',8,true],['E♭',3,true],['B♭',10,true],['F',5,true]];
+const coords=[[425,153],[685,248],[697,524],[425,650],[164,532]];
+const major=[['ii',2,'m7'],['iii',4,'m7'],['IV',5,'maj7'],['V',7,'7'],['vi',9,'m7']];
+const minor=[['ii',2,'m7b5'],['III',3,'maj7'],['iv',5,'m7'],['V',7,'7'],['VI',8,'maj7']];
+const modes={major:{quality:'maj7',planets:major},minor:{quality:'m',planets:minor},blues:{quality:'7',planets:[['ii',2,'m7'],['IV',5,'7'],['V',7,'7'],['VI',9,'7'],['sharpIV',6,'dim7']]}};
+const el=id=>document.getElementById(id),ns='http://www.w3.org/2000/svg';
+let nodes=[],map=new Map(),history=['sun'],revealed=false,saved=[];
+try{const list=JSON.parse(localStorage.getItem('cosmicSavedPathsV2')||'[]');if(Array.isArray(list)) saved=list.filter(x=>x&&Array.isArray(x.path)).slice(0,100)}catch{}
+keys.forEach((k,i)=>{const o=document.createElement('option');o.value=i;o.textContent=k[0];el('key').append(o)});el('key').value='0';
+function mode(){return el('mode').value}function tonic(){return keys[+el('key').value][1]}
+// Spell chord roots by scale degree, and chord tones by stacked thirds.
+// Pitch class alone cannot distinguish E♭ from D♯ or F♯ from G♭.
+const letters=['C','D','E','F','G','A','B'];
+const naturals={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const pc=n=>(n%12+12)%12;
+function noteFor(letter,number){
+  let delta=pc(number-naturals[letter]);
+  if(delta>6)delta-=12;
+  if(Math.abs(delta)>2)return (keys[+el('key').value][2]?flat:sharp)[pc(number)]; // Avoid unreadable triple accidentals
+  const accidental={[-2]:'𝄫',[-1]:'♭',[0]:'',[1]:'♯',[2]:'𝄪'}[delta];
+  return letter+(accidental===undefined?(delta>0?'♯'.repeat(delta):'♭'.repeat(-delta)):accidental);
+}
+function nextLetter(letter,steps){return letters[(letters.indexOf(letter)+steps)%7]}
+function tonicLetter(){return keys[+el('key').value][0][0]}
+function degreeLetter(degree){
+  const degrees={I:0,ii:1,iii:2,III:2,IV:3,iv:3,V:4,vi:5,VI:5,sharpIV:3};
+  return nextLetter(tonicLetter(),degrees[degree]??0)
+}
+function rootLetter(n){
+  if(n.id==='sun')return tonicLetter();
+  if(n.kind==='planet')return degreeLetter(n.degree);
+  const target=map.get(n.target);
+  const parent=target?rootLetter(target):tonicLetter();
+  if(n.sub==='ii'||n.sub==='bII')return nextLetter(parent,1);
+  if(n.sub==='V')return nextLetter(parent,4);
+  if(n.sub==='vii')return nextLetter(parent,6);
+  return parent;
+}
+function spelled(n,interval=0,thirds=0){
+  return noteFor(nextLetter(rootLetter(n),thirds),n.root+interval);
+}
+function pitch(i){return (keys[+el('key').value][2]?flat:sharp)[pc(i)]}
+const names={maj7:'maj7',m7:'m7',m7b5:'m7♭5',dim7:'dim7','7':'7',m:'m'};
+const intervals={maj7:[0,4,7,11],m7:[0,3,7,10],m7b5:[0,3,6,10],dim7:[0,3,6,9],'7':[0,4,7,10],m:[0,3,7]};
+function chord(n){return spelled(n)+names[n.quality]}function tones(n){return intervals[n.quality].map((i,k)=>spelled(n,i,k*2)).join(' – ')}
+function build(){const cfg=modes[mode()],t=tonic();nodes=[{id:'sun',kind:'sun',degree:'I',quality:cfg.quality,root:t,x:425,y:380,r:76,label:'SUN · I'}];
+for(let i=0;i<5;i++){let [id,offset,quality]=cfg.planets[i], [x,y]=coords[i];nodes.push({id,degree:id,kind:'planet',root:(t+offset)%12,quality,x,y,r:49,label:id});}
+// Blues is a separate, explicitly exploratory harmonic grammar. The tonic I7
+// is a stable home; it is NOT required to resolve to IV as in major functional harmony.
+if(mode()==='blues'){
+ // A spacious layout for *functional* blues: tonic I7 can be stable, while
+ // familiar secondary dominants and minor/diminished approaches orbit the targets.
+ const origin={x:530,y:450};nodes[0].x=origin.x;nodes[0].y=origin.y;
+ const slots={ii:[300,210],IV:[760,205],V:[820,570],VI:[500,710],sharpIV:[225,600]};
+ for(const n of nodes.slice(1)){[n.x,n.y]=slots[n.id];}
+ // Static positions keep the Moon systems readable. Existing IDs remain stable.
+ // A chord occupying another main node is not duplicated: I7 is V7/IV,
+ // V7 is V7/I, ii7 is ii of I, and #IVdim is vii°7/V.
+ const placements=[
+  ['ii:ii','ii','ii','outer',4,'m7b5',115,100,'iiø of ii'], // Em7♭5 -> A7 -> Dm7
+  ['ii:V','ii','V','inner',9,'7',288,67,'V7 of ii'],     // A7
+  ['ii:vii','ii','vii','inner',1,'dim7',455,92,'vii° of ii'], // C#dim7
+  ['IV:ii','IV','ii','outer',7,'m7',730,65,'ii of IV'],  // Gm7 -> C7 -> F7
+  ['IV:vii','IV','vii','inner',4,'dim7',952,91,'vii° of IV'], // Edim7 -> F7
+  ['IV:bII','IV','bII','crossed',6,'7',988,248,'♭II7 of IV'], // Gb7 -> F7
+  ['V:ii','V','ii','outer',9,'m7',1001,420,'ii of V'], // Am7 -> D7 -> G7
+  ['V:V','V','V','inner',2,'7',1012,608,'V7 of V'],    // D7 -> G7
+  ['V:bII','V','bII','crossed',8,'7',960,778,'♭II7 of V'], // Ab7 -> G7
+  ['VI:ii','VI','ii','outer',11,'m7b5',364,852,'iiø of VI'], // Bm7b5 -> E7 -> A7
+  ['VI:V','VI','V','inner',4,'7',560,843,'V7 of VI'],    // E7 -> A7
+  ['VI:vii','VI','vii','inner',8,'dim7',690,809,'vii° of VI'], // G#dim7 -> A7
+  ['sun:vii','sun','vii','inner',11,'dim7',352,443,'vii° of I'], // Bdim7 -> C7
+  ['sun:bII','sun','bII','crossed',1,'7',602,277,'♭II7 of I'] // Db7 -> C7
+ ];
+ for(const [id,target,sub,kind,offset,quality,x,y,label] of placements)
+  nodes.push({id,target,sub,kind,root:pc(t+offset),quality,x,y,r:30,label});
+ map=new Map(nodes.map(n=>[n.id,n]));return;
+}
+// Each target has moon types specifically as drawn in Halberstadt's two Cosmic systems.
+const targets=nodes.slice();
+for(const target of targets){const id=target.id,r=target.root,minorTarget=target.quality==='m7',sun=id==='sun',majorTarget=target.quality==='maj7'||target.quality==='7',halfDim=target.quality==='m7b5';
+let kinds=[];
+if(sun){kinds=[['ii','outer',2,mode()==='major'?'m7':'m7b5'],['V','inner',7,'7'],['bII','crossed',1,'7']];}
+else if(mode()==='minor'&&halfDim){kinds=[['V','inner',7,'7'],['bII','crossed',1,'7']];}
+else {kinds=[['ii','outer',2,minorTarget?'m7b5':(mode()==='minor'&&id==='V'?'m7b5':'m7')],['V','inner',7,'7']];
+if(minorTarget)kinds.push(['vii','inner',11,'dim7']);
+kinds.push(['bII','crossed',1,'7']);}
+// For minor i, ii and V are already separate planets; show only bII beside the sun.
+if(sun)kinds=kinds.filter(m=>m[0]==='bII');
+let ux=(target.x-425),uy=(target.y-380),len=Math.hypot(ux,uy)||1;ux/=len;uy/=len;if(sun){ux=1;uy=0}let tx=-uy,ty=ux;
+for(const [j,m] of kinds.entries()) {let [sub,kind,step,quality]=m;
+let dist=kind==='outer'?165:96,offset;
+if(kinds.length===4){
+  // Wider separation keeps the distant moon visible instead of tucked under
+  // the first close moon. Order here is: ii (outer), V (inner), vii° (inner), ♭II (crossed).
+  if(sub==='ii'){offset=-118; dist=178}
+  else if(sub==='V'){offset=-38; dist=98}
+  else if(sub==='vii'){offset=26; dist=98}
+  else if(sub==='bII'){offset=98; dist=102}
+  else offset=0;
+}else if(kinds.length===3){
+  // Order: ii (outer), V (inner), ♭II (crossed).
+  if(sub==='ii'){offset=-104; dist=174}
+  else if(sub==='V'){offset=-18; dist=98}
+  else if(sub==='bII'){offset=72; dist=102}
+  else offset=0;
+}else if(kinds.length===2){
+  if(sub==='V'){offset=-34; dist=98}
+  else if(sub==='bII'){offset=44; dist=102}
+  else offset=0;
+}else offset=0;
+if(sun){dist=174;offset=28}
+let x=Math.min(816,Math.max(39,target.x+ux*dist+tx*offset)),y=Math.min(735,Math.max(38,target.y+uy*dist+ty*offset));
+// Moon roots are spelled relative to their target planet.
+let rr=(r+step)%12;
+// Minor Cosmic VII° of iv (F minor): E diminished seventh, as pictured.
+nodes.push({id:id+':'+sub,target:id,sub,kind,root:rr,quality,x,y,r:kind==='outer'?30:27,label:(sub==='bII'?'♭II':sub==='vii'?'vii°':sub)+' of '+target.degree});}}
+map=new Map(nodes.map(n=>[n.id,n]));}
+function shape(tag,attrs,parent){let e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));parent.append(e);return e}
+function visible(){return nodes.filter(n=>n.kind!=='crossed'||el('crossed').checked)}
+function available(n){if(!n)return new Set();let pool=visible();if(mode()==='blues'){
+ // Within a moon system the arrows suggest resolution; primary chords can
+ // branch freely, as the 12-bar form repeatedly returns to I, IV and V.
+ if(n.kind==='outer'){
+  const close=pool.filter(x=>x.target===n.target&&(x.kind==='inner'||x.kind==='crossed')).map(x=>x.id);
+  // C7 is itself the V7 of F7 (IV), and F#dim7 the vii°7 of G7 (V).
+  if(n.target==='IV')close.push('sun');
+  if(n.target==='V')close.push('sharpIV');
+  return new Set(close);
+ }
+ if(n.kind==='inner'||n.kind==='crossed')return new Set([n.target]);
+ return new Set(pool.filter(x=>x.id!==n.id).map(x=>x.id));
+}if(n.kind==='sun'||n.kind==='planet')return new Set(pool.filter(x=>x.id!==n.id).map(x=>x.id));if(n.kind==='outer')return new Set(pool.filter(x=>x.target===n.target&&(x.kind==='inner'||x.kind==='crossed')).map(x=>x.id));let target=map.get(n.target);return new Set(pool.filter(x=>x.id===target.id||(x.root===target.root&&x.id!==n.id)).map(x=>x.id))}
+function refresh(){el('chart').setAttribute('viewBox',mode()==='blues'?'0 0 1080 930':'0 0 860 775');el('bluesPractice').hidden=mode()!=='blues';if(mode()==='blues')renderBluesBars();const current=map.get(history.at(-1))||map.get('sun'),allowed=available(current),hide=el('practice').checked;document.body.classList.toggle('practice',hide);const layer=el('nodes'),lines=el('paths');layer.replaceChildren();lines.replaceChildren();
+// Trim arrows at node boundaries. For repeated/reversed edges, fan their curves apart
+// so direction remains legible without making a solid line over itself.
+const usedEdges=new Map();
+for(let i=1;i<history.length;i++){
+  const a=map.get(history[i-1]),b=map.get(history[i]);if(!a||!b)continue;
+  const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);if(dist<5)continue;
+  const ux=dx/dist,uy=dy/dist,nx=-uy,ny=ux;
+  const edgeKey=[a.id,b.id].sort().join('|');const repeat=usedEdges.get(edgeKey)||0;usedEdges.set(edgeKey,repeat+1);
+  // Distinguish repeated traversals on either direction of the same edge.
+  const order=a.id.localeCompare(b.id)<=0?1:-1;
+  const bend=order*(repeat%2===0?1:-1)*(28+Math.floor(repeat/2)*19);
+  const mx=(a.x+b.x)/2+nx*bend,my=(a.y+b.y)/2+ny*bend;
+  const d=`M ${a.x+ux*(a.r+3)} ${a.y+uy*(a.r+3)} Q ${mx} ${my} ${b.x-ux*(b.r+5)} ${b.y-uy*(b.r+5)}`;
+  shape('path',{d,class:'arrow','marker-end':'url(#arrowhead)',opacity:Math.max(.50,.85-i*.012)},lines);
+}
+for(let n of visible()){let cls='node '+(n.kind==='planet'?'planet':n.kind)+(n.id===current.id?' selected':allowed.has(n.id)?' allowed':' dimmed');let g=shape('g',{class:cls,tabindex:0,role:'button','aria-label':n.label+', '+chord(n),transform:`translate(${n.x} ${n.y})`},layer);shape('circle',{r:n.r},g);let label=shape('text',{y:n.kind==='sun'?-14:-6,class:n.r<=30?'tiny':'role'},g);label.textContent=n.label;let name=shape('text',{y:n.kind==='sun'?12:15,class:(n.r<=30?'smallChord':'chord')+' practice-hide'},g);name.textContent=chord(n);if(n.kind==='sun'){let t=shape('text',{y:36,class:'tiny'},g);t.textContent='tonic'}
+if(n.kind==='crossed')shape('path',{d:`M${-n.r*.65},${-n.r*.65} L${n.r*.65},${n.r*.65} M${n.r*.65},${-n.r*.65} L${-n.r*.65},${n.r*.65}`,stroke:'#c27a8a','stroke-width':1.5,opacity:.55},g);
+const action=()=>select(n.id);g.addEventListener('click',action);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action()}})}
+el('current').textContent=(hide&&!revealed?'?':chord(current))+' · '+(current.kind==='sun'?'Sun':current.kind==='planet'?'Planet '+current.degree:current.label);
+el('notes').textContent=hide&&!revealed?'Predict the chord name and notes. Select Reveal to check.':`Chord tones: ${tones(current)}. ${current.kind==='outer'?'Distant moon: proceed to one of this planet’s close moons.':current.kind==='inner'||current.kind==='crossed'?'Close moon: resolve to target or switch to a chord sharing its root.':current.kind==='planet'?'Planet: select any other planet or moon.':'Tonic: select any planet or moon.'}`;
+el('history').replaceChildren(...history.map((id,i)=>{let span=document.createElement('span');span.className='pill';let n=map.get(id);span.textContent=(hide?'?':chord(n))+(i<history.length-1?' →':'');return span}));renderSaved();}
+function select(id){const n=map.get(id),cur=map.get(history.at(-1));if(!n||n.id===cur.id)return;if(!available(cur).has(id)){el('feedback').textContent='Not an allowed step from here. Choose a green-outlined destination.';return}history.push(id);revealed=false;el('feedback').textContent='Valid move. Listen for departure, preparation, or arrival.';refresh()}
+function persist(){try{localStorage.setItem('cosmicSavedPathsV2',JSON.stringify(saved))}catch{el('feedback').textContent='Browser storage is unavailable. Export paths to keep a copy.'}}
+function saveCurrent(auto=false){
+ if(history.length<2)return false;
+ const typed=el('saveName').value.trim();
+ const entry={mode:mode(),key:+el('key').value,path:[...history],created:new Date().toISOString(),name:(!auto&&typed)?typed:(auto?'Archived':'Saved')+' · '+keys[+el('key').value][0]+' '+mode()};
+ const prev=saved.at(0);
+ // Do not duplicate an identical automatic archive; explicit saves may use separate names.
+ if(auto&&prev&&prev.key===entry.key&&prev.mode===entry.mode&&JSON.stringify(prev.path)===JSON.stringify(entry.path))return false;
+ saved.unshift(entry);saved=saved.slice(0,100);persist();
+ if(!auto)el('saveName').value='';
+ return true;
+}
+function pathPreview(entry){
+  // Chord degrees / node IDs define the path; the selected tonic determines every chord name.
+  const activeMode=mode(), activeKey=+el('key').value;
+  if(entry.mode!==activeMode)return 'Switches to '+entry.mode+' when loaded';
+  return entry.path.map(id=>{const n=map.get(id);return n?chord(n):id}).join(' → ');
+}
+function renderSaved(){const root=el('saved');root.replaceChildren();if(!saved.length){let p=document.createElement('p');p.className='subtle';p.textContent='No saved paths yet.';root.append(p);return}
+for(let i=0;i<saved.length;i++){
+ const e=saved[i],row=document.createElement('div');row.className='savedrow';
+ let name=document.createElement('div');name.textContent=e.name;name.style.fontWeight='650';row.append(name);
+ let hint=document.createElement('div');hint.className='subtle';hint.textContent=e.path.join(' → ');row.append(hint);
+ let preview=document.createElement('div');preview.className='subtle';preview.textContent=pathPreview(e);preview.style.marginTop='4px';row.append(preview);
+ let load=document.createElement('button');load.textContent='Load in '+keys[+el('key').value][0];load.onclick=()=>{
+   // Do not restore the key of creation: IDs are harmonic functions, not fixed pitches.
+   saveCurrent(true);
+   if(mode()!==e.mode){el('mode').value=e.mode;build()}
+   history=e.path.filter(id=>map.has(id));
+   if(!history.length||history[0]!=='sun')history=['sun'];
+   if(history.some(id=>map.get(id)?.kind==='crossed'))el('crossed').checked=true;
+   revealed=false;el('feedback').textContent='Loaded in '+keys[+el('key').value][0]+' '+mode()+'. Change the key to transpose this path.';refresh()
+ };row.append(load);
+ let rename=document.createElement('button');rename.textContent='Rename';rename.onclick=()=>{
+   const next=prompt('Name this saved progression:',e.name);
+   if(next===null)return;
+   const clean=next.trim().slice(0,120);
+   if(!clean){el('feedback').textContent='Name cannot be empty.';return}
+   e.name=clean;persist();renderSaved();
+ };row.append(rename);
+ let del=document.createElement('button');del.textContent='Delete';del.onclick=()=>{saved.splice(i,1);persist();renderSaved()};row.append(del);root.append(row)
+}}
+function changeKey(){
+  // Node IDs and harmonic relationships are key-independent; rebuild them in the new key.
+  const oldPath=[...history];build();history=oldPath.filter(id=>map.has(id));
+  if(!history.length||history[0]!=='sun')history=['sun'];
+  revealed=false;
+  el('feedback').textContent='Transposed current path to '+keys[+el('key').value][0]+' '+mode()+'. Saved paths remain key-independent.';
+  refresh();
+}
+function changeMode(){saveCurrent(true);build();history=['sun'];revealed=false;el('feedback').textContent='Changed to '+mode()+'. Choose a saved path to load it in this key.';refresh()}
+el('key').onchange=changeKey;el('mode').onchange=changeMode;el('practice').onchange=()=>{revealed=false;refresh()};el('crossed').onchange=()=>{if(!el('crossed').checked&&history.some(id=>map.get(id)?.kind==='crossed')){saveCurrent(true);history=['sun']}refresh()};
+el('back').onclick=()=>{if(history.length>1)history.pop();revealed=false;refresh()};el('reset').onclick=()=>{let archived=saveCurrent(true);history=['sun'];revealed=false;el('feedback').textContent=archived?'Returned to Sun; previous path archived in Saved paths.':'Returned to Sun. Saved paths preserved.';refresh()};el('save').onclick=()=>{const ok=saveCurrent();el('feedback').textContent=ok?'Path saved in this browser.':'Nothing new to save; play a path first.';renderSaved()};el('reveal').onclick=()=>{revealed=true;refresh()};
+el('copy').onclick=async()=>{let txt=history.map(id=>chord(map.get(id))).join(' → ');try{await navigator.clipboard.writeText(txt);el('feedback').textContent='Copied: '+txt}catch{el('feedback').textContent='Copy manually: '+txt}};
+el('example').onclick=()=>{saveCurrent(true);history=mode()==='major'?['sun','iii','vi:V','vi','ii:V','ii','V','sun']:mode()==='minor'?['sun','VI','iv:ii','iv:V','iv','V','sun']:['sun','IV','sun','V','IV','sun'];history=history.filter(id=>map.has(id));revealed=false;el('feedback').textContent='Example path loaded; explore and save it.';refresh()};
+el('export').onclick=()=>{const blob=new Blob([JSON.stringify({format:'cosmic-harmony-paths',version:2,paths:saved},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='cosmic-harmony-paths.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+el('clearSaved').onclick=()=>{if(!saved.length)return;if(confirm('Delete all saved paths in this browser? Export first if you want a backup.')){saved=[];persist();renderSaved()}};
+const traditionalBlues=['sun','sun','sun','sun','IV','IV','sun','sun','V','IV','sun','V'];
+function renderBluesBars(){
+ const grid=el('bluesBars');grid.replaceChildren();
+ traditionalBlues.forEach((id,i)=>{
+  const b=document.createElement('button');b.innerHTML='<small>Bar '+(i+1)+'</small>';
+  b.append(document.createTextNode(chord(map.get(id))));
+  b.title='Trace through bar '+(i+1);
+  b.onclick=()=>traceBlues(i+1);
+  grid.append(b);
+ });
+}
+function traceBlues(count){
+ if(mode()!=='blues')return;
+ saveCurrent(true);
+ history=[...traditionalBlues.slice(0,count)];
+ revealed=false;
+ el('feedback').textContent='Loaded '+count+' bar'+(count===1?'':'s')+' of a traditional 12-bar blues in '+keys[+el('key').value][0]+'. Save it with a custom name or continue exploring.';
+ refresh();
+}
+el('loadBlues').onclick=()=>traceBlues(12);
+build();refresh();
+// The MIDI monitor deliberately leaves the diagram as the source of harmonic truth.
+// Raw notes are never rewritten to match a Cosmic chord.
+let midiAccess=null,midiInput=null,midiTimer=null,midiLastSignature='',midiBusy=false;
+const held=new Map(),sustained=new Map(),pedal=new Map(),rawEvents=[];
+function nameOfMidi(n){
+ const scale=mode()==='major'?[0,2,4,5,7,9,11]:mode()==='minor'?[0,2,3,5,7,8,10]:[0,2,3,4,5,7,9,10];
+ const index=scale.findIndex(x=>pc(tonic()+x)===pc(n));
+ const spelling=index>=0?noteFor(nextLetter(tonicLetter(),index),n):pitch(n);
+ return spelling+(Math.floor(n/12)-1);
+}
+const pcSet=arr=>new Set(arr.map(x=>x%12));
+function logMidi(message){rawEvents.unshift(new Date().toLocaleTimeString()+' '+message);if(rawEvents.length>35)rawEvents.pop();el('midiEvents').textContent=rawEvents.join('\n')}
+function updateMidiDevices(){let previous=el('midiDevice').value;el('midiDevice').replaceChildren(new Option('Choose input…',''));if(!midiAccess)return;for(const inp of midiAccess.inputs.values())el('midiDevice').add(new Option(inp.name+' ['+inp.state+']',inp.id));const options=[...el('midiDevice').options];let choice=options.find(x=>x.value===previous)?.value||options.find(x=>/reface/i.test(x.text))?.value||options[1]?.value||'';el('midiDevice').value=choice;setInput(choice)}
+function setInput(id){if(midiInput)midiInput.onmidimessage=null;midiInput=midiAccess?.inputs.get(id)||null;held.clear();sustained.clear();pedal.clear();midiLastSignature='';el('midiStatus').textContent=midiInput?'Listening: '+midiInput.name:'Select a MIDI input';renderMidi() ;if(midiInput)midiInput.onmidimessage=onMidi}
+function scheduleMidi(){if(midiTimer)clearTimeout(midiTimer);midiTimer=setTimeout(interpretMidi,Number(el('midiDelay').value))}
+function onMidi(ev){const bytes=[...ev.data],status=bytes[0]||0,type=status&0xf0,ch=status&0x0f,n=bytes[1],v=bytes[2],key=ch+':'+n; if(status===0xfe||status===0xf8||status===0xfa||status===0xfc)return; // active sensing, clock, transports
+if(type===0x90&&v>0){held.set(key,{n,ch,v});sustained.delete(key);logMidi('ON ch'+(ch+1)+' '+n+' vel='+v);scheduleMidi()}
+else if(type===0x80||(type===0x90&&v===0)){const obj=held.get(key);held.delete(key);if(pedal.get(ch)&&obj)sustained.set(key,obj);logMidi('OFF ch'+(ch+1)+' '+n);scheduleMidi()}
+else if(type===0xb0&&n===64){pedal.set(ch,v>=64);if(v<64){for(const [k,x] of sustained)if(x.ch===ch)sustained.delete(k)}logMidi('Sustain '+(v>=64?'ON':'OFF'));scheduleMidi()}
+else if(type===0xb0&&(n===120||n===123)){held.clear();sustained.clear();scheduleMidi()}
+renderMidi()}
+function activeMidi(){return [...held.values(),...sustained.values()].sort((a,b)=>a.n-b.n)}
+function renderMidi(){const notes=activeMidi();el('midiHeld').textContent=notes.length?notes.map(x=>nameOfMidi(x.n)+'('+x.n+')').join(' · '):'—'}
+function interpretMidi(){
+ const notes=activeMidi(),pitches=pcSet(notes.map(x=>x.n)),level=el('recognitionMode').value;
+ if(pitches.size<2){el('midiChord').textContent='—';el('midiCandidates').textContent=pitches.size?'Waiting for a chord.':'Play a chord to test note grouping.';midiLastSignature='';return}
+ const bass=notes.length?notes[0].n%12:null;
+ const here=map.get(history.at(-1));
+ const permitted=available(here);
+ // Keep strict, shell-based and context-assisted reasoning distinct.
+ // Rootless matching is gated by the present Cosmic position AND enough guide tones;
+ // never silently infer an arbitrary missing root from two random notes.
+ const candidates=[];
+ for(const n of visible()){
+   const expected=pcSet(intervals[n.quality].map(i=>(n.root+i)%12));
+   const matching=[...pitches].filter(x=>expected.has(x));
+   const extra=[...pitches].filter(x=>!expected.has(x));
+   const missing=[...expected].filter(x=>!pitches.has(x));
+   const root=n.root%12,third=(root+intervals[n.quality][1])%12;
+   const seventh=(root+intervals[n.quality].at(-1))%12;
+   const fifth=(root+intervals[n.quality][2])%12;
+   let type='',score=0,confidence='';
+   if(level==='strict'){
+     if(n.quality!=='m'&&matching.length===expected.size&&extra.length===0){type='complete';score=0;confidence='high'}
+     else if(n.quality==='m'&&matching.length===3&&extra.length===0){type='complete';score=0;confidence='high'}
+   }else{
+     if(extra.length===0&&missing.length===0){type='complete';score=0;confidence='high'}
+     else if(extra.length===0&&n.quality!=='m'&&pitches.has(root)&&pitches.has(third)&&pitches.has(seventh)&&missing.length===1&&missing[0]===fifth){type='shell · no fifth';score=3;confidence='high'}
+     else if(level==='contextual'&&permitted.has(n.id)&&pitches.size>=3&&extra.length===0&&pitches.has(third)&&pitches.has(seventh)&&!pitches.has(root)&&missing.length<=1){type='rootless';score=7;confidence='medium'}
+     // A 1-4-b7 voicing is a suspension, NOT automatically a dominant seventh.
+     else if(n.quality==='7'&&pitches.size===3&&pitches.has(root)&&pitches.has((root+5)%12)&&pitches.has((root+10)%12)&&extra.length===1){type='7sus4';score=11;confidence='medium'}
+   }
+   if(type){
+     // When matching the same sounding chord at multiple Cosmic locations,
+     // never assume one is correct without a harmonic distinction.
+     if(!permitted.has(n.id)&&n.id!==here.id)score+=1;
+     if(n.id===here.id)score+=.1;
+     candidates.push({n,type,score,confidence});
+   }
+ }
+ // Multiple locations may represent the EXACT SAME sounding chord (e.g.,
+ // Am7 is both planet vi and the outer ii moon of planet V).
+ // Group those as one harmonic interpretation before detecting ambiguity.
+ const grouped=new Map();
+ for(const c of candidates){
+   const sound=c.n.root+':'+c.n.quality;
+   if(!grouped.has(sound))grouped.set(sound,[]);
+   grouped.get(sound).push(c);
+ }
+ const interpretations=[...grouped.values()].map(locations=>{
+   // Prefer a permitted next position; otherwise prefer a non-moon planet.
+   locations.sort((a,b)=>
+     Number(permitted.has(b.n.id))-Number(permitted.has(a.n.id)) ||
+     Number(b.n.kind==='planet')-Number(a.n.kind==='planet') ||
+     a.score-b.score || a.n.id.localeCompare(b.n.id));
+   return {...locations[0],locations};
+ }).sort((a,b)=>a.score-b.score||a.n.id.localeCompare(b.n.id));
+ if(!interpretations.length){
+   el('midiChord').textContent='Unresolved';
+   el('midiCandidates').textContent=level==='strict'?'Strict mode needs all chord tones.':'No sufficiently supported Cosmic match. Raw MIDI remains unchanged.';
+   midiLastSignature='';return;
+ }
+ const best=interpretations[0];
+ // When two DIFFERENT harmonic interpretations fit equally well, keep both
+ // visible rather than auto-navigating. Duplicate positions are not ambiguity.
+ const ties=interpretations.filter(x=>Math.abs(x.score-best.score)<1.01);
+ const summary=x=>chord(x.n)+(x.type==='complete'?'':x.type==='7sus4'?'sus4':' ('+x.type+')');
+ el('midiChord').textContent=ties.length===1?summary(best):'Possible: '+ties.slice(0,4).map(summary).join(' / ');
+ let message=ties.length>1?'Ambiguous: '+ties.length+' different chord interpretations; no auto-trace.':
+    best.type==='7sus4'?'Suspended fourth (4 instead of 3); not treated as ordinary dominant 7.':
+    best.type==='rootless'?'Context-dependent rootless interpretation. Requires your confirmation; not auto-traced.':
+    best.type==='shell · no fifth'?'Jazz shell recognized (root, third, seventh).':'Complete chord recognized.';
+ if(ties.length===1){
+   if(best.locations.length>1)message+=' Also appears in '+best.locations.length+' Cosmic positions; equivalent chord names merged.';
+   message+=' '+(permitted.has(best.n.id)?'Permitted next Cosmic position.':'Not a permitted new step here.');
+ }
+ el('midiCandidates').textContent=message;
+ const safe=best.confidence==='high'&&best.type!=='7sus4'&&ties.length===1&&permitted.has(best.n.id);
+ if(!el('midiTrace').checked||!safe)return;
+ const signature=best.n.id+'|'+[...pitches].sort((a,b)=>a-b).join(',');
+ if(signature===midiLastSignature)return;
+ midiLastSignature=signature;select(best.n.id);el('midiCandidates').textContent='Traced from live MIDI ('+best.type+').';
+}
+el('midiConnect').onclick=async()=>{if(!navigator.requestMIDIAccess){el('midiStatus').textContent='Web MIDI unavailable. Use Chrome on http://localhost or HTTPS.';return}try{midiAccess=await navigator.requestMIDIAccess({sysex:false});midiAccess.onstatechange=()=>updateMidiDevices();updateMidiDevices();}catch(e){el('midiStatus').textContent='MIDI permission denied or unavailable: '+e.message}};
+el('midiDevice').onchange=e=>setInput(e.target.value);
+el('midiDelay').oninput=e=>{el('midiDelayValue').textContent=e.target.value+' ms'};
+el('recognitionMode').onchange=e=>{const copy={strict:'Strict: complete 7th chords only; no omitted tones.',jazz:'Jazz: allows omitted fifths and clear root–third–seventh shells. Sus4 stays distinct.',contextual:'Contextual: considers permitted rootless voicings, but leaves uncertain ones untraced.'};el('recognitionHelp').textContent=copy[e.target.value];midiLastSignature='';interpretMidi()};
+el('midiShowRaw').onchange=e=>{el('midiEvents').style.display=e.target.checked?'block':'none'};
+el('midiPanic').onclick=()=>{held.clear();sustained.clear();pedal.clear();midiLastSignature='';renderMidi();interpretMidi()};
+
+// First integration milestone: Cosmic Harmony remains independently usable.
+// If d3SRT is open on this same origin, it may provide MIDI and key updates.
+const cosmicBridge = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('d3srt-cosmic-v1') : null;
+if (cosmicBridge) {
+  cosmicBridge.onmessage = ({ data }) => {
+    if (!data || data.source !== 'd3srt' || data.version !== 1) return;
+    if (data.type === 'key') {
+      const idx = keys.findIndex(k => k[0] === data.tonic);
+      if (idx >= 0) {
+        const newMode = ['major','minor','blues'].includes(data.mode) ? data.mode : 'major';
+        if (el('mode').value !== newMode) {
+          el('mode').value = newMode;
+          changeMode();
+        }
+        if (el('key').value !== String(idx)) {
+          el('key').value = String(idx);
+          changeKey();
+        }
+      }
+    }
+    if (data.type === 'midi' && Array.isArray(data.bytes)) {
+      // Reuse the working Cosmic recognizer instead of forking it.
+      onMidi({ data: Uint8Array.from(data.bytes) });
+      el('midiStatus').textContent = 'Receiving shared MIDI from d3SRT';
+    }
+    if (data.type === 'status' && !midiInput)
+      el('midiStatus').textContent = data.connected
+        ? `Shared MIDI: ${data.device || 'connected'}` : 'Shared MIDI: disconnected';
+  };
+  cosmicBridge.postMessage({ source:'cosmic', version:1, type:'ready' });
+}
+
+})();
+</script></body></html>

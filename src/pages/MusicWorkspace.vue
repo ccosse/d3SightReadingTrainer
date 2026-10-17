@@ -1,5 +1,6 @@
 <template>
   <q-page class="music-workspace">
+    <CosmicMidiBridge />
     <div class="instrument-stack">
       <div
         v-for="item in orderedComponents"
@@ -28,6 +29,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import CosmicMidiBridge from '../components/CosmicMidiBridge.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import PitchClassSelector from '../components/PitchClassSelector.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
