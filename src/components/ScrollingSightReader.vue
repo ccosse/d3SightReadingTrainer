@@ -83,27 +83,32 @@
       </svg>
     </div>
 
-    <div class="capture-bar">
-      <strong>Live MIDI → Grand Staff</strong>
-      <button type="button" :disabled="liveCapture.recording || takePlaying" @click="beginCapture">● Record</button>
-      <button type="button" :disabled="!liveCapture.recording" @click="endCapture">■ Stop</button>
-      <button type="button" :disabled="!liveCapture.notes.length && !liveCapture.events.length" @click="clearCapture">Clear Take</button>
-      <button type="button" :disabled="!liveCapture.events.length || liveCapture.recording || takePlaying" @click="exportLiveCapture">Export raw take</button>
-      <button type="button" :disabled="liveCapture.recording || takePlaying" @click="selectTakeFile">Load take (JSON)</button>
-      <input ref="takeFileInput" type="file" accept=".json,application/json" hidden @change="loadTakeFile" />
-      <button type="button" :disabled="liveCapture.recording || !liveCapture.events.length || takePlaying" @click="playTake">▶ Play take</button>
-      <button type="button" :disabled="!takePlaying" @click="stopTake">■ Stop take</button>
-      <label class="capture-option"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
-      <label class="capture-option"><input v-model="captureOnlyView" type="checkbox" /> Capture only</label>
-      <label class="capture-option">Audio offset <input v-model.number="audioLeadMs" type="range" min="-750" max="750" step="25" /> {{ audioLeadMs > 0 ? '+' : '' }}{{ audioLeadMs }} ms</label>
-      <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
-        <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
-      </label>
-      <span>{{ takePlaying ? 'Playing take' : liveCapture.recording ? 'Recording' : 'Stopped' }} · {{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · Recorded {{ liveCapture.bpm }} BPM<span v-if="takePlaying"> · Playback {{ store.srtTempo }} BPM ({{ (store.srtTempo / liveCapture.bpm).toFixed(2) }}×)</span></span>
-      <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
+    <div class="recording-console">
+      <div class="tape-deck" role="group" aria-label="Unified piano tape transport">
+        <button type="button" class="tape-key record-key" title="Record incoming MIDI" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
+        <button type="button" class="tape-key" title="Play the current take, or the generated/manual staff when no take is loaded" aria-label="Play" :disabled="liveCapture.recording || takePlaying || (!liveCapture.events.length && !hasPlayableSource)" @click="transportPlay">▶ <span>Play</span></button>
+        <button type="button" class="tape-key" title="Stop recording or either playback source" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
+        <span class="transport-status">{{ liveCapture.recording ? 'Recording' : takePlaying ? 'Playing take' : store.srtTransportState === 'playing' ? 'Playing staff' : 'Stopped' }}</span>
+      </div>
+      <div class="capture-files" role="group" aria-label="Recording files and staff actions">
+        <span class="action-caption">Take & files</span>
+        <button type="button" :disabled="liveCapture.recording || takePlaying" @click="selectTakeFile">Load JSON</button>
+        <input ref="takeFileInput" type="file" accept=".json,application/json" hidden @change="loadTakeFile" />
+        <button type="button" :disabled="!liveCapture.events.length || liveCapture.recording || takePlaying" @click="exportLiveCapture">Export JSON</button>
+        <button type="button" :disabled="!hasPlayableSource || liveCapture.recording || takePlaying" @click="store.requestSrtSave">Save clip</button>
+        <button type="button" :disabled="!liveCapture.notes.length && !liveCapture.events.length" @click="clearCapture">Clear take</button>
+      </div>
+      <div class="capture-settings">
+        <label class="capture-option"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
+        <label class="capture-option"><input v-model="captureOnlyView" type="checkbox" /> Capture only</label>
+        <label class="capture-option">Audio offset <input v-model.number="audioLeadMs" type="range" min="-750" max="750" step="25" /> {{ audioLeadMs > 0 ? '+' : '' }}{{ audioLeadMs }} ms</label>
+        <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
+          <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
+        </label>
+        <span class="take-stat">{{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · Recorded {{ liveCapture.bpm }} BPM<span v-if="takePlaying"> · Playback {{ store.srtTempo }} BPM ({{ (store.srtTempo / liveCapture.bpm).toFixed(2) }}×)</span></span>
+        <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
+      </div>
     </div>
-    <PlaybackTransport class="staff-transport" />
-
 
   </section>
 </template>
@@ -113,7 +118,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ensureAudioReady, startChord, stopChordVoices, startMidi, stopMidiVoice } from '../music/audio'
 import { SightReadingGenerator } from '../music/generator'
 import { keyPitchClasses, midiOctave, mod12, noteName } from '../music/theory'
-import PlaybackTransport from './PlaybackTransport.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 import { liveCapture, startLiveCapture, stopLiveCapture, clearLiveCapture, exportLiveCapture, importLiveCaptureJson } from '../music/liveMidiCapture'
 import { prepareCaptureMetronome, startCaptureMetronome, stopCaptureMetronome } from '../music/captureMetronome'
@@ -128,7 +132,7 @@ const metronomeOn = ref(false)
 const captureOnlyView = ref(true)
 const captureDisplayActive = computed(() => captureOnlyView.value || liveCapture.recording || liveCapture.notes.length > 0)
 // Positive values advance audio relative to the score; negative values delay it.
-const audioLeadMs = ref(0)
+const audioLeadMs = ref(250)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
 const takeMessage = ref('')
@@ -138,6 +142,23 @@ let takeElapsedMs = 0
 let takeIndex = 0
 let takeGeneration = 0
 const takeVoices = new Map()
+// A single transport controls whichever source is active. A loaded/recorded take
+// takes priority over generated/manual music until Clear take is selected.
+async function transportRecord() {
+  if (store.srtTransportState === 'playing') pause()
+  await beginCapture()
+}
+async function transportPlay() {
+  if (liveCapture.recording || takePlaying.value) return
+  if (store.srtTransportState === 'playing') pause()
+  if (liveCapture.events.length) await playTake()
+  else await play()
+}
+function transportStop() {
+  if (liveCapture.recording) endCapture()
+  if (takePlaying.value) stopTake()
+  if (store.srtTransportState !== 'stopped') stop()
+}
 function stopTake() {
   ++takeGeneration
   if (takeFrame) cancelAnimationFrame(takeFrame)
@@ -1024,7 +1045,23 @@ onBeforeUnmount(() => { stopTake(); stopCaptureMetronome(); stopCaptureTicker();
 .clip-selection { fill: rgba(215,169,40,.16); stroke: #ffd866; stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
 .empty-state text { fill: #ddd; font-size: 24px; }
 .empty-state .empty-sub { fill: #aaa; font-size: 18px; }
-.staff-transport { padding: 5px 0 2px; }
+
+
+.recording-console { background:#203643; border-radius:8px; padding:9px 12px; display:flex; flex-direction:column; align-items:center; gap:9px; }
+.tape-deck { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; width:100%; }
+.tape-key { min-width:91px; min-height:44px; border:1px solid #7790a5; border-radius:7px; background:#273d53; color:#edf7ff; font-size:18px; cursor:pointer; }
+.tape-key span { font-size:13px; margin-left:5px; }
+.record-key { color:#ffb2b2; }
+.tape-key:disabled { opacity:.38; cursor:not-allowed; }
+.tape-key:hover:not(:disabled) { background:#385c79; }
+.transport-status { font-size:12px; color:#bad4e5; margin-left:12px; }
+.capture-files { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:7px; padding-top:8px; border-top:1px solid #445f73; width:100%; }
+.capture-files button { background:#315470; border:1px solid #6d96ae; color:white; padding:6px 9px; border-radius:5px; cursor:pointer; font-size:12px; }
+.capture-files button:disabled { opacity:.4; cursor:default; }
+.action-caption { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#a7c0d0; margin-right:5px; }
+.capture-settings { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; font-size:12px; }
+.take-stat { color:#c4dbe9; }
+
 .capture-label-guide { stroke: #bfeaff; stroke-width: 0.8; opacity: .75; fill: none; pointer-events: none; }
 .capture-head { fill: #5be1c0; stroke: #ffffff; stroke-width: 1.3; }
 .capture-label { fill: #bfeaff; font-size: 13px; font-weight: 600; paint-order: stroke; stroke: #202020; stroke-width: 3px; text-anchor: start; dominant-baseline: central; }
