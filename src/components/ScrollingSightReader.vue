@@ -155,6 +155,15 @@ const audioLeadMs = ref(250)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
 const loopTake = ref(false)
+const cosmicStepCount = ref(0)
+let lastCosmicStep = -1
+function publishCosmicPlayhead(index,playing=false) {
+  if (!cosmicStepCount.value)return
+  if (index===lastCosmicStep && playing)return
+  lastCosmicStep=index
+  window.dispatchEvent(new CustomEvent('cosmic-take-playhead',{detail:{index,playing,stepCount:cosmicStepCount.value}}))
+}
+function onCosmicTakeLoaded(event){cosmicStepCount.value=event.detail?.stepCount||0;lastCosmicStep=-1;publishCosmicPlayhead(0,false)}
 const takeMessage = ref('')
 let takeFrame = 0
 let takeLastFrame = 0
@@ -204,6 +213,7 @@ function releaseTakeVoices() {
   clearTakeHighlights()
 }
 function stopTake() {
+  if(takePlaying.value)publishCosmicPlayhead(Math.min(cosmicStepCount.value-1,Math.floor(takeElapsedMs/(60000/liveCapture.bpm*4))),false)
   ++takeGeneration
   if (takeFrame) cancelAnimationFrame(takeFrame)
   takeFrame=0
@@ -215,6 +225,7 @@ async function loadTakeFile(event) {
   const file=event.target.files?.[0]
   if (!file) return
   stopTake()
+  cosmicStepCount.value=0; lastCosmicStep=-1; publishCosmicPlayhead(-1,false)
   try {
     if (file.size>16000000) throw new Error('JSON file exceeds 16 MB')
     const count=importLiveCaptureJson(JSON.parse(await file.text()))
@@ -264,6 +275,7 @@ async function playTake() {
   takeElapsedMs=0
   takeLastFrame=performance.now()
   takePlaying.value=true
+  lastCosmicStep=-1
   takeMessage.value=`Playing at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
   const tick=(frameNow)=>{
     if(!takePlaying.value || generation!==takeGeneration)return
@@ -277,6 +289,7 @@ async function playTake() {
       ++takeIndex
     }
     currentBeat.value=Math.min(takeElapsedMs,liveCapture.durationMs)/(60000/liveCapture.bpm)
+    if(cosmicStepCount.value)publishCosmicPlayhead(Math.min(cosmicStepCount.value-1,Math.floor(takeElapsedMs/(60000/liveCapture.bpm*4))),true)
     if(takeElapsedMs>=liveCapture.durationMs && takeIndex>=events.length){
       if(loopTake.value && liveCapture.durationMs>0){
         // Invalidate pending asynchronous voice starts from the previous pass.
@@ -284,6 +297,7 @@ async function playTake() {
         generation=takeGeneration
         releaseTakeVoices()
         takeIndex=0
+        lastCosmicStep=-1
         // Preserve the overshoot so the grid stays in time across repeat boundaries.
         takeElapsedMs=takeElapsedMs%liveCapture.durationMs
         currentBeat.value=takeElapsedMs/(60000/liveCapture.bpm)
@@ -1081,9 +1095,9 @@ watch(() => store.srtTempo, rebaseTempoClock)
 watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), refreshManualEvents)
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
-function focusCosmicStep(event){if(liveCapture.recording || takePlaying.value || !liveCapture.notes.length)return;const index=event.detail?.index;if(!Number.isInteger(index)||index<0)return;currentBeat.value=Math.min((index*4),liveCapture.durationMs/(60000/liveCapture.bpm))}
-onMounted(() => { prepareSession(); store.setSrtTransportState('stopped');window.addEventListener('cosmic-review-step',focusCosmicStep) })
-onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCosmicStep); stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+function focusCosmicStep(event){if(liveCapture.recording || takePlaying.value || !liveCapture.notes.length || !cosmicStepCount.value)return;const index=event.detail?.index;if(!Number.isInteger(index)||index<0||index>=cosmicStepCount.value)return;currentBeat.value=index*4;publishCosmicPlayhead(index,false)}
+onMounted(() => { prepareSession(); store.setSrtTransportState('stopped');window.addEventListener('cosmic-review-step',focusCosmicStep);window.addEventListener('cosmic-take-loaded',onCosmicTakeLoaded) })
+onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCosmicStep);window.removeEventListener('cosmic-take-loaded',onCosmicTakeLoaded); stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>

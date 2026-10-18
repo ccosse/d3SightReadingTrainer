@@ -120,6 +120,7 @@ function loadChallengeScore(data) {
     if(key)store.setKey(key.id,{mode:wantedMode})
     const count=importLiveCaptureJson({format:'d3srt-raw-midi-take',version:1,bpm,durationMs,events})
     store.setSrtTempo(bpm)
+    window.dispatchEvent(new CustomEvent('cosmic-take-loaded',{detail:{stepCount:data.steps.length}}))
     status.value=`Challenge score: ${data.steps.length} bars of 4/4 · ${count} played notes · ${bpm} BPM. Timing is a practice grid, not the original performance. Review or export JSON.`
   } catch(error) { status.value=`Challenge import failed: ${error.message}` }
 }
@@ -223,11 +224,14 @@ async function connectMidi() {
     refreshInputs()
   } catch (error) { status.value = `MIDI unavailable: ${error.message}` }
 }
+function forwardPlayhead(event){publish('take-playhead',event.detail || {})}
 onMounted(() => {
+  window.addEventListener('cosmic-take-playhead', forwardPlayhead)
   if (typeof BroadcastChannel !== 'undefined') {
     channel = new BroadcastChannel('d3srt-cosmic-v1')
     channel.onmessage = ({ data }) => {
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'audition-chord'){auditionChord(data.notes,data.durationMs); if(Number.isInteger(data.stepIndex))window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.stepIndex}}));return}
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'select-step'){window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.index}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()
@@ -238,6 +242,7 @@ onMounted(() => {
 })
 watch(() => [store.currentKeyId, store.currentMode], publishKey)
 onBeforeUnmount(() => {
+  window.removeEventListener('cosmic-take-playhead',forwardPlayhead)
   if (activeInput) activeInput.onmidimessage = null
   monitorGeneration++;releaseVoices();clearLiveHighlights()
   if (access) access.onstatechange = null
