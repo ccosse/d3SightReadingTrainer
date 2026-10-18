@@ -88,7 +88,9 @@
         <button type="button" class="tape-key record-key" :title="store.tooltipsEnabled ? 'Record incoming MIDI notes without generating any background music' : undefined" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
         <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Play the current take, or the generated/manual staff when no take is loaded' : undefined" aria-label="Play" :disabled="liveCapture.recording || takePlaying || (!liveCapture.events.length && !hasPlayableSource)" @click="transportPlay">▶ <span>Play</span></button>
         <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Stop recording or either playback source' : undefined" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
-        <span class="transport-status" aria-live="polite">{{ liveCapture.recording ? 'Recording' : takePlaying ? 'Playing take' : store.srtTransportState === 'playing' ? 'Playing staff' : 'Stopped' }}</span>
+        <label class="transport-loop" :class="{ 'transport-loop-active': loopTake }" :title="store.tooltipsEnabled ? 'Repeat the current MIDI take continuously at the selected tempo' : undefined">
+          <input v-model="loopTake" type="checkbox" aria-label="Loop current track" /> ↻ Loop
+        </label>
       </div>
       <div class="capture-settings">
         <label class="capture-option" :title="store.tooltipsEnabled ? 'Click track synchronized with the recording measure grid' : undefined"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
@@ -152,6 +154,7 @@ function stepAudioOffset(delta) { audioLeadMs.value += delta; clampAudioOffset()
 const audioLeadMs = ref(250)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
+const loopTake = ref(false)
 const takeMessage = ref('')
 let takeFrame = 0
 let takeLastFrame = 0
@@ -195,14 +198,17 @@ function transportStop() {
   if (takePlaying.value) stopTake()
   if (store.srtTransportState !== 'stopped') stop()
 }
+function releaseTakeVoices() {
+  for (const voice of takeVoices.values()) if (voice && !voice.pending) stopMidiVoice(voice, 0.025)
+  takeVoices.clear()
+  clearTakeHighlights()
+}
 function stopTake() {
   ++takeGeneration
   if (takeFrame) cancelAnimationFrame(takeFrame)
   takeFrame=0
   takePlaying.value=false
-  for (const voice of takeVoices.values()) if (voice && !voice.pending) stopMidiVoice(voice, 0.05)
-  takeVoices.clear()
-  clearTakeHighlights()
+  releaseTakeVoices()
 }
 function selectTakeFile() { takeFileInput.value?.click() }
 async function loadTakeFile(event) {
@@ -249,7 +255,7 @@ async function playTake() {
   catch(error) {takeMessage.value=`Audio unavailable: ${error.message}`;return}
   // Start from the beginning, preserving each raw event's relative timestamp.
   stopTake()
-  const generation=takeGeneration
+  let generation=takeGeneration
   takeIndex=0; currentBeat.value=0
   // Keep one virtual timeline expressed in ORIGINAL take milliseconds. The Staff
   // BPM dial determines how quickly that timeline progresses in real time.
@@ -271,7 +277,23 @@ async function playTake() {
       ++takeIndex
     }
     currentBeat.value=Math.min(takeElapsedMs,liveCapture.durationMs)/(60000/liveCapture.bpm)
-    if(takeElapsedMs>=liveCapture.durationMs && takeIndex>=events.length){stopTake();takeMessage.value='Take playback complete';return}
+    if(takeElapsedMs>=liveCapture.durationMs && takeIndex>=events.length){
+      if(loopTake.value && liveCapture.durationMs>0){
+        // Invalidate pending asynchronous voice starts from the previous pass.
+        ++takeGeneration
+        generation=takeGeneration
+        releaseTakeVoices()
+        takeIndex=0
+        // Preserve the overshoot so the grid stays in time across repeat boundaries.
+        takeElapsedMs=takeElapsedMs%liveCapture.durationMs
+        currentBeat.value=takeElapsedMs/(60000/liveCapture.bpm)
+        takeMessage.value=`Looping at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
+      } else {
+        stopTake()
+        takeMessage.value='Take playback complete'
+        return
+      }
+    }
     takeFrame=requestAnimationFrame(tick)
   }
   takeFrame=requestAnimationFrame(tick)
@@ -1104,7 +1126,9 @@ onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCos
 .record-key { color:#ffb2b2; }
 .tape-key:disabled { opacity:.38; cursor:not-allowed; }
 .tape-key:hover:not(:disabled) { background:#385c79; }
-.transport-status { display:inline-block; width:106px; min-width:106px; text-align:left; font-size:12px; color:#bad4e5; margin-left:12px; white-space:nowrap; }
+.transport-loop { display:inline-flex; align-items:center; justify-content:center; min-width:96px; min-height:40px; margin-left:12px; padding:4px 10px; border:1px solid #7790a5; border-radius:7px; background:#25384e; color:#d0e2ee; font-size:13px; cursor:pointer; white-space:nowrap; }
+.transport-loop input { accent-color:#ffd17d; margin-right:6px; }
+.transport-loop-active { border-color:#ffd17d; background:#4e4432; color:#ffe4ac; }
 .recording-tools { width:100%; max-width:890px; border-top:1px solid #445f73; padding:4px 8px 1px; }
 .recording-tools summary { cursor:pointer; text-align:center; color:#cbe4f5; font-size:12px; padding:5px; user-select:none; }
 .tools-grid { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; margin:9px 0; }
