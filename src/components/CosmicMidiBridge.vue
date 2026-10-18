@@ -1,6 +1,6 @@
 <template>
   <section class="integration-panel" aria-label="Cosmic Harmony MIDI connection">
-    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M16 · Journey replay</span></div>
+    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M22 · Transport & journeys</span></div>
     <div class="integration-actions">
       <button type="button" @click="openCosmic">Open Cosmic Harmony ↗</button>
       <button type="button" @click="launchChallenge">🎹 Cosmic Challenge</button>

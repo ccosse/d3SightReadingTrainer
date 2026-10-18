@@ -86,9 +86,9 @@
     <div class="recording-console">
       <div class="tape-deck" role="group" aria-label="Unified piano tape transport">
         <button type="button" class="tape-key record-key" :title="store.tooltipsEnabled ? 'Record incoming MIDI notes without generating any background music' : undefined" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
-        <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Play or resume the current take, or the generated/manual staff when no take is loaded' : undefined" aria-label="Play" :disabled="liveCapture.recording || takePlaying || (!liveCapture.events.length && !hasPlayableSource)" @click="transportPlay">▶ <span>Play</span></button>
-        <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? 'Pause playback at the current position; Play resumes' : undefined" aria-label="Pause" :disabled="liveCapture.recording || (!takePlaying && !takePaused && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused')" @click="transportPause">Ⅱ <span>Pause</span></button>
+        <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? (takePlaying || store.srtTransportState === 'playing' ? 'Pause playback without resetting the position' : 'Play or resume from the current position') : undefined" :aria-label="takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play'" :disabled="liveCapture.recording || (!(takePlaying || store.srtTransportState === 'playing') && !liveCapture.events.length && !hasPlayableSource)" @click="transportPlayPause">{{ takePlaying || store.srtTransportState === 'playing' ? 'Ⅱ' : '▶' }} <span>{{ takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play' }}</span></button>
         <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? 'Stop recording or either playback source' : undefined" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
+        <button type="button" class="tape-key" title="Clear the current staff take without deleting saved files or journeys" aria-label="Clear staff take" :disabled="liveCapture.recording || (!liveCapture.events.length && !liveCapture.notes.length)" @click="clearStaffFromTransport">⌫ <span>Clear</span></button>
         <label class="transport-loop" :class="{ 'transport-loop-active': loopTake }" :title="store.tooltipsEnabled ? 'Repeat the current MIDI take continuously at the selected tempo' : undefined">
           <input v-model="loopTake" type="checkbox" aria-label="Loop current track" /> ↻ Loop
         </label>
@@ -203,6 +203,10 @@ async function transportPlay() {
   if (store.srtTransportState === 'playing') pause()
   if (liveCapture.events.length) await playTake(takePaused.value)
   else await play()
+}
+function transportPlayPause() {
+  if (takePlaying.value || store.srtTransportState === 'playing') transportPause()
+  else void transportPlay()
 }
 function transportPause() {
   if (takePlaying.value) pauseTake()
@@ -440,6 +444,10 @@ function endCapture() {
   stopLiveCapture()
   stopCaptureMetronome()
   stopCaptureTicker()
+}
+function clearStaffFromTransport() {
+  if (liveCapture.events.length && !window.confirm('Clear the current unsaved staff recording? Saved JSON takes and Cosmic journeys will not be deleted.')) return
+  clearCapture()
 }
 function clearCapture() {
   stopTake()

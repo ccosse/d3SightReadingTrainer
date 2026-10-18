@@ -8,14 +8,14 @@
     >
       <button type="button" class="accidentals" @click="store.setKey(key.id, { mode: 'major' })">
         {{ accidentalText(key.signature) }}
-        <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.label }} major: {{ signatureLabel(key.signature) }}.</q-tooltip>
+        <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.label }}M: {{ signatureLabel(key.signature) }}.</q-tooltip>
       </button>
       <button type="button" class="major" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'major' }" @click="store.setKey(key.id, { mode: 'major' })">
         {{ key.label }} major
         <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.label }} major.</q-tooltip>
       </button>
       <button type="button" class="minor" :class="{ emphasized: key.id === store.currentKeyId && store.currentMode === 'minor' }" @click="store.setKey(key.id, { mode: 'minor' })">
-        {{ key.relativeMinor }}
+        {{ key.relativeMinor.replace(/ minor$/, 'm') }}
         <q-tooltip v-if="store.tooltipsEnabled">Select {{ key.relativeMinor }} while preserving this key signature.</q-tooltip>
       </button>
     </div>
@@ -45,7 +45,7 @@ function accidentalText(signature) {
 }
 .ladder-row {
   display: grid;
-  grid-template-columns: minmax(145px, 1.5fr) minmax(82px, 0.78fr) minmax(94px, 0.9fr);
+  grid-template-columns: minmax(165px, 2fr) minmax(52px, 0.6fr) minmax(64px, 0.75fr);
   align-items: stretch;
   min-height: 0;
   border-bottom: 0;
@@ -75,7 +75,7 @@ function accidentalText(signature) {
 .emphasized { font-weight: 800 !important; color: #fff !important; }
 @media (max-width: 680px) {
   .ladder { min-height: 390px; }
-  .ladder-row { grid-template-columns: minmax(126px, 1.35fr) 0.8fr 0.9fr; }
+  .ladder-row { grid-template-columns: minmax(140px, 1.7fr) 0.65fr 0.75fr; }
   .ladder-row button { font-size: 16px; }
 }
 </style>
