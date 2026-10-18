@@ -86,8 +86,9 @@
     <div class="recording-console">
       <div class="tape-deck" role="group" aria-label="Unified piano tape transport">
         <button type="button" class="tape-key record-key" :title="store.tooltipsEnabled ? 'Record incoming MIDI notes without generating any background music' : undefined" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
-        <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Play the current take, or the generated/manual staff when no take is loaded' : undefined" aria-label="Play" :disabled="liveCapture.recording || takePlaying || (!liveCapture.events.length && !hasPlayableSource)" @click="transportPlay">▶ <span>Play</span></button>
-        <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Stop recording or either playback source' : undefined" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
+        <button type="button" class="tape-key" :title="store.tooltipsEnabled ? 'Play or resume the current take, or the generated/manual staff when no take is loaded' : undefined" aria-label="Play" :disabled="liveCapture.recording || takePlaying || (!liveCapture.events.length && !hasPlayableSource)" @click="transportPlay">▶ <span>Play</span></button>
+        <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? 'Pause playback at the current position; Play resumes' : undefined" aria-label="Pause" :disabled="liveCapture.recording || (!takePlaying && !takePaused && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused')" @click="transportPause">Ⅱ <span>Pause</span></button>
+        <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? 'Stop recording or either playback source' : undefined" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
         <label class="transport-loop" :class="{ 'transport-loop-active': loopTake }" :title="store.tooltipsEnabled ? 'Repeat the current MIDI take continuously at the selected tempo' : undefined">
           <input v-model="loopTake" type="checkbox" aria-label="Loop current track" /> ↻ Loop
         </label>
@@ -154,6 +155,7 @@ function stepAudioOffset(delta) { audioLeadMs.value += delta; clampAudioOffset()
 const audioLeadMs = ref(250)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
+const takePaused = ref(false)
 const loopTake = ref(false)
 const cosmicStepCount = ref(0)
 let lastCosmicStep = -1
@@ -199,12 +201,16 @@ async function transportRecord() {
 async function transportPlay() {
   if (liveCapture.recording || takePlaying.value) return
   if (store.srtTransportState === 'playing') pause()
-  if (liveCapture.events.length) await playTake()
+  if (liveCapture.events.length) await playTake(takePaused.value)
   else await play()
+}
+function transportPause() {
+  if (takePlaying.value) pauseTake()
+  else if (store.srtTransportState === 'playing') pause()
 }
 function transportStop() {
   if (liveCapture.recording) endCapture()
-  if (takePlaying.value) stopTake()
+  if (takePlaying.value || takePaused.value) stopTake(true)
   if (store.srtTransportState !== 'stopped') stop()
 }
 function releaseTakeVoices() {
@@ -212,13 +218,26 @@ function releaseTakeVoices() {
   takeVoices.clear()
   clearTakeHighlights()
 }
-function stopTake() {
+function pauseTake() {
+  if (!takePlaying.value) return
+  publishCosmicPlayhead(Math.min(cosmicStepCount.value-1,Math.floor(takeElapsedMs/(60000/liveCapture.bpm*4))),false)
+  ++takeGeneration
+  if (takeFrame) cancelAnimationFrame(takeFrame)
+  takeFrame=0
+  takePlaying.value=false
+  takePaused.value=true
+  releaseTakeVoices()
+  takeMessage.value=`Paused at beat ${currentBeat.value.toFixed(1)}`
+}
+function stopTake(reset=false) {
   if(takePlaying.value)publishCosmicPlayhead(Math.min(cosmicStepCount.value-1,Math.floor(takeElapsedMs/(60000/liveCapture.bpm*4))),false)
   ++takeGeneration
   if (takeFrame) cancelAnimationFrame(takeFrame)
   takeFrame=0
   takePlaying.value=false
+  takePaused.value=false
   releaseTakeVoices()
+  if(reset) {takeElapsedMs=0;takeIndex=0;currentBeat.value=0;lastCosmicStep=-1;publishCosmicPlayhead(0,false)}
 }
 function selectTakeFile() { takeFileInput.value?.click() }
 async function loadTakeFile(event) {
@@ -259,23 +278,23 @@ function playMidiEvent(bytes, generation) {
     takeVoices.clear()
   }
 }
-async function playTake() {
+async function playTake(resume=false) {
   if(liveCapture.recording || !liveCapture.events.length || takePlaying.value) return
   if(store.audioEngine==='web-midi') {takeMessage.value='Choose an internal or SoundFont instrument for take playback.';return}
   try { await ensureAudioReady() }
   catch(error) {takeMessage.value=`Audio unavailable: ${error.message}`;return}
-  // Start from the beginning, preserving each raw event's relative timestamp.
-  stopTake()
+  // Resuming preserves the timeline and next MIDI event; fresh Play starts at zero.
+  if (!resume) {stopTake(true);takeIndex=0;currentBeat.value=0}
   let generation=takeGeneration
-  takeIndex=0; currentBeat.value=0
   // Keep one virtual timeline expressed in ORIGINAL take milliseconds. The Staff
   // BPM dial determines how quickly that timeline progresses in real time.
   // Accumulating delta per frame also allows tempo changes DURING playback
   // without skipping or replaying MIDI events.
-  takeElapsedMs=0
+  if (!resume) takeElapsedMs=0
   takeLastFrame=performance.now()
   takePlaying.value=true
-  lastCosmicStep=-1
+  takePaused.value=false
+  if (!resume)lastCosmicStep=-1
   takeMessage.value=`Playing at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
   const tick=(frameNow)=>{
     if(!takePlaying.value || generation!==takeGeneration)return
@@ -303,7 +322,7 @@ async function playTake() {
         currentBeat.value=takeElapsedMs/(60000/liveCapture.bpm)
         takeMessage.value=`Looping at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
       } else {
-        stopTake()
+        stopTake(true)
         takeMessage.value='Take playback complete'
         return
       }
