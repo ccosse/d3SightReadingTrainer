@@ -25,7 +25,7 @@
             @click="store.selectPitchClass(key.pitchClass)"
           />
           <text
-            v-if="showLabel(key)"
+            v-if="showLabel()"
             :x="key.x + key.width / 2"
             :y="key.height - 15"
             text-anchor="middle"
@@ -51,7 +51,7 @@
             @click="store.selectPitchClass(key.pitchClass)"
           />
           <text
-            v-if="showLabel(key)"
+            v-if="showLabel()"
             :x="key.x + key.width / 2"
             :y="key.height - 13"
             text-anchor="middle"
@@ -91,7 +91,7 @@ function keyClass(key) {
   }
 }
 
-function showLabel(key) {
+function showLabel() {
   return store.showPianoLabels
 }
 
