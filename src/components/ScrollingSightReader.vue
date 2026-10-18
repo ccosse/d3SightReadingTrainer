@@ -446,7 +446,6 @@ function endCapture() {
   stopCaptureTicker()
 }
 function clearStaffFromTransport() {
-  if (liveCapture.events.length && !window.confirm('Clear the current unsaved staff recording? Saved JSON takes and Cosmic journeys will not be deleted.')) return
   clearCapture()
 }
 function clearCapture() {
