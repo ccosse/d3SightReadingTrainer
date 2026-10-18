@@ -56,6 +56,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     showKeyOverlay: false,
     keySelectsTonic: true,
     showAllNoteNames: false,
+    showPianoLabels: typeof window !== 'undefined' && window.localStorage.getItem('d3srt-show-piano-labels') === 'true',
     showGuitarStrings: true,
     showGuitarFrets: true,
     showNeckDots: true,

@@ -92,8 +92,7 @@ function keyClass(key) {
 }
 
 function showLabel(key) {
-  if (preset.value.id === 'reface-37') return true
-  return key.pitchClass === 0 || store.isPlayingMidi(key.midi)
+  return store.showPianoLabels
 }
 
 function keyLabel(key) {
