@@ -159,6 +159,25 @@ let takeElapsedMs = 0
 let takeIndex = 0
 let takeGeneration = 0
 const takeVoices = new Map()
+const takeHighlightTokens = new Map()
+function clearTakeHighlights() {
+  for (const token of takeHighlightTokens.values()) store.endPlaying(token)
+  takeHighlightTokens.clear()
+}
+function highlightTakeMidi(bytes) {
+  const [status=0, pitch=0, velocity=0]=bytes
+  const kind=status&0xf0, ch=status&0x0f, key=`${ch}:${pitch}`
+  if (kind===0x90 && velocity>0) {
+    const prior=takeHighlightTokens.get(key)
+    if (prior!==undefined) store.endPlaying(prior)
+    takeHighlightTokens.set(key,store.beginPlaying([pitch],'take-midi'))
+  } else if (kind===0x80 || (kind===0x90 && velocity===0)) {
+    const token=takeHighlightTokens.get(key)
+    if (token!==undefined) store.endPlaying(token)
+    takeHighlightTokens.delete(key)
+  } else if (kind===0xb0 && (pitch===120 || pitch===123)) clearTakeHighlights()
+}
+
 // A single transport controls whichever source is active. A loaded/recorded take
 // takes priority over generated/manual music until Clear take is selected.
 async function transportRecord() {
@@ -183,6 +202,7 @@ function stopTake() {
   takePlaying.value=false
   for (const voice of takeVoices.values()) if (voice && !voice.pending) stopMidiVoice(voice, 0.05)
   takeVoices.clear()
+  clearTakeHighlights()
 }
 function selectTakeFile() { takeFileInput.value?.click() }
 async function loadTakeFile(event) {
@@ -201,6 +221,7 @@ async function loadTakeFile(event) {
   finally { event.target.value='' }
 }
 function playMidiEvent(bytes, generation) {
+  highlightTakeMidi(bytes)
   const [status=0,pitch=0,velocity=0]=bytes
   const kind=status&0xf0,channel=status&0x0f,key=`${channel}:${pitch}`
   if (kind===0x90 && velocity>0) {

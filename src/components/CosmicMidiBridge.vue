@@ -32,6 +32,26 @@ const monitorEnabled = ref(false)
 const showCredits = ref(false)
 const monitorStatus = ref('Off · keyboard sounds unaffected')
 const playingVoices = new Map()
+// Visual MIDI state is independent of the optional sound monitor.
+const liveHighlightTokens = new Map()
+function clearLiveHighlights() {
+  for (const token of liveHighlightTokens.values()) store.endPlaying(token)
+  liveHighlightTokens.clear()
+}
+function highlightLiveMidi(bytes) {
+  const [status=0, note=0, velocity=0] = bytes
+  const kind=status & 0xf0, channel=status & 0x0f, key=`${channel}:${note}`
+  if (kind===0x90 && velocity>0) {
+    const old=liveHighlightTokens.get(key)
+    if (old!==undefined) store.endPlaying(old)
+    liveHighlightTokens.set(key,store.beginPlaying([note],'live-midi'))
+  } else if (kind===0x80 || (kind===0x90 && velocity===0)) {
+    const token=liveHighlightTokens.get(key)
+    if (token!==undefined) store.endPlaying(token)
+    liveHighlightTokens.delete(key)
+  } else if (kind===0xb0 && (note===120 || note===123)) clearLiveHighlights()
+}
+
 let monitorGeneration = 0
 const inputs = ref([])
 const selectedInput = ref('')
@@ -155,12 +175,13 @@ function midiMessage(event) {
   if ([0xfe, 0xf8, 0xfa, 0xfc].includes(statusByte)) return
   recentEvent.value = `MIDI: ${bytes.map(v => v.toString(16).padStart(2, '0')).join(' ')} · ${Math.round(event.timeStamp)} ms`
   ingestLiveMidi(bytes, event.timeStamp)
+  highlightLiveMidi(bytes)
   monitorMidi(bytes)
   publish('midi', { bytes, timestamp: event.timeStamp })
 }
 function selectInput() {
   if (activeInput) activeInput.onmidimessage = null
-  monitorGeneration++; releaseVoices()
+  monitorGeneration++; releaseVoices(); clearLiveHighlights()
   activeInput = access?.inputs.get(selectedInput.value) || null
   if (activeInput) activeInput.onmidimessage = midiMessage
   status.value = activeInput ? `Listening to ${activeInput.name}` : 'Choose a MIDI input'
@@ -196,7 +217,7 @@ onMounted(() => {
 watch(() => [store.currentKeyId, store.currentMode], publishKey)
 onBeforeUnmount(() => {
   if (activeInput) activeInput.onmidimessage = null
-  monitorGeneration++;releaseVoices()
+  monitorGeneration++;releaseVoices();clearLiveHighlights()
   if (access) access.onstatechange = null
   channel?.close()
 })
