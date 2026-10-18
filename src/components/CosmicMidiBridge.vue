@@ -1,6 +1,6 @@
 <template>
   <section class="integration-panel" aria-label="Cosmic Harmony MIDI connection">
-    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M15 · Practice journeys</span></div>
+    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M16 · Journey replay</span></div>
     <div class="integration-actions">
       <button type="button" @click="openCosmic">Open Cosmic Harmony ↗</button>
       <button type="button" @click="launchChallenge">🎹 Cosmic Challenge</button>
@@ -34,9 +34,16 @@ const monitorStatus = ref('Off · keyboard sounds unaffected')
 const playingVoices = new Map()
 // Visual MIDI state is independent of the optional sound monitor.
 const liveHighlightTokens = new Map()
+const sustainedHighlightTokens = new Map()
+const sustainPedals = new Set()
+function releaseSustained(channel) {
+ for(const [key,token] of sustainedHighlightTokens)if(key.startsWith(channel+':')){store.endPlaying(token);sustainedHighlightTokens.delete(key)}
+}
 function clearLiveHighlights() {
   for (const token of liveHighlightTokens.values()) store.endPlaying(token)
   liveHighlightTokens.clear()
+  for(const token of sustainedHighlightTokens.values())store.endPlaying(token)
+  sustainedHighlightTokens.clear();sustainPedals.clear()
 }
 function highlightLiveMidi(bytes) {
   const [status=0, note=0, velocity=0] = bytes
@@ -44,12 +51,13 @@ function highlightLiveMidi(bytes) {
   if (kind===0x90 && velocity>0) {
     const old=liveHighlightTokens.get(key)
     if (old!==undefined) store.endPlaying(old)
+    const sustained=sustainedHighlightTokens.get(key);if(sustained!==undefined){store.endPlaying(sustained);sustainedHighlightTokens.delete(key)}
     liveHighlightTokens.set(key,store.beginPlaying([note],'live-midi'))
   } else if (kind===0x80 || (kind===0x90 && velocity===0)) {
     const token=liveHighlightTokens.get(key)
-    if (token!==undefined) store.endPlaying(token)
+    if (token!==undefined) {if(sustainPedals.has(channel))sustainedHighlightTokens.set(key,token);else store.endPlaying(token)}
     liveHighlightTokens.delete(key)
-  } else if (kind===0xb0 && (note===120 || note===123)) clearLiveHighlights()
+  } else if(kind===0xb0 && note===64){if(velocity>=64)sustainPedals.add(channel);else{sustainPedals.delete(channel);releaseSustained(channel)}} else if (kind===0xb0 && (note===120 || note===123)) clearLiveHighlights()
 }
 
 let monitorGeneration = 0
@@ -61,6 +69,19 @@ let activeInput = null
 let channel = null
 let child = null
 let pendingChallenge = false
+let auditionToken=0
+async function auditionChord(notes,durationMs=950){
+ if(!Array.isArray(notes)||notes.length>16||notes.some(n=>!Number.isInteger(n)||n<0||n>127))return
+ const id=++auditionToken
+ if(store.audioEngine==='web-midi'){status.value='Select an internal or SoundFont instrument to audition chords.';return}
+ try{
+  await ensureAudioReady()
+  const voices=await Promise.all(notes.map(n=>startMidi(n,0.14)))
+  if(id!==auditionToken){voices.forEach(v=>stopMidiVoice(v,0.03));return}
+  const token=store.beginPlaying(notes,'cosmic-audition')
+  setTimeout(()=>{voices.forEach(v=>stopMidiVoice(v,0.07));store.endPlaying(token)},Math.max(100,Math.min(5000,Number(durationMs)||950)))
+ }catch(e){status.value='Chord audition failed: '+e.message}
+}
 
 function loadChallengeScore(data) {
   if (!Array.isArray(data.steps) || data.steps.length < 1 || data.steps.length > 64) return
@@ -206,6 +227,7 @@ onMounted(() => {
   if (typeof BroadcastChannel !== 'undefined') {
     channel = new BroadcastChannel('d3srt-cosmic-v1')
     channel.onmessage = ({ data }) => {
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'audition-chord'){auditionChord(data.notes,data.durationMs); if(Number.isInteger(data.stepIndex))window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.stepIndex}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()

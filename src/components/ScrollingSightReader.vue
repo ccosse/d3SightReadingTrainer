@@ -1059,8 +1059,9 @@ watch(() => store.srtTempo, rebaseTempoClock)
 watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), refreshManualEvents)
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
 watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
-onMounted(() => { prepareSession(); store.setSrtTransportState('stopped') })
-onBeforeUnmount(() => { stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+function focusCosmicStep(event){if(liveCapture.recording || takePlaying.value || !liveCapture.notes.length)return;const index=event.detail?.index;if(!Number.isInteger(index)||index<0)return;currentBeat.value=Math.min((index*4),liveCapture.durationMs/(60000/liveCapture.bpm))}
+onMounted(() => { prepareSession(); store.setSrtTransportState('stopped');window.addEventListener('cosmic-review-step',focusCosmicStep) })
+onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCosmicStep); stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>
