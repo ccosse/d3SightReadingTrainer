@@ -3,7 +3,7 @@
 :root{color-scheme:dark;--bg:#101522;--surface:#1a2233;--surface2:#253149;--ink:#edf2fa;--muted:#aab9d0;--gold:#ffd17d;--blue:#85caff;--purple:#c0a7ff;--green:#7ce3ba;--red:#f79b9e}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}header{padding:20px 24px 8px;max-width:1300px;margin:auto}h1{font-size:26px;margin:0 0 4px}header p{color:var(--muted);margin:0 0 12px}.layout{max-width:1300px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:0 20px 28px}.panel{background:var(--surface);border:1px solid #34415a;border-radius:15px;padding:14px}.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}.toolbar label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}select,button{background:var(--surface2);color:var(--ink);border:1px solid #485673;border-radius:8px;padding:8px 11px;font:inherit;cursor:pointer}button:hover{border-color:var(--blue)}button:focus-visible,select:focus-visible,.node:focus-visible{outline:3px solid var(--gold);outline-offset:3px}button.primary{background:#245b7b}.switch{accent-color:var(--gold)}.viewport{width:100%;overflow:hidden}svg{display:block;width:100%;height:auto;max-height:760px}svg text{font-family:system-ui,sans-serif;text-anchor:middle;pointer-events:none}.node{cursor:pointer;outline:none}.node circle{stroke-width:2.2}.outer circle{stroke-width:3.1}.inner circle{stroke-width:2.6}.crossed circle{stroke-width:2.8}.node:hover circle,.node:focus circle{stroke:var(--gold);stroke-width:4}.node.allowed circle{stroke:var(--green);stroke-width:3.3}.node.selected circle{stroke:var(--gold);stroke-width:4.2}.node.dimmed{opacity:.32}.orbit{fill:none;stroke:#33435e;stroke-dasharray:5 9}.planet circle{fill:#273d55;stroke:#6598c5}.sun circle{fill:#684e28;stroke:#eabf69}.outer circle{fill:#2a3154;stroke:#b996ff}.inner circle{fill:#1f4a46;stroke:#4fe0c8}.crossed circle{fill:#463039;stroke:#f08ea2}.chord{font-weight:700;fill:#fff;font-size:17px}.role{font-size:12px;fill:#d1dcee}.tiny{font-size:10.5px;fill:#d1dcee}.smallChord{font-size:12.5px;fill:#fff;font-weight:650}.arrow{fill:none;stroke:var(--gold);stroke-width:3;stroke-linecap:round}.side h2{font-size:16px;margin:2px 0 10px}.side h3{font-size:13px;color:var(--muted);margin:20px 0 8px;text-transform:uppercase;letter-spacing:.04em}.hint{color:var(--muted);line-height:1.48;font-size:13px}.pill{display:inline-block;background:#31445d;color:#d8e8f8;padding:3px 7px;border-radius:6px;margin:3px 4px 3px 0;font-size:13px}.history{min-height:64px;line-height:1.8}.savedrow{padding:8px;border:1px solid #42516c;border-radius:8px;margin-bottom:7px}.savedrow button{margin:4px 5px 0 0;font-size:12px;padding:5px 7px}.savedrow .subtle{line-height:1.4;overflow-wrap:anywhere}.feedback{min-height:60px;color:var(--green);font-size:13px;line-height:1.45}.buttons{display:flex;flex-wrap:wrap;gap:7px}.buttons button{font-size:13px}.subtle{color:var(--muted);font-size:12px}.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:12px;padding:6px 2px 0}.dot{display:inline-block;border-radius:50%;width:11px;height:11px;margin-right:4px;vertical-align:middle}body.practice .practice-hide{visibility:hidden}#notes{font-size:13px;color:var(--muted);line-height:1.5}footer{max-width:1300px;margin:0 auto;padding:0 24px 26px;color:var(--muted);font-size:12px}kbd{color:#fff;background:#364358;padding:2px 5px;border-radius:3px}@media(max-width:860px){.layout{grid-template-columns:1fr;padding:0 10px 20px}.side{order:2}header{padding:16px 14px 9px}h1{font-size:22px}}@media(max-width:520px){.panel{padding:8px}.toolbar{gap:8px}svg{min-width:0}}
 
 .bluesPractice{margin:9px 0 14px;padding:12px;border:1px solid #415676;border-radius:12px;background:#142135}.bluesHead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.bluesBars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:9px}.bluesBars button{min-width:0;padding:10px 4px;text-align:center;background:#273b55}.bluesBars button:hover{background:#31516b}.bluesBars button small{display:block;color:#aab9d0;font-size:10px;margin-bottom:3px}.midiPanel{border:1px solid #4e6785;border-radius:10px;padding:11px;background:#182b3d;margin:10px 0}.midiPanel h3{margin:0 0 9px}.midiRow{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:8px 0}.midiRow label{font-size:12px;color:var(--muted)}.midiRow input[type=range]{width:100px}.midiRow select{max-width:200px;min-width:125px}.midiReadout{font-size:13px;line-height:1.5;overflow-wrap:anywhere}.midiReadout strong{color:var(--gold)}.midiSmall{color:var(--muted);font-size:11px}.midiTip{font-size:11px;color:#b4c6dc;line-height:1.45;margin:4px 0 8px}.midiRow select#recognitionMode{min-width:138px}
-.challengePanel{border:1px solid #7a6b95;border-radius:12px;padding:12px;background:#22263e;margin:14px 0}.challengeHeader{display:flex;justify-content:space-between;gap:8px;align-items:center}.challengeHeader span,.challengeStats{color:#c9d6e8;font-size:12px}.challengeButtons,.challengeOptions,.challengeStats{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px;align-items:center}.challengeOptions label{font-size:12px;color:#c9d6e8}.challengePrompt{margin-top:12px;font-size:17px;font-weight:700;color:#ffdb8c}.challengeResponse{margin-top:9px;min-height:36px;line-height:1.45;color:#a5ded1;font-size:13px}.challengePanel .challengeStats{justify-content:space-between}.node.challenge-target circle{stroke:#ffe084!important;stroke-width:6!important;filter:drop-shadow(0 0 11px #f8ca64)}.node.challenge-muted{opacity:.10;pointer-events:none}.challengePanel button:disabled{opacity:.45;cursor:not-allowed}.challengeNarrative{margin-top:9px;padding:9px 10px;border-left:3px solid #e5bd70;background:#172333;border-radius:5px;color:#e7edf5;font-size:12px;line-height:1.5}.challengeReview{color:#d0d8e8;font-size:12px;line-height:1.5;margin-top:9px}
+.challengePanel{border:1px solid #7a6b95;border-radius:12px;padding:12px;background:#22263e;margin:14px 0}.challengeHeader{display:flex;justify-content:space-between;gap:8px;align-items:center}.challengeHeader span,.challengeStats{color:#c9d6e8;font-size:12px}.challengeButtons,.challengeOptions,.challengeStats{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px;align-items:center}.challengeOptions label{font-size:12px;color:#c9d6e8}.challengePrompt{margin-top:12px;font-size:17px;font-weight:700;color:#ffdb8c}.challengeResponse{margin-top:9px;min-height:36px;line-height:1.45;color:#a5ded1;font-size:13px}.challengePanel .challengeStats{justify-content:space-between}.node.challenge-target circle{stroke:#ffe084!important;stroke-width:6!important;filter:drop-shadow(0 0 11px #f8ca64)}.node.challenge-muted{opacity:.10;pointer-events:none}.challengePanel button:disabled{opacity:.45;cursor:not-allowed}.challengeSetup{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.challengeSetup label{display:flex;flex-direction:column;gap:4px;color:#c9d6e8;font-size:12px;flex:1;min-width:130px}.challengeSetup select{font-size:12px;width:100%;padding:6px}.challengeSetup label[hidden]{display:none}.node.challenge-option circle{stroke:#60c9a1;stroke-width:3;stroke-dasharray:5 4}.challengePanel .challengeReview{max-height:64px;overflow:auto}.challengeNarrative{margin-top:9px;padding:9px 10px;border-left:3px solid #e5bd70;background:#172333;border-radius:5px;color:#e7edf5;font-size:12px;line-height:1.5}.challengeReview{color:#d0d8e8;font-size:12px;line-height:1.5;margin-top:9px}
 
 /* M12: the prompted exercise remains visible while studying the tall Cosmic map. */
 .side .challengePanel{position:sticky;top:8px;z-index:15;margin:0 0 14px;background:#232842;box-shadow:0 8px 24px #080c1780}
@@ -22,7 +22,7 @@ body > header{display:none}
 .sideHeading h2{margin:0}
 .creditsButton{font-size:11px;padding:5px 8px;border-radius:6px;color:#cbd9ed}
 @media(max-width:520px){.cosmicPanelHeading{margin-bottom:8px}.cosmicPanelHeading strong{font-size:15px}}
-</style></head><body><main class="layout"><section class="panel"><div class="cosmicPanelHeading"><strong>☀ Cosmic Harmony</strong><span>Major · Minor · Blues · M14</span></div><div class="toolbar"><label>Mode <select id="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="blues">Blues</option></select></label><label>Sun / key <select id="key"></select></label><label><input class="switch" type="checkbox" id="practice"> Mental mode (hide chord names)</label><label><input class="switch" type="checkbox" id="crossed"> Show ♭II7 (×) moons</label></div><div class="viewport"><svg id="chart" viewBox="0 0 860 775" role="img" aria-label="Interactive cosmic harmony diagram with sun, planets, and inner and outer moons"><defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#ffd17d"/></marker><radialGradient id="sunGradient"><stop offset="0" stop-color="#947239"/><stop offset="1" stop-color="#53432d"/></radialGradient></defs><circle class="orbit" cx="425" cy="380" r="253"/><circle class="orbit" cx="425" cy="380" r="312"/><g id="paths"></g><g id="nodes"></g></svg></div><div id="bluesPractice" class="bluesPractice" hidden><div class="bluesHead"><strong>12-bar blues · I7–IV7–V7</strong><button id="loadBlues">Trace all 12 bars</button></div><div id="bluesBars" class="bluesBars"></div></div><div class="legend"><span><i class="dot" style="background:#eabf69"></i>Sun</span><span><i class="dot" style="background:#6598c5"></i>Planet</span><span><i class="dot" style="background:#65baab"></i>Close moon</span><span><i class="dot" style="background:#9986d1"></i>Distant moon (ii)</span><span><i class="dot" style="background:#c27a8a"></i>♭II7 alternative</span></div></section><aside class="panel side"><section class="challengePanel" aria-label="Cosmic Challenge"><div class="challengeHeader"><strong>🎹 Cosmic Challenge</strong><span id="challengeCount">Ready</span></div><div id="challengeMidiStatus" class="challengeMidiStatus" role="status">MIDI: connect through d3SRT (or standalone below)</div><div class="challengeButtons"><button id="challengeStart" class="primary" type="button">Start 8-chord challenge</button><button id="challengeEnd" type="button" disabled>End</button><button id="challengeStaff" type="button" disabled title="Send the successfully played MIDI notes to d3SRT, spaced one chord per 4/4 measure">Send to staff ↗</button></div><div class="challengeOptions"><label><input id="challengeNames" type="checkbox" checked> Show chord name</label><label><input id="challengeContext" type="checkbox" checked> Show entire map</label><label><input id="challengeShells" type="checkbox" checked> Accept 1–3–7 shells</label></div><div id="challengePrompt" class="challengePrompt">Follow a prompted Cosmic path and play each chord on your MIDI keyboard.</div><div id="challengeNarrative" class="challengeNarrative" aria-live="polite">Follow a harmonic journey and listen to each resolution.</div><div id="challengeResponse" class="challengeResponse" role="status" aria-live="polite">Connect MIDI in d3SRT, then start.</div><div id="challengeReview" class="challengeReview"></div><div class="challengeStats"><span id="challengeCorrect">Correct: 0</span><span id="challengeRetries">Retries: 0</span><span id="challengeStreak">Streak: 0</span></div></section><div class="sideHeading"><h2>Navigation</h2><button type="button" id="creditsOpen" class="creditsButton" aria-haspopup="dialog" aria-controls="creditsDialog">About / Credits</button></div><h3>Current position</h3><div id="current" style="font-size:22px;font-weight:750;color:var(--gold)">Cmaj7 · Sun</div><p id="notes">Select a node to see its function and chord tones.</p><h3>Path</h3><div id="history" class="history"></div><div class="buttons"><button id="back">↶ Back</button><button id="reset">Reset to Sun</button><button id="save">Save path</button><button id="copy">Copy path</button></div><label for="saveName" style="display:block;margin-top:10px">Path name <input id="saveName" type="text" maxlength="120" placeholder="e.g. Autumn Leaves (Em)" style="width:100%;box-sizing:border-box;margin-top:5px;background:#142239;border:1px solid #526077;border-radius:6px;padding:9px;color:#f4f6fa" /></label><h3>Saved paths</h3><div id="saved"></div><div class="buttons"><button id="export">Export paths (JSON)</button><button id="clearSaved">Clear saved paths</button></div><details class="midiDiagnostics"><summary>Standalone MIDI / diagnostics</summary><section class="midiPanel" aria-label="Live MIDI input"><h3>🎹 Live MIDI · experimental</h3><div class="midiRow"><button id="midiConnect" class="primary">Connect MIDI</button><select id="midiDevice" aria-label="MIDI input"><option value="">Choose input…</option></select></div><div id="midiStatus" class="midiSmall">Not connected. Chrome on HTTPS or localhost required.</div><div class="midiRow"><label>Chord grouping <input id="midiDelay" type="range" min="100" max="700" value="250" step="25"> <span id="midiDelayValue">250 ms</span></label></div><div class="midiRow"><label for="recognitionMode">Recognition <select id="recognitionMode"><option value="strict">Strict · four tones</option><option value="jazz" selected>Jazz · shells</option><option value="contextual">Contextual · rootless</option></select></label></div><div id="recognitionHelp" class="midiTip">Jazz: allows omitted fifths and clear root–third–seventh shells. Sus4 chords stay distinct.</div><div class="midiRow"><label><input type="checkbox" id="midiTrace"> Auto-trace unambiguous, permitted chords</label></div><div class="midiRow"><label><input type="checkbox" id="midiShowRaw"> Show raw MIDI events</label> <button id="midiPanic">Clear held notes</button></div><div class="midiReadout"><div>Held keys: <strong id="midiHeld">—</strong></div><div>Recognized: <strong id="midiChord">—</strong></div><div id="midiCandidates" class="midiSmall">Play a chord to test note grouping.</div><div id="midiEvents" class="midiSmall" style="display:none;max-height:120px;overflow:auto;white-space:pre-wrap"></div></div></section></details><div class="buttons"><button id="reveal" class="primary">Reveal selected chord</button><button id="example">Load example path</button></div><p id="feedback" class="feedback"></p></aside></main><dialog id="creditsDialog" style="max-width:620px;background:#1a2233;color:#edf2fa;border:1px solid #526077;border-radius:14px;padding:24px;line-height:1.55"><button id="creditsClose" style="float:right">Close</button><h2>About Cosmic Harmony</h2><p>The major/minor harmonic astronomy diagrams are inspired by Randy Halberstadt's <em>Metaphors for the Musician</em>, Chapter 22, “Harmonic Astronomy.” This browser implementation is a new interactive adaptation, not a reproduction of his diagram. Blues mode is an original experimental extension.</p><p>Use Sun or planet to branch to any planet or moon; from distant moons proceed to the close moons of that planet; from close moons resolve to their destination or another chord sharing the destination root. The ♭II7 (×) alternatives are chromatic options.</p><p>Cosmic Harmony receives local MIDI from d3SRT when launched as a companion window. Saved paths are stored in this browser; export a backup if needed.</p></dialog><script>document.getElementById('creditsOpen')?.addEventListener('click',()=>document.getElementById('creditsDialog').showModal());document.getElementById('creditsClose')?.addEventListener('click',()=>document.getElementById('creditsDialog').close());</script><script>
+</style></head><body><main class="layout"><section class="panel"><div class="cosmicPanelHeading"><strong>☀ Cosmic Harmony</strong><span>Major · Minor · Blues · M15</span></div><div class="toolbar"><label>Mode <select id="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="blues">Blues</option></select></label><label>Sun / key <select id="key"></select></label><label><input class="switch" type="checkbox" id="practice"> Mental mode (hide chord names)</label><label><input class="switch" type="checkbox" id="crossed"> Show ♭II7 (×) moons</label></div><div class="viewport"><svg id="chart" viewBox="0 0 860 775" role="img" aria-label="Interactive cosmic harmony diagram with sun, planets, and inner and outer moons"><defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#ffd17d"/></marker><radialGradient id="sunGradient"><stop offset="0" stop-color="#947239"/><stop offset="1" stop-color="#53432d"/></radialGradient></defs><circle class="orbit" cx="425" cy="380" r="253"/><circle class="orbit" cx="425" cy="380" r="312"/><g id="paths"></g><g id="nodes"></g></svg></div><div id="bluesPractice" class="bluesPractice" hidden><div class="bluesHead"><strong>12-bar blues · I7–IV7–V7</strong><button id="loadBlues">Trace all 12 bars</button></div><div id="bluesBars" class="bluesBars"></div></div><div class="legend"><span><i class="dot" style="background:#eabf69"></i>Sun</span><span><i class="dot" style="background:#6598c5"></i>Planet</span><span><i class="dot" style="background:#65baab"></i>Close moon</span><span><i class="dot" style="background:#9986d1"></i>Distant moon (ii)</span><span><i class="dot" style="background:#c27a8a"></i>♭II7 alternative</span></div></section><aside class="panel side"><section class="challengePanel" aria-label="Cosmic Challenge"><div class="challengeHeader"><strong>🎹 Cosmic Challenge</strong><span id="challengeCount">Ready</span></div><div id="challengeMidiStatus" class="challengeMidiStatus" role="status">MIDI: connect through d3SRT (or standalone below)</div><div class="challengeSetup"><label>Exercise <select id="challengeType"><option value="guided">Guided harmonic journey</option><option value="destination">Choose your own route</option></select></label><label id="challengeFamilyLabel">Journey <select id="challengeFamily"></select></label><label id="challengeDestinationLabel" hidden>Visit planet <select id="challengeDestination"></select></label></div><div class="challengeButtons"><button id="challengeStart" class="primary" type="button">Start practice</button><button id="challengeEnd" type="button" disabled>End</button><button id="challengeStaff" type="button" disabled title="Send the successfully played MIDI notes to d3SRT, spaced one chord per 4/4 measure">Send to staff ↗</button></div><div class="challengeOptions"><label><input id="challengeNames" type="checkbox" checked> Show chord name</label><label><input id="challengeContext" type="checkbox" checked> Show entire map</label><label><input id="challengeShells" type="checkbox" checked> Accept 1–3–7 shells</label></div><div id="challengePrompt" class="challengePrompt">Follow a prompted Cosmic path and play each chord on your MIDI keyboard.</div><div id="challengeNarrative" class="challengeNarrative" aria-live="polite">Follow a harmonic journey and listen to each resolution.</div><div id="challengeResponse" class="challengeResponse" role="status" aria-live="polite">Connect MIDI in d3SRT, then start.</div><div id="challengeReview" class="challengeReview"></div><div class="challengeStats"><span id="challengeCorrect">Correct: 0</span><span id="challengeRetries">Retries: 0</span><span id="challengeStreak">Streak: 0</span></div></section><div class="sideHeading"><h2>Navigation</h2><button type="button" id="creditsOpen" class="creditsButton" aria-haspopup="dialog" aria-controls="creditsDialog">About / Credits</button></div><h3>Current position</h3><div id="current" style="font-size:22px;font-weight:750;color:var(--gold)">Cmaj7 · Sun</div><p id="notes">Select a node to see its function and chord tones.</p><h3>Path</h3><div id="history" class="history"></div><div class="buttons"><button id="back">↶ Back</button><button id="reset">Reset to Sun</button><button id="save">Save path</button><button id="copy">Copy path</button></div><label for="saveName" style="display:block;margin-top:10px">Path name <input id="saveName" type="text" maxlength="120" placeholder="e.g. Autumn Leaves (Em)" style="width:100%;box-sizing:border-box;margin-top:5px;background:#142239;border:1px solid #526077;border-radius:6px;padding:9px;color:#f4f6fa" /></label><h3>Saved paths</h3><div id="saved"></div><div class="buttons"><button id="export">Export paths (JSON)</button><button id="clearSaved">Clear saved paths</button></div><details class="midiDiagnostics"><summary>Standalone MIDI / diagnostics</summary><section class="midiPanel" aria-label="Live MIDI input"><h3>🎹 Live MIDI · experimental</h3><div class="midiRow"><button id="midiConnect" class="primary">Connect MIDI</button><select id="midiDevice" aria-label="MIDI input"><option value="">Choose input…</option></select></div><div id="midiStatus" class="midiSmall">Not connected. Chrome on HTTPS or localhost required.</div><div class="midiRow"><label>Chord grouping <input id="midiDelay" type="range" min="100" max="700" value="250" step="25"> <span id="midiDelayValue">250 ms</span></label></div><div class="midiRow"><label for="recognitionMode">Recognition <select id="recognitionMode"><option value="strict">Strict · four tones</option><option value="jazz" selected>Jazz · shells</option><option value="contextual">Contextual · rootless</option></select></label></div><div id="recognitionHelp" class="midiTip">Jazz: allows omitted fifths and clear root–third–seventh shells. Sus4 chords stay distinct.</div><div class="midiRow"><label><input type="checkbox" id="midiTrace"> Auto-trace unambiguous, permitted chords</label></div><div class="midiRow"><label><input type="checkbox" id="midiShowRaw"> Show raw MIDI events</label> <button id="midiPanic">Clear held notes</button></div><div class="midiReadout"><div>Held keys: <strong id="midiHeld">—</strong></div><div>Recognized: <strong id="midiChord">—</strong></div><div id="midiCandidates" class="midiSmall">Play a chord to test note grouping.</div><div id="midiEvents" class="midiSmall" style="display:none;max-height:120px;overflow:auto;white-space:pre-wrap"></div></div></section></details><div class="buttons"><button id="reveal" class="primary">Reveal selected chord</button><button id="example">Load example path</button></div><p id="feedback" class="feedback"></p></aside></main><dialog id="creditsDialog" style="max-width:620px;background:#1a2233;color:#edf2fa;border:1px solid #526077;border-radius:14px;padding:24px;line-height:1.55"><button id="creditsClose" style="float:right">Close</button><h2>About Cosmic Harmony</h2><p>The major/minor harmonic astronomy diagrams are inspired by Randy Halberstadt's <em>Metaphors for the Musician</em>, Chapter 22, “Harmonic Astronomy.” This browser implementation is a new interactive adaptation, not a reproduction of his diagram. Blues mode is an original experimental extension.</p><p>Use Sun or planet to branch to any planet or moon; from distant moons proceed to the close moons of that planet; from close moons resolve to their destination or another chord sharing the destination root. The ♭II7 (×) alternatives are chromatic options.</p><p>Cosmic Harmony receives local MIDI from d3SRT when launched as a companion window. Saved paths are stored in this browser; export a backup if needed.</p></dialog><script>document.getElementById('creditsOpen')?.addEventListener('click',()=>document.getElementById('creditsDialog').showModal());document.getElementById('creditsClose')?.addEventListener('click',()=>document.getElementById('creditsDialog').close());</script><script>
 (()=>{'use strict';
 const sharp=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'],flat=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
 const keys=[['C',0,false],['G',7,false],['D',2,false],['A',9,false],['E',4,false],['B',11,false],['F♯',6,false],['G♭',6,true],['D♭',1,true],['A♭',8,true],['E♭',3,true],['B♭',10,true],['F',5,true]];
@@ -179,11 +179,12 @@ for(let n of visible()){let cls='node '+(n.kind==='planet'?'planet':n.kind); if(
   // In challenges, green allowed-move outlines are misleading: only the requested
   // destination is actionable. Keep the rest as context without green borders.
   if(n.id===challenge.target) cls+=' challenge-target';
+  else if(challenge.type==='destination' && !challenge.target && allowed.has(n.id) && (n.id!=='sun'||challenge.visitedDestination)) cls+=' challenge-option';
   else if(n.id===current.id) cls+=' selected';
   else if(!el('challengeContext').checked) cls+=' challenge-muted';
 } else cls+=(n.id===current.id?' selected':allowed.has(n.id)?' allowed':' dimmed');let g=shape('g',{class:cls,tabindex:0,role:'button','aria-label':n.label+', '+chord(n),transform:`translate(${n.x} ${n.y})`},layer);shape('circle',{r:n.r},g);let label=shape('text',{y:n.kind==='sun'?-14:-6,class:n.r<=30?'tiny':'role'},g);label.textContent=n.label;let name=shape('text',{y:n.kind==='sun'?12:15,class:(n.r<=30?'smallChord':'chord')+' practice-hide'},g);name.textContent=chord(n);if(n.kind==='sun'){let t=shape('text',{y:36,class:'tiny'},g);t.textContent='tonic'}
 if(n.kind==='crossed')shape('path',{d:`M${-n.r*.65},${-n.r*.65} L${n.r*.65},${n.r*.65} M${n.r*.65},${-n.r*.65} L${-n.r*.65},${n.r*.65}`,stroke:'#c27a8a','stroke-width':1.5,opacity:.55},g);
-const action=()=>{if(challenge?.active)return;select(n.id)};g.addEventListener('click',action);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action()}})}
+const action=()=>{if(challenge?.active){if(challenge.type==='destination')chooseFreeTarget(n.id);return;}select(n.id)};g.addEventListener('click',action);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action()}})}
 el('current').textContent=(hide&&!revealed?'?':chord(current))+' · '+(current.kind==='sun'?'Sun':current.kind==='planet'?'Planet '+current.degree:current.label);
 el('notes').textContent=hide&&!revealed?'Predict the chord name and notes. Select Reveal to check.':`Chord tones: ${tones(current)}. ${current.kind==='outer'?'Distant moon: proceed to one of this planet’s close moons.':current.kind==='inner'||current.kind==='crossed'?'Close moon: resolve to target or switch to a chord sharing its root.':current.kind==='planet'?'Planet: select any other planet or moon.':'Tonic: select any planet or moon.'}`;
 el('history').replaceChildren(...history.map((id,i)=>{let span=document.createElement('span');span.className='pill';let n=map.get(id);span.textContent=(hide?'?':chord(n))+(i<history.length-1?' →':'');return span}));renderSaved();}
@@ -236,9 +237,9 @@ function changeKey(){endChallenge(false);
   if(!history.length||history[0]!=='sun')history=['sun'];
   revealed=false;
   el('feedback').textContent='Transposed current path to '+keys[+el('key').value][0]+' '+mode()+'. Saved paths remain key-independent.';
-  refresh();
+  populateChallengeOptions();refresh();
 }
-function changeMode(){endChallenge(false); saveCurrent(true);build();history=['sun'];revealed=false;el('feedback').textContent='Changed to '+mode()+'. Choose a saved path to load it in this key.';refresh()}
+function changeMode(){endChallenge(false); saveCurrent(true);build();history=['sun'];revealed=false;el('feedback').textContent='Changed to '+mode()+'. Choose a saved path to load it in this key.';populateChallengeOptions();refresh()}
 el('key').onchange=changeKey;el('mode').onchange=changeMode;el('practice').onchange=()=>{revealed=false;refresh()};el('crossed').onchange=()=>{if(!el('crossed').checked&&history.some(id=>map.get(id)?.kind==='crossed')){saveCurrent(true);history=['sun']}refresh()};
 el('back').onclick=()=>{if(history.length>1)history.pop();revealed=false;refresh()};el('reset').onclick=()=>{let archived=saveCurrent(true);history=['sun'];revealed=false;el('feedback').textContent=archived?'Returned to Sun; previous path archived in Saved paths.':'Returned to Sun. Saved paths preserved.';refresh()};el('save').onclick=()=>{const ok=saveCurrent();el('feedback').textContent=ok?'Path saved in this browser.':'Nothing new to save; play a path first.';renderSaved()};el('reveal').onclick=()=>{revealed=true;refresh()};
 el('copy').onclick=async()=>{let txt=history.map(id=>chord(map.get(id))).join(' → ');try{await navigator.clipboard.writeText(txt);el('feedback').textContent='Copied: '+txt}catch{el('feedback').textContent='Copy manually: '+txt}};
@@ -373,87 +374,145 @@ function interpretMidi(){
 
 // Challenge uses the existing key-independent Cosmic node IDs and the same
 // note-on/off grouping as normal recognition. Raw MIDI is never altered.
-function drawChallenge(){
- const active=!!challenge?.active;
- el('challengeStart').disabled=active;el('challengeEnd').disabled=!active;el('challengeStaff').disabled=active || !(challenge?.played?.length);
- if(!challenge)return;
- el('challengeCount').textContent=active?`${challenge.completed+1} / ${challenge.length}`:`${challenge.completed} / ${challenge.length}`;
- el('challengeCorrect').textContent='Correct: '+challenge.correct;
- el('challengeRetries').textContent='Retries: '+challenge.retries;
- el('challengeStreak').textContent='Streak: '+challenge.streak;
- el('challengeReview').textContent=challenge.played?.length?challenge.played.map((step,i)=>`${i+1}. ${step.name} (${step.notes.length} keys)`).join('  ·  '):'';
- if(active){
-  const target=map.get(challenge.target);
-  el('challengePrompt').textContent=el('challengeNames').checked?`TARGET: ${chord(target)} · ${target.label}`:`TARGET: ${target.label}`;
-  el('challengeNarrative').textContent=describeChallengeStep(challenge.target);
- }
- refresh();
-}
-// Purposeful eight-step journeys replace random destination hopping.
-// Every path ends at the Sun; each earlier step is legal in the Cosmic grammar.
-const challengeJourneys={
+// Family-based guided journeys plus free-choice routes. All chord movement is
+// validated against the *same* Cosmic navigation rules used outside practice.
+const journeyFamilies={
  major:[
-  ['iii','vi:V','vi','ii:ii','ii:V','ii','V','sun'],
-  ['IV','iii','vi:V','vi','ii:V','ii','V','sun'],
-  ['ii','iii:vii','iii','vi:V','vi','ii','V','sun']
+  {id:'turnaround',name:'Turnaround / homecoming',why:'Connect the planets through secondary dominants and return through V–I.',paths:[
+   ['iii','vi:V','vi','ii:ii','ii:V','ii','V','sun'],
+   ['IV','iii','vi:V','vi','ii:V','ii','V','sun']]},
+  {id:'minor',name:'Minor-planet approaches',why:'Hear minor iiø–V7 approaches into a minor planet, then find home.',paths:[
+   ['vi:ii','vi:V','vi','ii:ii','ii:V','ii','V','sun'],
+   ['iii:ii','iii:V','iii','vi:V','vi','ii','V','sun']]},
+  {id:'chromatic',name:'Leading-tone / chromatic',why:'Use a diminished leading-tone moon, then continue the harmonic journey.',paths:[
+   ['ii','iii:vii','iii','vi:V','vi','ii','V','sun']]},
+  {id:'dominants',name:'Dominant-chain return',why:'Hear the chain of fifths build momentum into the tonic.',paths:[
+   ['iii','vi:V','vi','ii:V','ii','V:V','V','sun']]},
+  {id:'major',name:'Tonicize IV',why:'Approach the IV planet through its ii–V, then return home.',paths:[
+   ['IV:ii','IV:V','IV','iii','vi:V','vi','V','sun']]}
  ],
  minor:[
-  ['iv','III:ii','III:V','III','VI','ii','V','sun'],
-  ['VI','iv','III:ii','III:V','III','ii','V','sun']
+  {id:'relative',name:'Relative-major tunnel',why:'Tonicize the relative major before returning to minor tonic.',paths:[
+   ['iv','III:ii','III:V','III','VI','ii','V','sun'],
+   ['VI','iv','III:ii','III:V','III','ii','V','sun']]},
+  {id:'minoriv',name:'Minor iv and return',why:'Approach iv with its own dominant, then resolve through iiø–V–i.',paths:[
+   ['VI:ii','VI:V','VI','iv:V','iv','ii','V','sun']]},
+  {id:'majorarrival',name:'Relative-major ii–V',why:'Use the complete ii–V approach to III, then move through VI toward home.',paths:[
+   ['III:ii','III:V','III','VI:ii','VI:V','VI','V','sun']]}
  ],
  blues:[
-  ['IV','sun','ii','ii:V','ii','V','IV','sun'],
-  ['V','IV','sun','ii','ii:V','ii','V','sun']
+  {id:'basic',name:'Blues I–IV–V',why:'Practice blues homecomings where tonic I7 stays stable.',paths:[
+   ['IV','sun','ii','ii:V','ii','V','IV','sun'],
+   ['V','IV','sun','ii','ii:V','ii','V','sun']]},
+  {id:'approach',name:'Blues secondary approaches',why:'Visit blues destinations through ii and V7 moons.',paths:[
+   ['V:ii','V:V','V','IV','sun','ii','V','sun'],
+   ['IV:ii','sun','IV','V','V:V','V','IV','sun']]}
  ]
 };
-let journeyIndex={major:0,minor:0,blues:0};
+let familyIndex={},journeyIndex={};
+function populateChallengeOptions(){
+ const families=journeyFamilies[mode()]||journeyFamilies.major;
+ const f=el('challengeFamily'),old=f.value;
+ f.replaceChildren(new Option('Surprise me (rotate)','all'));
+ families.forEach(x=>f.add(new Option(x.name,x.id)));
+ f.value=[...f.options].some(o=>o.value===old)?old:'all';
+ const d=el('challengeDestination'),previous=d.value;
+ d.replaceChildren();
+ nodes.filter(n=>n.kind==='planet').forEach(n=>d.add(new Option(`${n.degree} · ${chord(n)}`,n.id)));
+ d.value=[...d.options].some(o=>o.value===previous)?previous:(d.options[0]?.value||'');
+ el('challengeType').dispatchEvent(new Event('change'));
+}
 function chooseJourney(){
- const choices=challengeJourneys[mode()]||challengeJourneys.major;
- const i=journeyIndex[mode()]++ % choices.length;
- const journey=choices[i].filter(id=>map.has(id));
- // Validate each segment, including the very first step from the Sun.
- if(journey.length!==8 || !journey.every((id,i)=>available(map.get(i?journey[i-1]:'sun')).has(id))) {
-  throw new Error('Invalid authored Cosmic Challenge journey: '+journey.join(' → '));
+ const families=journeyFamilies[mode()]||journeyFamilies.major;
+ let selected=el('challengeFamily').value;
+ let f=selected==='all'?families[(familyIndex[mode()]||0)%families.length]:families.find(x=>x.id===selected);
+ if(selected==='all')familyIndex[mode()]=(familyIndex[mode()]||0)+1;
+ if(!f)f=families[0];
+ const idx=journeyIndex[mode()+':'+f.id]||0;
+ journeyIndex[mode()+':'+f.id]=idx+1;
+ const route=f.paths[idx%f.paths.length];
+ if(route.length!==8 || !route.every((id,i)=>map.has(id) && available(map.get(i?route[i-1]:'sun')).has(id))){
+  throw new Error('Invalid guided journey: '+f.id+' '+route.join(' → '));
  }
- return journey;
+ return {route,family:f};
 }
 function describeChallengeStep(targetId){
  const next=map.get(targetId),from=map.get(history.at(-1));
  if(!next||!from)return '';
  const target=next.target&&map.get(next.target);
- if(next.kind==='outer')return `Preparation: ${chord(next)} is ii of ${chord(target)}. This outer moon sets up a dominant approach to ${chord(target)}.`;
+ if(next.kind==='outer')return `Preparation: ${chord(next)} is ii of ${chord(target)}. Next, hear the pull of its dominant.`;
  if(next.kind==='inner'||next.kind==='crossed'){
-  if(next.sub==='V')return `Tension: ${chord(next)} is V7 of ${chord(target)}. Its third and seventh pull toward ${chord(target)}.`;
-  if(next.sub==='vii')return `Leading-tone approach: ${chord(next)} is vii°7 of ${chord(target)}. Its root leads up a semitone to the destination.`;
-  return `Chromatic approach: ${chord(next)} is a ♭II7 substitute pointing toward ${chord(target)}.`;
+  if(next.sub==='V')return `Tension: ${chord(next)} is V7 of ${chord(target)}. Its guide tones want to resolve there.`;
+  if(next.sub==='vii')return `Leading tone: ${chord(next)} approaches ${chord(target)} by a semitone.`;
+  return `Chromatic approach: ${chord(next)} is a ♭II7 substitute approaching ${chord(target)}.`;
  }
- if(next.kind==='sun')return `Home: ${chord(from)} → ${chord(next)}. Hear the phrase settle back on the tonic.`;
- if(from.kind==='inner'||from.kind==='crossed')return `Arrival: ${chord(from)} resolves to ${chord(next)}. Pause and hear the destination.`;
- if(from.kind==='outer')return `Moving toward ${chord(next)} after the preparation chord.`;
- return `New destination: move from ${chord(from)} to planet ${next.degree} (${chord(next)}). The next steps will give this journey its harmonic direction.`;
+ if(next.kind==='sun')return `Homecoming: ${chord(from)} → ${chord(next)}. Listen for the tonic settling.`;
+ if(from.kind==='inner'||from.kind==='crossed')return `Resolution: ${chord(from)} resolves to ${chord(next)}.`;
+ return `New planet: ${chord(from)} → ${chord(next)}. From here you can begin another harmonic approach.`;
+}
+function drawChallenge(){
+ const active=!!challenge?.active;
+ el('challengeStart').disabled=active;el('challengeEnd').disabled=!active;
+ el('challengeType').disabled=active;el('challengeFamily').disabled=active;el('challengeDestination').disabled=active;
+ el('challengeStaff').disabled=active || !(challenge?.played?.length);
+ if(!challenge)return;
+ const free=challenge.type==='destination';
+ el('challengeCount').textContent=active?(free?`${challenge.completed} moves`:`${challenge.completed+1} / ${challenge.length}`):`${challenge.completed} / ${free?'free':challenge.length}`;
+ el('challengeCorrect').textContent='Correct: '+challenge.correct;
+ el('challengeRetries').textContent='Retries: '+challenge.retries;
+ el('challengeStreak').textContent='Streak: '+challenge.streak;
+ el('challengeReview').textContent=challenge.played?.length?challenge.played.map((step,i)=>`${i+1}. ${step.name} (${step.notes.length} keys)`).join('  ·  '):'';
+ if(active){
+  const target=challenge.target&&map.get(challenge.target);
+  if(target){
+   el('challengePrompt').textContent=el('challengeNames').checked?`TARGET: ${chord(target)} · ${target.label}`:`TARGET: ${target.label}`;
+   el('challengeNarrative').textContent=describeChallengeStep(target.id)+(free?` Your goal is planet ${chord(map.get(challenge.destination))}, then the Sun.`:'');
+  }else{
+   el('challengePrompt').textContent=free?'CHOOSE a green-outlined next chord on the map':'Waiting for next destination';
+   el('challengeNarrative').textContent=challenge.visitedDestination?
+    'You reached your destination planet. Choose a legal route back to the Sun to finish.':
+    `Find your own valid route to planet ${chord(map.get(challenge.destination))}; then return home. Click a permitted chord, then play it.`;
+  }
+ }
+ refresh();
+}
+function chooseFreeTarget(id){
+ if(!challenge?.active||challenge.type!=='destination'||challenge.awaitRelease)return;
+ const here=map.get(history.at(-1));
+ if(id==='sun'&&!challenge.visitedDestination){el('challengeResponse').textContent='Visit your destination planet before returning home.';return}
+ if(!available(here).has(id)){el('challengeResponse').textContent='That move is not permitted from the current position. Choose an outlined option.';return}
+ challenge.target=id;
+ el('challengeResponse').textContent='Now play the selected chord on your keyboard.';
+ drawChallenge();
 }
 function chooseDestination(){return challenge?.route?.[challenge.completed]||null}
 function startChallenge(){
  if(challenge?.active)return;
- // Preserve existing manual work and do not reset saved paths.
  history=['sun'];revealed=false;
- challenge={active:true,length:8,completed:0,correct:0,retries:0,streak:0,
-  target:null,awaitRelease:false,lastSignature:'',lastTargets:[],played:[],route:chooseJourney()};
- challenge.target=chooseDestination();
+ const free=el('challengeType').value==='destination';
+ let journey=null;
+ if(!free){try{journey=chooseJourney()}catch(e){el('challengeResponse').textContent=e.message;return}}
+ challenge={active:true,type:free?'destination':'guided',length:free?0:8,completed:0,correct:0,retries:0,streak:0,
+  target:null,awaitRelease:false,lastSignature:'',lastTargets:[],played:[],route:journey?.route||[],
+  family:journey?.family||null,destination:free?el('challengeDestination').value:null,visitedDestination:false};
+ if(!free)challenge.target=chooseDestination();
  el('midiTrace').checked=false;
- el('challengeResponse').textContent='Play the highlighted destination. Release the keys between chords.';
+ el('challengeResponse').textContent=free?'Choose a valid move on the map, then play it. Visit your destination planet and return to the Sun.':
+  `Journey: ${journey.family.name}. ${journey.family.why}`;
  drawChallenge();
 }
 function endChallenge(showSummary=true){
  if(!challenge?.active)return;
  challenge.active=false;
- el('challengePrompt').textContent='Challenge complete';
- el('challengeNarrative').textContent=challenge.completed>=challenge.length?'Journey complete: you returned to the Sun. Listen again, then send your eight chords to the staff for review.':'Journey stopped early. Your completed steps remain available.';
- if(showSummary)el('challengeResponse').textContent=`Session: ${challenge.correct} correct, ${challenge.retries} retries. Your path remains visible and can be saved.`;
+ el('challengePrompt').textContent=challenge.type==='destination'&&challenge.visitedDestination&&history.at(-1)==='sun'?'Destination reached · back home':'Challenge complete';
+ el('challengeNarrative').textContent=challenge.type==='destination'?
+  (challenge.visitedDestination&&history.at(-1)==='sun'?'You found your own harmonic route and returned home. Send it to the staff or save the path.':'Journey stopped. The completed route can still be saved.'):
+  (challenge.completed>=challenge.length?'Journey complete: you returned to the Sun. Send your chords to the staff for review.':'Journey stopped early. Your completed steps remain available.');
+ if(showSummary)el('challengeResponse').textContent=`Session: ${challenge.correct} correct, ${challenge.retries} retries. The path remains visible and can be saved.`;
  drawChallenge();
 }
 function evaluateChallenge(){
- if(!challenge?.active)return;
+ if(!challenge?.active||!challenge.target)return;
  const pitches=pcSet(activeMidi().map(x=>x.n));
  if(pitches.size===0){challenge.awaitRelease=false;challenge.lastSignature='';return}
  if(challenge.awaitRelease)return;
@@ -481,6 +540,13 @@ function evaluateChallenge(){
   history.push(target.id);challenge.lastTargets.push(target.id);
   if(challenge.lastTargets.length>3)challenge.lastTargets.shift();
   challenge.awaitRelease=true;
+  if(challenge.type==='destination'){
+   if(target.id===challenge.destination)challenge.visitedDestination=true;
+   if(challenge.visitedDestination&&target.id==='sun'){endChallenge();return;}
+   challenge.target=null;
+   el('challengeResponse').textContent=`✓ ${chord(completedNode)} verified. Choose your next permitted chord.`;
+   drawChallenge();return;
+  }
   if(challenge.completed>=challenge.length){endChallenge();return}
   challenge.target=chooseDestination();
   el('challengeResponse').textContent=`✓ ${chord(completedNode)} correct${shell?' (shell)':''}. Release keys, then play the next destination.`;
@@ -506,6 +572,13 @@ el('challengeStart').onclick=startChallenge;
 el('challengeEnd').onclick=()=>endChallenge();
 el('challengeNames').onchange=()=>{if(challenge)drawChallenge()};
 el('challengeContext').onchange=()=>refresh();
+el('challengeType').onchange=()=>{
+ const free=el('challengeType').value==='destination';
+ el('challengeFamilyLabel').hidden=free;
+ el('challengeDestinationLabel').hidden=!free;
+ el('challengeStart').textContent=free?'Start free-route challenge':'Start 8-chord challenge';
+};
+populateChallengeOptions();
 
 el('midiConnect').onclick=async()=>{if(!navigator.requestMIDIAccess){el('midiStatus').textContent='Web MIDI unavailable. Use Chrome on http://localhost or HTTPS.';return}try{midiAccess=await navigator.requestMIDIAccess({sysex:false});midiAccess.onstatechange=()=>updateMidiDevices();updateMidiDevices();}catch(e){el('midiStatus').textContent='MIDI permission denied or unavailable: '+e.message}};
 el('midiDevice').onchange=e=>setInput(e.target.value);
