@@ -20,8 +20,9 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { ingestLiveMidi } from '../music/liveMidiCapture'
+import { ingestLiveMidi, importLiveCaptureJson, liveCapture } from '../music/liveMidiCapture'
 import { ensureAudioReady, startMidi, stopMidiVoice } from '../music/audio'
+import { MAJOR_KEYS } from '../music/theory'
 
 const store = useNoteMapStore()
 const midiAvailable = typeof navigator !== 'undefined' && !!navigator.requestMIDIAccess
@@ -41,6 +42,46 @@ let channel = null
 let child = null
 let pendingChallenge = false
 
+function loadChallengeScore(data) {
+  if (!Array.isArray(data.steps) || data.steps.length < 1 || data.steps.length > 64) return
+  if (liveCapture.recording) { status.value='Stop recording before importing a Cosmic Challenge.'; return }
+  if (liveCapture.notes.length && !window.confirm('Replace the current MIDI take with this Cosmic Challenge score? Export your existing take first if needed.')) return
+  const bpm=Math.max(30,Math.min(220,Number(store.srtTempo)||72))
+  const beatMs=60000/bpm
+  const events=[]
+  for (let i=0;i<data.steps.length;i++) {
+    const step=data.steps[i]
+    if (!Array.isArray(step?.notes) || step.notes.length > 32) return
+    const onset=Math.round(i*4*beatMs)
+    const release=Math.round((i*4+3.5)*beatMs)
+    const seen=new Set()
+    for (const note of step.notes) {
+      if (!Number.isInteger(note?.midi) || note.midi<0 || note.midi>127) return
+      const ch=Number.isInteger(note.channel)&&note.channel>=0&&note.channel<=15?note.channel:0
+      const velocity=Math.max(1,Math.min(127,Math.round(Number(note.velocity)||90)))
+      const key=ch+':'+note.midi
+      if(seen.has(key))continue
+      seen.add(key)
+      events.push({atMs:onset,bytes:[0x90|ch,note.midi,velocity]})
+      events.push({atMs:release,bytes:[0x80|ch,note.midi,0]})
+    }
+  }
+  if (!events.length)return
+  const durationMs=Math.round(data.steps.length*4*beatMs)
+  try {
+    // Match the grand staff key signature to the Cosmic challenge key.
+    // d3SRT represents minor keys using their relative major key signatures.
+    const tonic=String(data.tonic || '')
+    const wantedMode=data.mode==='minor'?'minor':'major'
+    const key=MAJOR_KEYS.find(k=> wantedMode==='minor'
+      ? k.relativeMinor.split(' ')[0] === tonic
+      : k.label === tonic)
+    if(key)store.setKey(key.id,{mode:wantedMode})
+    const count=importLiveCaptureJson({format:'d3srt-raw-midi-take',version:1,bpm,durationMs,events})
+    store.setSrtTempo(bpm)
+    status.value=`Challenge score: ${data.steps.length} bars of 4/4 · ${count} played notes · ${bpm} BPM. Timing is a practice grid, not the original performance. Review or export JSON.`
+  } catch(error) { status.value=`Challenge import failed: ${error.message}` }
+}
 function publish(type, fields = {}) {
   channel?.postMessage({ source: 'd3srt', version: 1, type, ...fields })
 }
@@ -144,6 +185,7 @@ onMounted(() => {
   if (typeof BroadcastChannel !== 'undefined') {
     channel = new BroadcastChannel('d3srt-cosmic-v1')
     channel.onmessage = ({ data }) => {
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()
         if (pendingChallenge) { publish('challenge-start'); pendingChallenge = false }

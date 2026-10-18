@@ -1033,6 +1033,7 @@ watch(() => store.srtTransportNonce, () => {
   else stop()
 })
 watch(() => store.srtGenerationNonce, regenerate)
+watch(() => liveCapture.take, () => { if(!liveCapture.recording) currentBeat.value=0 })
 watch(() => store.srtTempo, rebaseTempoClock)
 watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), refreshManualEvents)
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
