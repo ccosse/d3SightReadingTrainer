@@ -1,8 +1,9 @@
 <template>
   <section class="integration-panel" aria-label="Cosmic Harmony MIDI connection">
-    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M3 · Live capture</span></div>
+    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M9 · Cosmic Challenge</span></div>
     <div class="integration-actions">
       <button type="button" @click="openCosmic">Open Cosmic Harmony ↗</button>
+      <button type="button" @click="launchChallenge">🎹 Cosmic Challenge</button>
       <button type="button" :disabled="!midiAvailable" @click="connectMidi">{{ connected ? 'Change MIDI input' : 'Connect MIDI' }}</button>
       <select v-if="inputs.length" v-model="selectedInput" @change="selectInput" aria-label="MIDI input">
         <option v-for="input in inputs" :key="input.id" :value="input.id">{{ input.name }}</option>
@@ -38,6 +39,7 @@ let access = null
 let activeInput = null
 let channel = null
 let child = null
+let pendingChallenge = false
 
 function publish(type, fields = {}) {
   channel?.postMessage({ source: 'd3srt', version: 1, type, ...fields })
@@ -50,6 +52,12 @@ function currentTonic() {
 }
 function publishKey() { publish('key', { tonic: currentTonic(), mode: store.currentMode }) }
 function publishStatus() { publish('status', { connected: !!activeInput, device: activeInput?.name || '' }) }
+function launchChallenge() {
+  pendingChallenge = true
+  openCosmic()
+  // An already-open companion will not issue another ready signal.
+  if (child && !child.closed) publish('challenge-start')
+}
 function openCosmic() {
   // Public asset is copied to the built app root; BASE_URL supports GitHub Pages.
   const url = new URL(`${import.meta.env.BASE_URL}cosmic-harmony.html`, location.origin)
@@ -138,6 +146,7 @@ onMounted(() => {
     channel.onmessage = ({ data }) => {
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()
+        if (pendingChallenge) { publish('challenge-start'); pendingChallenge = false }
       }
     }
   }
