@@ -1,8 +1,9 @@
 <template>
   <section class="integration-panel" aria-label="Cosmic Harmony MIDI connection">
-    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M24.4 · Equivalent-chord resolution</span></div>
+    <div class="integration-title"><strong>Cosmic Harmony · MIDI bridge</strong><span class="integration-note">M25 · Help & documentation</span></div>
     <div class="integration-actions">
       <button type="button" @click="openCosmic">Open Cosmic Harmony ↗</button>
+      <button type="button" @click="openHelp">Help ?</button>
       <button type="button" @click="launchChallenge">🎹 Cosmic Challenge</button>
       <button type="button" :disabled="!midiAvailable" @click="connectMidi">{{ connected ? 'Change MIDI input' : 'Connect MIDI' }}</button>
       <select v-if="inputs.length" v-model="selectedInput" @change="selectInput" aria-label="MIDI input">
@@ -24,6 +25,7 @@ import { ingestLiveMidi, importLiveCaptureJson, liveCapture } from '../music/liv
 import { ensureAudioReady, startMidi, stopMidiVoice } from '../music/audio'
 import { MAJOR_KEYS } from '../music/theory'
 
+function openHelp() { window.open(new URL('help.html', window.location.href.split('#')[0]), '_blank', 'noopener') }
 const store = useNoteMapStore()
 const midiAvailable = typeof navigator !== 'undefined' && !!navigator.requestMIDIAccess
 const status = ref('Not connected')
