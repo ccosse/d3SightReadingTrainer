@@ -230,9 +230,9 @@ function publishFreePath(force=false){
  const signature=JSON.stringify([mode(),keys[+el('key').value][0],history]);
  if(!force && signature===lastPublishedFreePath)return;
  lastPublishedFreePath=signature;
- const steps=history.map(id=>{const n=map.get(id);return {nodeId:id,name:chord(n)};});
+ const steps=history.map(id=>{const n=map.get(id);return {nodeId:id,name:chord(n),notes:generatedChordNotes(n)};});
  cosmicBridge.postMessage({source:'cosmic',version:1,type:'free-path-state',
-   mode:mode(),tonic:keys[+el('key').value][0],steps});
+   mode:mode(),tonic:keys[+el('key').value][0],activeIndex:history.length-1,steps});
 }
 function select(id){if(challenge?.active)return;const n=map.get(id),cur=map.get(history.at(-1));if(!n||n.id===cur.id)return;if(!available(cur).has(id)){el('feedback').textContent='Not an allowed step from here. Choose a green-outlined destination.';return}history.push(id);revealed=false;el('feedback').textContent=explainTransition(cur.id,id);replaySelected=-1;staffReplaySteps=[];refresh()}
 function persist(){try{localStorage.setItem('cosmicSavedPathsV2',JSON.stringify(saved))}catch{el('feedback').textContent='Browser storage is unavailable. Export paths to keep a copy.'}}
@@ -286,7 +286,10 @@ function changeKey(){endChallenge(false);
   populateChallengeOptions();refresh();
 }
 function changeMode(){endChallenge(false); saveCurrent(true);build();history=['sun'];revealed=false;el('feedback').textContent='Changed to '+mode()+'. Choose a saved path to load it in this key.';populateChallengeOptions();refresh()}
-el('key').onchange=changeKey;el('mode').onchange=changeMode;el('practice').onchange=()=>{revealed=false;refresh()};el('crossed').onchange=()=>{if(!el('crossed').checked&&history.some(id=>map.get(id)?.kind==='crossed')){saveCurrent(true);history=['sun']}refresh()};
+// Send deliberate CH key changes back to d3SRT; programmatic updates via
+// the bridge call changeKey/changeMode directly, avoiding feedback loops.
+function publishKeySelection(){cosmicBridge?.postMessage({source:'cosmic',version:1,type:'key-selected',mode:mode(),tonic:keys[+el('key').value][0]})}
+el('key').onchange=()=>{changeKey();publishKeySelection()};el('mode').onchange=()=>{changeMode();publishKeySelection()};el('practice').onchange=()=>{revealed=false;refresh()};el('crossed').onchange=()=>{if(!el('crossed').checked&&history.some(id=>map.get(id)?.kind==='crossed')){saveCurrent(true);history=['sun']}refresh()};
 el('back').onclick=()=>{if(history.length>1){const removed=history.pop();el('feedback').textContent='Removed '+chord(map.get(removed))+'. Narrative updated.';staffReplaySteps=[];replaySelected=-1;}revealed=false;refresh()};el('reset').onclick=()=>{let archived=saveCurrent(true);history=['sun'];freePlayed=[];staffReplaySteps=[];replaySelected=-1;revealed=false;el('feedback').textContent=archived?'Returned to Sun; previous path archived in Saved paths.':'Returned to Sun. Saved paths preserved.';refresh()};el('save').onclick=()=>{const ok=saveCurrent();el('feedback').textContent=ok?'Path saved in this browser.':'Nothing new to save; play a path first.';renderSaved()};el('reveal').onclick=()=>{revealed=true;refresh()};
 el('copy').onclick=async()=>{let txt=history.map(id=>chord(map.get(id))).join(' → ');try{await navigator.clipboard.writeText(txt);el('feedback').textContent='Copied: '+txt}catch{el('feedback').textContent='Copy manually: '+txt}};
 el('example').onclick=()=>{saveCurrent(true);history=mode()==='major'?['sun','iii','vi:V','vi','ii:V','ii','V','sun']:mode()==='minor'?['sun','VI','iv:ii','iv:V','iv','V','sun']:['sun','IV','sun','V','IV','sun'];history=history.filter(id=>map.has(id));revealed=false;el('feedback').textContent='Example path loaded; explore and save it.';refresh()};
