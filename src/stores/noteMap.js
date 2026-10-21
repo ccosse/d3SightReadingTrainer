@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { keyboardPresetById } from '../music/keyboardPresets'
+import { reconcileMusicalSteps } from '../music/musicalSession'
 import {
   configureAudioEngine,
   requestMidiOutputs,
@@ -94,6 +95,13 @@ export const useNoteMapStore = defineStore('noteMap', {
     scanTempo: 96,
     playingTokens: [],
     nextPlayingToken: 1,
+    // Unified musical session; the Classic interface continues using its existing
+    // staff and highlight state during incremental migration.
+    musicalSession: {
+      revision: 0, source: '', mode: 'major', tonic: 'C',
+      steps: [], activeIndex: -1, playing: false
+    },
+    nextMusicalStepId: 1,
 
     staffLengthBeats: STAFF_LENGTH_BEATS,
     staffQuantize: 0.5,
@@ -435,6 +443,25 @@ export const useNoteMapStore = defineStore('noteMap', {
       this.playingTokens = source
         ? this.playingTokens.filter((entry) => entry.source !== source)
         : []
+    },
+
+    syncMusicalPath({ mode = 'major', tonic = 'C', steps = [], source = 'cosmic' } = {}) {
+      if (!Array.isArray(steps) || steps.length > 128) return
+      const previous = this.musicalSession
+      const compatible = previous.mode === mode && previous.tonic === tonic
+      const result = reconcileMusicalSteps(compatible ? previous.steps : [], steps, this.nextMusicalStepId)
+      this.nextMusicalStepId = result.nextId
+      this.musicalSession = {
+        ...previous, revision: previous.revision + 1,
+        source, mode, tonic, steps: result.steps,
+        activeIndex: -1, playing: false
+      }
+    },
+
+    setMusicalPlayhead(index, playing = false) {
+      const normalized = Number.isInteger(index) && index >= 0 && index < this.musicalSession.steps.length ? index : -1
+      this.musicalSession.activeIndex = normalized
+      this.musicalSession.playing = Boolean(playing) && normalized >= 0
     },
 
     setStaffDragPayload(payload) {

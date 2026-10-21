@@ -217,10 +217,10 @@ function transportStop() {
   if (takePlaying.value || takePaused.value) stopTake(true)
   if (store.srtTransportState !== 'stopped') stop()
 }
-function releaseTakeVoices() {
+function releaseTakeVoices({ preserveHighlights = false } = {}) {
   for (const voice of takeVoices.values()) if (voice && !voice.pending) stopMidiVoice(voice, 0.025)
   takeVoices.clear()
-  clearTakeHighlights()
+  if (!preserveHighlights) clearTakeHighlights()
 }
 function pauseTake() {
   if (!takePlaying.value) return
@@ -230,7 +230,7 @@ function pauseTake() {
   takeFrame=0
   takePlaying.value=false
   takePaused.value=true
-  releaseTakeVoices()
+  releaseTakeVoices({ preserveHighlights: true })
   takeMessage.value=`Paused at beat ${currentBeat.value.toFixed(1)}`
 }
 function stopTake(reset=false) {
@@ -295,6 +295,9 @@ async function playTake(resume=false) {
   // Accumulating delta per frame also allows tempo changes DURING playback
   // without skipping or replaying MIDI events.
   if (!resume) takeElapsedMs=0
+  // Paused audio is silent, while the instrument highlights remain frozen.
+  // Resume clears only that visual snapshot before processing the next MIDI event.
+  if (resume) clearTakeHighlights()
   takeLastFrame=performance.now()
   takePlaying.value=true
   takePaused.value=false
@@ -945,12 +948,12 @@ function refreshManualEvents() {
   )
   previousBeat = currentBeat.value
 }
-function clearReleaseTimers() {
+function clearReleaseTimers({ preserveHighlights = false } = {}) {
   releaseTimers.forEach((timer) => window.clearTimeout(timer))
   releaseTimers = []
   activeVoiceGroups.forEach((group) => { group.cancelled = true; stopChordVoices(group.voices, 0.05) })
   activeVoiceGroups = []
-  store.clearPlaying('srt')
+  if (!preserveHighlights) store.clearPlaying('srt')
 }
 function prepareSession() {
   clearReleaseTimers()
@@ -975,6 +978,7 @@ async function play() {
   const token = ++sessionToken
   await ensureAudioReady()
   if (token !== sessionToken) return
+  store.clearPlaying('srt') // discard the frozen visual snapshot on resume
   store.setSrtTransportState('playing')
   const beatMs = 60000 / store.srtTempo
   startedAt = performance.now() - currentBeat.value * beatMs
@@ -984,7 +988,7 @@ async function play() {
 function freezeTransport(state) {
   sessionToken += 1
   cancelAnimation()
-  clearReleaseTimers()
+  clearReleaseTimers({ preserveHighlights: state === 'paused' })
   previousBeat = currentBeat.value
   store.setSrtTransportState(state)
 }

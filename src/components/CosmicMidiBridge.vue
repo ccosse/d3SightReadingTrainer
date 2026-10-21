@@ -85,7 +85,18 @@ async function auditionChord(notes,durationMs=950){
  }catch(e){status.value='Chord audition failed: '+e.message}
 }
 
+function acceptCosmicPath(data, source = 'cosmic') {
+  if (!Array.isArray(data.steps) || data.steps.length > 128) return
+  store.syncMusicalPath({
+    tonic: String(data.tonic || 'C'),
+    mode: ['major', 'minor', 'blues'].includes(data.mode) ? data.mode : 'major',
+    steps: data.steps,
+    source
+  })
+}
+
 function loadChallengeScore(data) {
+  acceptCosmicPath(data, 'cosmic-staff')
   if (!Array.isArray(data.steps) || data.steps.length < 1 || data.steps.length > 64) return
   if (liveCapture.recording) { status.value='Stop recording before importing a Cosmic Challenge.'; return }
   if (liveCapture.notes.length && !window.confirm('Replace the current MIDI take with this Cosmic Challenge score? Export your existing take first if needed.')) return
@@ -226,14 +237,19 @@ async function connectMidi() {
     refreshInputs()
   } catch (error) { status.value = `MIDI unavailable: ${error.message}` }
 }
-function forwardPlayhead(event){publish('take-playhead',event.detail || {})}
+function forwardPlayhead(event){
+  const detail = event.detail || {}
+  store.setMusicalPlayhead(detail.index, detail.playing)
+  publish('take-playhead', detail)
+}
 onMounted(() => {
   window.addEventListener('cosmic-take-playhead', forwardPlayhead)
   if (typeof BroadcastChannel !== 'undefined') {
     channel = new BroadcastChannel('d3srt-cosmic-v1')
     channel.onmessage = ({ data }) => {
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'free-path-state') { acceptCosmicPath(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'audition-chord'){auditionChord(data.notes,data.durationMs); if(Number.isInteger(data.stepIndex))window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.stepIndex}}));return}
-      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'select-step'){window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.index}}));return}
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'select-step'){store.setMusicalPlayhead(data.index,false);window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.index}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()
