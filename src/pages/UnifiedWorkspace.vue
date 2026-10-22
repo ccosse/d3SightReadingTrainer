@@ -7,9 +7,13 @@
       <strong class="unified-heading">Unified</strong>
       <div class="unified-key">{{ store.currentKey.label }} · {{ store.currentMode }}</div>
       <q-space />
-      <q-btn dense flat round :icon="store.srtTransportState === 'playing' ? 'pause' : 'play_arrow'" :aria-label="store.srtTransportState === 'playing' ? 'Pause' : 'Play'" @click="toggleTransport" />
-      <q-btn dense flat round icon="stop" aria-label="Stop" @click="store.requestSrtStop()" />
+      <q-btn dense flat round icon="fiber_manual_record" color="red-5" :disable="store.srtRecording" aria-label="Record MIDI take" @click="store.requestSrtRecord()" />
+      <q-badge v-if="store.srtRecording" color="negative" label="REC" />
+      <q-btn dense flat round :icon="store.srtTransportState === 'playing' ? 'pause' : 'play_arrow'" :aria-label="store.srtTransportState === 'playing' ? 'Pause' : 'Play'" :disable="store.srtRecording" @click="toggleTransport" />
+      <q-btn dense flat round icon="stop" aria-label="Stop recording or playback" @click="store.requestSrtStop()" />
+      <q-btn dense flat round icon="backspace" aria-label="Clear current staff take" @click="store.requestSrtClear()" />
       <q-btn dense flat round icon="repeat" :color="store.srtLoopManual ? 'primary' : 'grey-5'" aria-label="Toggle looping" @click="store.srtLoopManual = !store.srtLoopManual" />
+      <q-checkbox dense dark v-model="store.srtMetronomeOn" label="Click" title="Metronome during MIDI recording" />
       <q-input
         class="unified-tempo" dark dense outlined type="number" label="BPM"
         :model-value="store.srtTempo" min="30" max="220" aria-label="Tempo in beats per minute"
@@ -60,6 +64,8 @@
           <div class="unified-tile-title">
             <span>{{ pane.label }}</span>
             <q-space />
+            <q-btn v-if="pane.id === 'cosmic'" dense unelevated color="primary" text-color="black" icon="queue_music" label="Send to Staff" :disable="!cosmicFrameReady" title="Send current Cosmic Harmony path to staff" @click="sendCosmicPathToStaff" />
+            <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="article" :color="cosmicNarrativeOpen ? 'primary' : 'grey-5'" aria-label="Toggle full-height Cosmic narrative" title="Toggle Cosmic narrative" @click="toggleCosmicNarrative" />
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="tune" :color="cosmicDetails ? 'primary' : 'grey-5'" aria-label="Show Cosmic Harmony navigation and narrative" @click="toggleCosmicDetails" />
             <q-btn dense flat round :icon="maximized === pane.id ? 'close_fullscreen' : 'open_in_full'" :aria-label="maximized === pane.id ? `Restore ${pane.label} tile` : `Maximize ${pane.label} tile`" @click="maximized = maximized === pane.id ? '' : pane.id" />
           </div>
@@ -67,9 +73,9 @@
             <iframe
               v-if="pane.id === 'cosmic'" :ref="setCosmicFrame"
               class="cosmic-embedded" :src="cosmicUrl" title="Interactive Cosmic Harmony"
-              @load="syncCosmicDetails"
+              @load="onCosmicFrameLoad"
             />
-            <ScrollingSightReader v-else-if="pane.id === 'staff'" />
+            <ScrollingSightReader v-else-if="pane.id === 'staff'" unified-transport />
             <PianoKeyboard v-else-if="pane.id === 'piano'" />
             <StratocasterFretboard v-else-if="pane.id === 'guitar'" />
           </div>
@@ -112,6 +118,8 @@ const leftOpen = ref(true)
 const rightOpen = ref(false)
 const maximized = ref('')
 const cosmicDetails = ref(false)
+const cosmicNarrativeOpen = ref(true)
+const cosmicFrameReady = ref(false)
 const cosmicFrame = ref(null)
 const gridEl = ref(null)
 const columnPercent = ref(50)
@@ -150,11 +158,33 @@ function toggleTransport() {
   else store.requestSrtPlay()
 }
 function setCosmicFrame(element) { cosmicFrame.value = element }
+function onCosmicFrameLoad() { cosmicFrameReady.value = true; syncCosmicDetails() }
 function syncCosmicDetails() {
-  try { cosmicFrame.value?.contentDocument?.documentElement.classList.toggle('embed-details', cosmicDetails.value) }
-  catch { /* iframe is same-origin on supported deployments; standalone window still works */ }
+  try {
+    const doc = cosmicFrame.value?.contentDocument
+    if (!doc) return
+    doc.documentElement.classList.toggle('embed-details', cosmicDetails.value)
+    doc.documentElement.classList.toggle('embed-narrative', cosmicNarrativeOpen.value && !cosmicDetails.value)
+  } catch { /* iframe is same-origin on supported deployments */ }
 }
-function toggleCosmicDetails() { cosmicDetails.value = !cosmicDetails.value; syncCosmicDetails() }
+function toggleCosmicDetails() {
+  cosmicDetails.value = !cosmicDetails.value
+  cosmicNarrativeOpen.value = !cosmicDetails.value
+  syncCosmicDetails()
+}
+function toggleCosmicNarrative() {
+  cosmicNarrativeOpen.value = !cosmicNarrativeOpen.value
+  if (cosmicNarrativeOpen.value) cosmicDetails.value = false
+  syncCosmicDetails()
+}
+function sendCosmicPathToStaff() {
+  try {
+    const button = cosmicFrame.value?.contentDocument?.getElementById('freeStaff')
+    if (!button) return
+    // Call the real Cosmic command: it preserves its path notes and MIDI bridge.
+    button.click()
+  } catch (error) { console.warn('Cosmic Harmony iframe not ready', error) }
+}
 function openCosmicWindow() {
   window.open(new URL(`${import.meta.env.BASE_URL}cosmic-harmony.html`, location.origin).href, 'cosmic-harmony', 'popup=yes,width=1150,height=850,resizable=yes,scrollbars=yes')
 }

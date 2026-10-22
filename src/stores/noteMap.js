@@ -114,6 +114,8 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtTransportState: 'stopped',
     srtTransportCommand: 'stop',
     srtTransportNonce: 0,
+    srtMetronomeOn: false,
+    srtRecording: false,
     srtTempo: 72,
     srtEventSpacing: 1,
     srtMaterial: 'mixed',
@@ -633,6 +635,16 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     requestSrtStop() {
       this.srtTransportCommand = 'stop'
+      this.srtTransportNonce += 1
+    },
+
+    requestSrtRecord() {
+      this.srtTransportCommand = 'record'
+      this.srtTransportNonce += 1
+    },
+
+    requestSrtClear() {
+      this.srtTransportCommand = 'clear'
       this.srtTransportNonce += 1
     },
 
