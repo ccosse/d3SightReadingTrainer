@@ -74,8 +74,8 @@
             <StratocasterFretboard v-else-if="pane.id === 'guitar'" />
           </div>
         </section>
-        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="{ left: `${columnPercent}%` }" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
-        <div v-if="layout.rows === 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${rowPercent}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="rowPercent = limitPercent(rowPercent - 5)" @keydown.down.prevent="rowPercent = limitPercent(rowPercent + 5)" />
+        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="{ left: `${columnPercent}%`, top: layout.rows === 2 && layout.upperIds?.length === 1 ? `${rowTarget}%` : '0', bottom: layout.rows === 2 && layout.lowerIds?.length === 1 ? `${100 - rowTarget}%` : '0' }" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
+        <div v-if="layout.rows === 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${rowTarget}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
       </div>
 
       <q-btn v-if="!rightOpen" class="unified-reveal unified-reveal--right" flat round icon="chevron_left" aria-label="Show session inspector" @click="rightOpen = true" />
@@ -95,7 +95,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { UNIFIED_PANES, restoreUnifiedLayout, tileLayout } from '../music/unifiedTiling'
+import { UNIFIED_PANES, restoreUnifiedLayout, tileLayout, suggestedRowPercent } from '../music/unifiedTiling'
 import CosmicMidiBridge from '../components/CosmicMidiBridge.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -116,15 +116,23 @@ const cosmicFrame = ref(null)
 const gridEl = ref(null)
 const columnPercent = ref(50)
 const rowPercent = ref(62)
+const rowAdjusted = ref(false)
+const gridDimensions = ref({ width: 0, height: 0 })
+const keyboardRatio = ref(8)
+const rowTarget = computed(() => rowAdjusted.value ? rowPercent.value : suggestedRowPercent(layout.value, gridDimensions.value.width, gridDimensions.value.height, keyboardRatio.value))
 const cosmicUrl = `${import.meta.env.BASE_URL}cosmic-harmony.html?embed=1`
 const visibleIds = computed(() => panes.filter(pane => visibility.value[pane.id]).map(pane => pane.id))
 const layout = computed(() => tileLayout(visibleIds.value, maximized.value))
 const gridStyle = computed(() => ({
   gridTemplateColumns: layout.value.columns === 2 ? `${columnPercent.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)',
-  gridTemplateRows: layout.value.rows === 2 ? `${rowPercent.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)'
+  gridTemplateRows: layout.value.rows === 2 ? `${rowTarget.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)'
 }))
 
-function limitPercent(value) { return Math.max(24, Math.min(76, Math.round(value))) }
+function nudgeRow(delta) {
+  rowPercent.value = limitPercent(rowTarget.value + delta)
+  rowAdjusted.value = true
+}
+function limitPercent(value) { return Math.max(24, Math.min(80, Math.round(value))) }
 function setVisible(id, value) {
   if (value === false && visibleIds.value.length === 1) return
   visibility.value = { ...visibility.value, [id]: Boolean(value) }
@@ -135,6 +143,7 @@ function resetLayout() {
   maximized.value = ''
   columnPercent.value = 50
   rowPercent.value = 62
+  rowAdjusted.value = false
 }
 function toggleTransport() {
   if (store.srtTransportState === 'playing') store.requestSrtPause()
@@ -151,6 +160,7 @@ function openCosmicWindow() {
 }
 function beginSplit(event, axis) {
   if (!gridEl.value || event.button !== 0) return
+  if (axis === 'row' && !rowAdjusted.value) { rowPercent.value = rowTarget.value; rowAdjusted.value = true }
   const pointerId = event.pointerId
   const divider = event.currentTarget
   divider.setPointerCapture?.(pointerId)
@@ -158,7 +168,7 @@ function beginSplit(event, axis) {
     const rect = gridEl.value?.getBoundingClientRect()
     if (!rect) return
     if (axis === 'column') columnPercent.value = limitPercent((e.clientX - rect.left) / rect.width * 100)
-    else rowPercent.value = limitPercent((e.clientY - rect.top) / rect.height * 100)
+    else { rowPercent.value = limitPercent((e.clientY - rect.top) / rect.height * 100); rowAdjusted.value = true }
   }
   const stop = () => {
     divider.removeEventListener('pointermove', move)
@@ -172,28 +182,44 @@ function beginSplit(event, axis) {
 }
 function persistLayout() {
   try {
-    window.localStorage.setItem('d3srt-unified-layout-v1', JSON.stringify({
+    window.localStorage.setItem('d3srt-unified-layout-v2', JSON.stringify({
       visibility: visibility.value, leftOpen: leftOpen.value, rightOpen: rightOpen.value,
-      columnPercent: columnPercent.value, rowPercent: rowPercent.value
+      columnPercent: columnPercent.value, rowPercent: rowPercent.value, rowAdjusted: rowAdjusted.value
     }))
   } catch { /* persistence is optional */ }
 }
 let stopWatching
+let gridObserver
+let keyboardObserver
+function measureGrid() {
+  if (!gridEl.value) return
+  const rect = gridEl.value.getBoundingClientRect()
+  gridDimensions.value = { width: rect.width, height: rect.height }
+  const svg = gridEl.value.querySelector('.unified-tile--piano svg[viewBox]')
+  const vb = svg?.viewBox?.baseVal
+  if (vb?.height && vb?.width) keyboardRatio.value = vb.width / vb.height
+}
 onMounted(() => {
   try {
-    const saved = JSON.parse(window.localStorage.getItem('d3srt-unified-layout-v1') || 'null')
+    const saved = JSON.parse(window.localStorage.getItem('d3srt-unified-layout-v2') || window.localStorage.getItem('d3srt-unified-layout-v1') || 'null')
     if (saved) {
       visibility.value = restoreUnifiedLayout(saved.visibility)
       leftOpen.value = saved.leftOpen !== false
       rightOpen.value = saved.rightOpen === true
       columnPercent.value = limitPercent(Number(saved.columnPercent) || 50)
       rowPercent.value = limitPercent(Number(saved.rowPercent) || 62)
+      rowAdjusted.value = saved.rowAdjusted === true
     }
   } catch { /* use defaults */ }
   if (window.innerWidth < 850) { leftOpen.value = false; rightOpen.value = false }
-  stopWatching = watch([visibility, leftOpen, rightOpen, columnPercent, rowPercent], persistLayout, { deep: true })
+  gridObserver = new ResizeObserver(measureGrid)
+  if (gridEl.value) gridObserver.observe(gridEl.value)
+  keyboardObserver = new MutationObserver(measureGrid)
+  if (gridEl.value) keyboardObserver.observe(gridEl.value, { subtree: true, attributes: true, attributeFilter: ['viewBox'] })
+  measureGrid()
+  stopWatching = watch([visibility, leftOpen, rightOpen, columnPercent, rowPercent, rowAdjusted], persistLayout, { deep: true })
 })
-onBeforeUnmount(() => stopWatching?.())
+onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardObserver?.disconnect() })
 </script>
 
 <style scoped>
@@ -240,4 +266,15 @@ onBeforeUnmount(() => stopWatching?.())
   .unified-sidebar { flex:0 0 190px; }
   .unified-tiles { min-width:0; }
 }
+</style>
+
+<style scoped>
+/* Slice 4: preserve original geometry; center narrow content in unused pane height. */
+.unified-tile--staff .unified-tile-content,
+.unified-tile--piano .unified-tile-content,
+.unified-tile--guitar .unified-tile-content { display: flex; align-items: safe center; }
+.unified-tile--staff .unified-tile-content > *,
+.unified-tile--piano .unified-tile-content > *,
+.unified-tile--guitar .unified-tile-content > * { width: 100%; flex: 0 0 auto; }
+.unified-tile--cosmic .unified-tile-content { overflow: hidden; }
 </style>

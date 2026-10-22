@@ -23,16 +23,27 @@ export function tileLayout(visibleIds, maximizedId = '') {
   const areas = {}
   if (active.length === 1) areas[active[0]] = '1 / 1 / 2 / 2'
   if (active.length === 2) {
-    // Two width-hungry instrument SVGs are more legible when stacked.
-    const stack = active.every((id) => id === 'piano' || id === 'guitar')
+    // A Cosmic map and a staff are comfortable side-by-side. Every other
+    // combination containing a wide instrument benefits from stacking.
+    const stack = active.some((id) => id === 'piano' || id === 'guitar')
     areas[active[0]] = '1 / 1 / 2 / 2'
     areas[active[1]] = stack ? '2 / 1 / 3 / 2' : '1 / 2 / 2 / 3'
-    return { columns: stack ? 1 : 2, rows: stack ? 2 : 1, areas, ids: active }
+    return { columns: stack ? 1 : 2, rows: stack ? 2 : 1, areas, ids: active, upperIds: stack ? [active[0]] : active, lowerIds: stack ? [active[1]] : [] }
   }
   if (active.length === 3) {
-    areas[active[0]] = '1 / 1 / 2 / 2'
-    areas[active[1]] = '1 / 2 / 2 / 3'
-    areas[active[2]] = '2 / 1 / 3 / 3'
+    const expansive = active.filter((id) => id === 'cosmic' || id === 'staff')
+    if (expansive.length === 1) {
+      // When CH or Staff is the only tall view, let it span the full upper row.
+      // Keyboard/fretboard take the wide but shallow lower row.
+      const instruments = active.filter((id) => id !== expansive[0])
+      areas[expansive[0]] = '1 / 1 / 2 / 3'
+      areas[instruments[0]] = '2 / 1 / 3 / 2'
+      areas[instruments[1]] = '2 / 2 / 3 / 3'
+    } else {
+      areas[active[0]] = '1 / 1 / 2 / 2'
+      areas[active[1]] = '1 / 2 / 2 / 3'
+      areas[active[2]] = '2 / 1 / 3 / 3'
+    }
   }
   if (active.length === 4) {
     areas[active[0]] = '1 / 1 / 2 / 2'
@@ -40,5 +51,30 @@ export function tileLayout(visibleIds, maximizedId = '') {
     areas[active[2]] = '2 / 1 / 3 / 2'
     areas[active[3]] = '2 / 2 / 3 / 3'
   }
-  return { columns: active.length > 1 ? 2 : 1, rows: active.length > 2 ? 2 : 1, areas, ids: active }
+  const upperIds = active.filter((id) => areas[id]?.startsWith('1 /'))
+  const lowerIds = active.filter((id) => areas[id]?.startsWith('2 /'))
+  return { columns: active.length > 1 ? 2 : 1, rows: active.length > 2 ? 2 : 1, areas, ids: active, upperIds, lowerIds }
+}
+
+/**
+ * Initial splitter position using the natural shape of the lower views.
+ * Height is capped by the space actually available, and dragging the splitter
+ * always overrides this suggestion. No SVG or instrument geometry is changed.
+ * keyboardRatio is the current keyboard SVG's natural width/height ratio.
+ */
+export function suggestedRowPercent(layout, width, height, keyboardRatio = 8) {
+  if (layout.rows !== 2 || !(width > 0) || !(height > 0)) return 60
+  const lower = layout.lowerIds || []
+  if (!lower.length) return 60
+  const lowerTwo = lower.length === 2
+  const contentWidth = lowerTwo ? Math.max(1, (width - 6) / 2) : width
+  const wanted = lower.map((id) => {
+    if (id === 'piano') return contentWidth / Math.max(3, keyboardRatio) + 44
+    if (id === 'guitar') return contentWidth * (237 / 928) + 44
+    if (id === 'staff') return contentWidth * (380 / 1120) + 150
+    return contentWidth * (775 / 860) + 45
+  })
+  // We cannot give the lower row all the space on a short laptop screen.
+  const lowerHeight = Math.min(height * 0.60, Math.max(115, ...wanted) + 10)
+  return Math.max(24, Math.min(80, Math.round(100 * (1 - lowerHeight / height))))
 }
