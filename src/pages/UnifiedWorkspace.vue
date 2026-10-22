@@ -87,11 +87,27 @@
       <q-btn v-if="!rightOpen" class="unified-reveal unified-reveal--right" flat round icon="chevron_left" aria-label="Show session inspector" @click="rightOpen = true" />
       <aside v-show="rightOpen" class="unified-sidebar unified-sidebar--right" aria-label="Musical session inspector">
         <div class="unified-sidebar-title"><strong>Musical session</strong><q-btn dense flat round icon="chevron_right" aria-label="Collapse inspector" @click="rightOpen = false" /></div>
-        <p class="sidebar-hint">Shared across Cosmic Harmony, staff, piano, and guitar.</p>
-        <div class="session-label">Key</div><div class="session-value">{{ store.currentKey.label }} · {{ store.currentMode }}</div>
-        <div class="session-label">Harmonic focus</div><div class="session-value">{{ store.musicalSession.focus.source || 'None' }}</div>
-        <div class="session-label">Progression</div><div class="session-value">{{ store.musicalSession.steps.length }} steps · {{ store.musicalSession.activeIndex >= 0 ? store.musicalSession.activeIndex + 1 : '—' }} selected</div>
-        <div class="session-label">Playback</div><div class="session-value">{{ store.srtTransportState }}</div>
+        <p class="sidebar-hint">Live musical context, shared by every open view.</p>
+        <div class="session-inspector">
+          <div class="session-topline">
+            <div><div class="session-label">Key / mode</div><div class="session-value">{{ store.currentKey.label }} · {{ store.currentMode }}</div></div>
+            <div><div class="session-label">Transport</div><div class="session-value">{{ store.srtTransportState }}</div></div>
+          </div>
+          <div class="session-label">Inspecting</div>
+          <div class="session-value">{{ focusedChordName }}</div>
+          <div class="session-subvalue">{{ focusedNotesText }}</div>
+          <div class="session-label">Progression</div>
+          <div class="session-value">{{ store.musicalSession.steps.length }} visits · {{ store.musicalSession.activeIndex >= 0 ? store.musicalSession.activeIndex + 1 : '—' }} active</div>
+          <div v-if="store.musicalSession.steps.length" class="session-steps" aria-label="Shared harmonic progression">
+            <div v-for="(step, index) in store.musicalSession.steps" :key="step.stepId"
+              class="session-step" :class="{ 'session-step--active': index === store.musicalSession.activeIndex }">
+              <span class="session-step-index">{{ index + 1 }}</span>
+              <span class="session-step-name">{{ step.name }}</span>
+            </div>
+          </div>
+          <p v-else class="sidebar-hint">Click a Cosmic chord to build a progression.</p>
+        </div>
+        <q-space />
         <q-btn dense outline color="primary" icon="open_in_new" label="Open full Cosmic window" @click="openCosmicWindow" />
       </aside>
     </div>
@@ -112,6 +128,16 @@ import SidebarGuitarSettings from '../components/SidebarGuitarSettings.vue'
 import SidebarStaffSettings from '../components/SidebarStaffSettings.vue'
 
 const store = useNoteMapStore()
+const focusedChordName = computed(() => {
+  const step = store.musicalSession.steps.find(item => item.stepId === store.musicalSession.focus.stepId)
+  return step?.name || (store.musicalSession.focus.source ? `Selected via ${store.musicalSession.focus.source}` : 'No chord selected')
+})
+const focusedNotesText = computed(() => {
+  const midis = store.musicalSession.focus.midis
+  if (!midis.length) return 'Select a chord or notes to inspect their pitches.'
+  const names = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B']
+  return midis.map(midi => `${names[midi % 12]}${Math.floor(midi / 12) - 1}`).join(' · ')
+})
 const panes = UNIFIED_PANES
 const visibility = ref(restoreUnifiedLayout())
 const leftOpen = ref(true)
@@ -285,6 +311,17 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .tile-split:hover { background:#6bc2b155; }
 .session-label { text-transform:uppercase; font-size:11px; color:#90abc4; margin-top:8px; }
 .session-value { font-size:14px; overflow-wrap:anywhere; }
+.session-inspector { min-height:0; display:flex; flex-direction:column; gap:5px; }
+.session-topline { display:flex; gap:12px; flex-wrap:wrap; }
+.session-topline > * { min-width:75px; }
+.session-subvalue { font-size:12px; color:#b3c7d6; line-height:1.4; overflow-wrap:anywhere; }
+.session-steps { margin-top:8px; border:1px solid #41516b; border-radius:6px; overflow-y:auto; min-height:0; max-height:44vh; }
+.session-step { display:flex; gap:8px; align-items:center; padding:6px 8px; border-bottom:1px solid #344357; font-size:12px; }
+.session-step:last-child { border-bottom:0; }
+.session-step--active { background:#264c58; border-left:3px solid #80d2b1; padding-left:5px; }
+.session-step-index { min-width:22px; color:#90abc4; font-variant-numeric:tabular-nums; }
+.session-step-name { overflow-wrap:anywhere; }
+.unified-sidebar--right > .q-space { min-height:4px; }
 @media (max-width:950px) {
   .unified-sidebar { flex-basis:200px; }
   .unified-sidebar--right { flex-basis:180px; }
