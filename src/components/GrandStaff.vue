@@ -64,7 +64,7 @@
               :cy="note.y"
               rx="10"
               ry="7"
-              :class="[note.kind === 'selected' ? 'selected-head' : 'key-head', { playing: store.isPlayingPitchClass(note.pitchClass) }]"
+              :class="[note.kind === 'selected' ? 'selected-head' : 'key-head', { playing: store.isPlayingPitchClass(note.pitchClass), focused: store.isFocusedMidi(note.midi) }]"
               :transform="`rotate(-18 ${note.x} ${note.y})`"
               @mouseenter="store.setFocus(`Staff: ${note.label}`)"
               @click.stop="selectStaffPitch(note.pitchClass)"
@@ -113,7 +113,7 @@
                 rx="10"
                 ry="7"
                 class="sequence-head"
-                :class="{ selected: cluster.beat === store.selectedStaffBeat, playing: store.isPlayingPitchClass(note.pitchClass) }"
+                :class="{ selected: cluster.beat === store.selectedStaffBeat, playing: store.isPlayingPitchClass(note.pitchClass), focused: store.isFocusedMidi(note.midi) }"
                 :transform="`rotate(-18 ${note.x} ${note.y})`"
                 @mouseenter="store.setFocus(`Staff sequence: ${note.label} at beat ${cluster.beat + 1}`)"
                 @click.stop="selectSequenceNote(cluster.beat, note.pitchClass)"
@@ -348,13 +348,13 @@ function addSelectedAtPointer(event) {
 
 function selectStaffPitch(pitchClass) {
   store.setMode('major')
-  store.selectPitchClass(pitchClass)
+  store.selectPitchClass(pitchClass, 'staff')
 }
 
 function selectSequenceNote(beat, pitchClass) {
   store.setMode('major')
   store.setSelectedStaffBeat(beat)
-  store.selectPitchClass(pitchClass)
+  store.selectPitchClass(pitchClass, 'staff')
 }
 
 function moveSelectedCluster(value) {
@@ -378,7 +378,7 @@ const displayedNotes = computed(() => {
     const pc = mod12(midi)
     const selected = store.isSelected(pc)
     const inKey = store.showKeyOverlay && store.isInCurrentKey(pc)
-    if (selected || inKey) {
+    if (selected || inKey || store.isFocusedMidi(midi)) {
       candidates.push({ midi, pitchClass: pc, kind: selected ? 'selected' : 'key' })
     }
   }
@@ -480,6 +480,7 @@ const signatureSymbols = computed(() => {
 .sequence-head { fill: #12c84c; stroke: #caffd8; stroke-width: 1.2; cursor: pointer; }
 .sequence-cluster.selected .sequence-head,
 .sequence-head.selected { fill: var(--q-primary); stroke: #e5f5ff; stroke-width: 2; }
+.selected-head.focused, .key-head.focused, .sequence-head.focused { fill: #49aebd; stroke: #bcf6ff; stroke-width: 1.9; }
 .selected-head.playing, .key-head.playing, .sequence-head.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2.2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.85)); }
 .scanline { stroke: #8dffab; stroke-width: 2.4; opacity: 0.92; filter: drop-shadow(0 0 5px rgba(141, 255, 171, 0.8)); pointer-events: none; }
 .staff-tools {

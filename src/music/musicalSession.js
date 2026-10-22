@@ -19,3 +19,20 @@ export function reconcileMusicalSteps(previous = [], incoming = [], nextId = 1) 
   })
   return { steps, nextId }
 }
+
+
+// A musical focus is an inspection/selection snapshot, separate from sounding
+// MIDI voices. It is safe to retain while transport is paused.
+export function normalizeMusicalFocus({ midis = [], pitchClasses = [], source = 'unknown', stepId = null } = {}) {
+  const pitches = [...new Set((Array.isArray(midis) ? midis : []).filter((n) => Number.isInteger(n) && n >= 0 && n <= 127))]
+  const pcs = [...new Set([
+    ...(Array.isArray(pitchClasses) ? pitchClasses : []).filter((n) => Number.isInteger(n) && n >= 0 && n <= 11),
+    ...pitches.map((n) => n % 12)
+  ])]
+  return {
+    source: String(source || 'unknown'),
+    stepId: typeof stepId === 'string' && stepId ? stepId : null,
+    midis: pitches,
+    pitchClasses: pcs
+  }
+}

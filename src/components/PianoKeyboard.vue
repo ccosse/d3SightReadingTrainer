@@ -22,7 +22,7 @@
             @pointerdown.prevent="pressKey(key)"
             @pointerup.prevent="releasePreview"
             @pointercancel="releasePreview"
-            @click="store.selectPitchClass(key.pitchClass)"
+            @click="store.selectPitchClass(key.pitchClass, 'piano')"
           />
           <text
             v-if="showLabel()"
@@ -48,7 +48,7 @@
             @pointerdown.prevent="pressKey(key)"
             @pointerup.prevent="releasePreview"
             @pointercancel="releasePreview"
-            @click="store.selectPitchClass(key.pitchClass)"
+            @click="store.selectPitchClass(key.pitchClass, 'piano')"
           />
           <text
             v-if="showLabel()"
@@ -87,6 +87,7 @@ function keyClass(key) {
   return {
     selected: store.isSelected(key.pitchClass),
     'current-key': store.showKeyOverlay && store.isInCurrentKey(key.pitchClass) && !store.isSelected(key.pitchClass),
+    focused: store.isFocusedMidi(key.midi),
     playing: store.isPlayingMidi(key.midi)
   }
 }
@@ -136,6 +137,7 @@ onBeforeUnmount(releasePreview)
 .white-key.current-key { fill: #d9eadc; stroke: var(--asymptopia-green); }
 .black-key.current-key { fill: #31553a; stroke: var(--asymptopia-green); }
 .white-key.selected, .black-key.selected { fill: var(--q-primary); stroke: #d9efff; }
+.white-key.focused, .black-key.focused { fill: #49aebd; stroke: #bcf6ff; stroke-width: 1.8; }
 .white-key.playing, .black-key.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2.2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.78)); }
 .white-label { fill: #171717; font-size: 22px; pointer-events: none; font-weight: 600; }
 .white-label.inverse { fill: #fff; }

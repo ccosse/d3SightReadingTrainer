@@ -1,10 +1,17 @@
 <template>
   <q-layout view="hHh Lpr lFf" class="app-shell">
     <q-header class="app-header">
-      <div class="blank-header" />
+      <div v-if="isUnified" class="unified-app-header">
+        <span class="unified-brand">d3SRT + Cosmic Harmony</span>
+        <q-space />
+        <q-btn dense flat no-caps label="Classic workspace" to="/" />
+        <q-btn dense unelevated no-caps color="primary" text-color="black" label="Unified workspace" to="/unified" />
+      </div>
+      <div v-else class="blank-header" />
     </q-header>
 
     <q-drawer
+      v-if="!isUnified"
       v-model="store.leftDrawerOpen"
       :overlay="leftDrawerOverlay"
       :behavior="leftDrawerOverlay ? 'mobile' : 'desktop'"
@@ -17,6 +24,7 @@
       <q-scroll-area class="fit dark-drawer-scroll">
         <div class="left-drawer-column">
           <div class="left-drawer-tools">
+            <q-btn class="unified-launch" dense flat no-caps icon="dashboard_customize" label="Unified workspace preview" to="/unified" />
             <ComponentOrderList />
 
           </div>
@@ -36,6 +44,7 @@
     </q-drawer>
 
     <q-btn
+      v-if="!isUnified"
       class="left-edge-tab"
       :style="leftEdgeTabStyle"
       unelevated
@@ -49,7 +58,7 @@
     </q-btn>
 
     <q-drawer
-      v-if="showFifthsTools"
+      v-if="!isUnified && showFifthsTools"
       v-model="store.rightDrawerOpen"
       side="right"
       :overlay="rightDrawerOverlay"
@@ -95,7 +104,7 @@
     </q-drawer>
 
     <q-btn
-      v-if="showFifthsTools"
+      v-if="!isUnified && showFifthsTools"
       class="fifths-edge-tab"
       :style="fifthsEdgeTabStyle"
       unelevated
@@ -144,6 +153,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRoute } from 'vue-router'
 import ComponentOrderList from '../components/ComponentOrderList.vue'
 import FifthsExplorer from '../components/FifthsExplorer.vue'
 import TheoryControls from '../components/TheoryControls.vue'
@@ -151,6 +161,8 @@ import { useNoteMapStore } from '../stores/noteMap'
 
 const store = useNoteMapStore()
 const $q = useQuasar()
+const route = useRoute()
+const isUnified = computed(() => route.path === '/unified')
 const desktopDrawerWidth = 350
 const stableWorkspaceWidth = 900
 const drawerWidth = computed(() => $q.screen.lt.sm ? Math.min(340, Math.round($q.screen.width * 0.92)) : desktopDrawerWidth)
@@ -182,6 +194,9 @@ const fifthsEdgeTabStyle = computed(() => ({
 .app-shell, .page-container { background: #333; color: white; }
 .app-header { background: #292929; border-bottom: 0; }
 .blank-header { height: 8px; }
+.unified-app-header { display:flex; align-items:center; gap:10px; min-height:44px; padding:4px 12px; }
+.unified-brand { font-size:14px; font-weight:700; color:#cee2e7; }
+.unified-launch { width:100%; color:#bcebd1; border-bottom:1px solid #4b4b4b; border-radius:0; }
 .dark-drawer { background: #303030 !important; color: white !important; }
 .dark-drawer-scroll { background: #303030; color: #fff; }
 .left-drawer-column { min-height: 100%; display: flex; flex-direction: column; }
