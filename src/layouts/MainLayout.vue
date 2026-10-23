@@ -3,9 +3,7 @@
     <q-header class="app-header">
       <div v-if="isUnified" class="unified-app-header">
         <span class="unified-brand">d3SRT + Cosmic Harmony</span>
-        <q-space />
-        <q-btn dense flat no-caps label="Classic workspace" to="/" />
-        <q-btn dense unelevated no-caps color="primary" text-color="black" label="Unified workspace" to="/unified" />
+
       </div>
       <div v-else class="blank-header" />
     </q-header>

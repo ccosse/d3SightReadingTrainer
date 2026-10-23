@@ -3,7 +3,7 @@
     <!-- One bridge instance handles the same BroadcastChannel and Pinia state
          as Classic. The iframe below is only a different view of Cosmic Harmony. -->
     <div class="unified-toolbar">
-      <q-btn dense flat round icon="menu" aria-label="Toggle workspace controls" @click="leftOpen = !leftOpen">
+      <q-btn dense flat round icon="menu" aria-label="Toggle workspace controls" :aria-expanded="leftOpen" @click="leftOpen = !leftOpen">
         <q-tooltip v-if="store.tooltipsEnabled">{{ leftOpen ? 'Hide' : 'Show' }} workspace controls</q-tooltip>
       </q-btn>
       <strong class="unified-heading">Unified</strong>
@@ -20,16 +20,23 @@
         <q-tooltip v-if="store.tooltipsEnabled">Recording files, audio offset and notation cleanup</q-tooltip>
       </q-btn>
       <q-btn dense flat round icon="repeat" :color="store.srtLoopManual ? 'primary' : 'grey-5'" aria-label="Toggle looping" @click="store.srtLoopManual = !store.srtLoopManual" />
-      <q-checkbox dense dark v-model="store.srtMetronomeOn" label="Click" title="Metronome during MIDI recording" />
-      <q-input
-        class="unified-tempo" dark dense outlined type="number" label="BPM"
-        :model-value="store.srtTempo" min="30" max="220" aria-label="Tempo in beats per minute"
-        @update:model-value="store.setSrtTempo($event)"
-      />
-      <q-btn dense flat round :icon="rightOpen ? 'chevron_right' : 'chevron_left'" aria-label="Toggle Circle of Fifths sidebar" @click="rightOpen = !rightOpen">
+      <q-btn class="unified-metronome" dense flat round :color="store.srtMetronomeOn ? 'primary' : 'grey-5'"
+        :aria-pressed="store.srtMetronomeOn" aria-label="Toggle metronome" @click="store.srtMetronomeOn = !store.srtMetronomeOn">
+        <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7.6 5.5h8.8L20.1 21H3.9L7.6 5.5Z" /><path d="M5.6 18h12.8" />
+          <path d="m12 15 6.7-12" /><circle cx="18.7" cy="3" r="1.3" fill="currentColor" stroke="none" />
+        </svg>
+        <q-tooltip v-if="store.tooltipsEnabled">{{ store.srtMetronomeOn ? 'Disable' : 'Enable' }} metronome click</q-tooltip>
+      </q-btn>
+      <div class="unified-tempo-control">
+        <q-input class="unified-tempo" dark dense borderless hide-bottom-space type="number"
+          :model-value="store.srtTempo" min="30" max="220" aria-label="Tempo in beats per minute"
+          @update:model-value="store.setSrtTempo($event)" />
+        <span class="unified-tempo-label">BPM</span>
+      </div>
+      <q-btn dense flat round icon="menu" aria-label="Toggle Circle of Fifths sidebar" :aria-expanded="rightOpen" @click="rightOpen = !rightOpen">
         <q-tooltip v-if="store.tooltipsEnabled">{{ rightOpen ? 'Hide' : 'Show' }} Circle of Fifths</q-tooltip>
       </q-btn>
-      <q-btn dense flat icon="open_in_new" label="Classic" :to="'/'" />
       <div v-show="recordingToolsOpen" id="unified-recording-tools" class="unified-recording-popover" role="region" aria-label="Recording tools">
         <div class="unified-recording-title"><strong>Recording tools</strong>
           <q-btn dense flat round icon="close" aria-label="Close Recording tools" @click="recordingToolsOpen = false" />
@@ -40,10 +47,7 @@
 
     <div class="unified-body">
       <aside v-show="leftOpen" class="unified-sidebar unified-sidebar--left" :style="{ width: `${leftWidth}px` }" aria-label="Unified view and settings controls">
-        <div class="unified-sidebar-title">
-          <strong>Views</strong>
-          <q-btn dense flat round icon="chevron_left" aria-label="Collapse sidebar" @click="leftOpen = false" />
-        </div>
+        <div class="unified-sidebar-title"><strong>Views</strong></div>
         <span class="sidebar-section-label" title="Toggle panes without changing the sidebar size">Visible panes</span>
         <q-checkbox
           v-for="pane in panes" :key="pane.id" dense dark keep-color color="primary"
@@ -72,7 +76,12 @@
           @pointerdown.prevent="beginSidebarResize($event, 'left')"
           @keydown.left.prevent="nudgeSidebar('left', -24)" @keydown.right.prevent="nudgeSidebar('left', 24)" />
       </aside>
-      <q-btn v-if="!leftOpen" class="unified-reveal unified-reveal--left" flat round icon="chevron_right" aria-label="Show view controls" @click="leftOpen = true" />
+      <q-btn class="unified-reveal unified-reveal--left" :class="{ 'is-open': leftOpen }"
+        :style="{ left: leftOpen ? `${leftWidth + 5}px` : '6px' }" unelevated icon="chevron_right"
+        :aria-label="leftOpen ? 'Hide view controls' : 'Show view controls'" :aria-expanded="leftOpen"
+        @click="leftOpen = !leftOpen">
+        <q-tooltip v-if="store.tooltipsEnabled">{{ leftOpen ? 'Hide' : 'Show' }} view controls</q-tooltip>
+      </q-btn>
 
       <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '' }" aria-label="Tiled music workspace">
         <section
@@ -84,6 +93,13 @@
             <span>{{ pane.label }}</span>
             <q-space />
             <q-btn v-if="pane.id === 'cosmic' && !cosmicNarrativeOpen" dense unelevated color="primary" text-color="black" icon="queue_music" label="Send to Staff" :disable="!cosmicFrameReady" title="Send current Cosmic Harmony path to staff" @click="sendCosmicPathToStaff" />
+            <q-btn v-if="pane.id === 'piano' || pane.id === 'guitar'" dense flat no-caps
+              class="unified-key-notes" :color="store.isCurrentKeySelected ? 'primary' : 'grey-4'"
+              :label="store.isCurrentKeySelected ? 'All Off' : 'All On'"
+              :aria-pressed="store.isCurrentKeySelected" :aria-label="store.isCurrentKeySelected ? 'Clear key notes' : 'Select all notes in current key'"
+              @click="store.toggleCurrentKeyNotes()">
+              <q-tooltip v-if="store.tooltipsEnabled">{{ store.isCurrentKeySelected ? 'Clear' : 'Select' }} all notes of the {{ store.currentMode }} {{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label }} scale on piano and guitar</q-tooltip>
+            </q-btn>
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="article" :color="cosmicNarrativeOpen ? 'primary' : 'grey-5'" aria-label="Toggle full-height Cosmic narrative" title="Toggle Cosmic narrative" @click="toggleCosmicNarrative" />
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="tune" :color="cosmicDetails ? 'primary' : 'grey-5'" aria-label="Show Cosmic Harmony navigation and narrative" @click="toggleCosmicDetails" />
             <q-btn dense flat round :icon="maximized === pane.id ? 'close_fullscreen' : 'open_in_full'" :aria-label="maximized === pane.id ? `Restore ${pane.label} tile` : `Maximize ${pane.label} tile`" @click="maximized = maximized === pane.id ? '' : pane.id" />
@@ -103,7 +119,12 @@
         <div v-if="layout.rows === 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${rowTarget}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
       </div>
 
-      <q-btn v-if="!rightOpen" class="unified-reveal unified-reveal--right" flat round icon="chevron_left" aria-label="Show Circle of Fifths sidebar" @click="rightOpen = true" />
+      <q-btn class="unified-reveal unified-reveal--right" :class="{ 'is-open': rightOpen }"
+        :style="{ right: rightOpen ? `${rightWidth + 5}px` : '6px' }" unelevated icon="chevron_left"
+        :aria-label="rightOpen ? 'Hide Circle of Fifths sidebar' : 'Show Circle of Fifths sidebar'" :aria-expanded="rightOpen"
+        @click="rightOpen = !rightOpen">
+        <q-tooltip v-if="store.tooltipsEnabled">{{ rightOpen ? 'Hide' : 'Show' }} Circle of Fifths</q-tooltip>
+      </q-btn>
       <aside v-show="rightOpen" class="unified-sidebar unified-sidebar--right" :style="{ width: `${rightWidth}px` }" aria-label="Circle of Fifths and theory controls">
         <div class="unified-sidebar-title">
           <strong>Circle of Fifths</strong>
@@ -116,7 +137,7 @@
         </div>
         <!-- Reuse the original working widgets, including key and tooltip controls. -->
         <FifthsExplorer compact stacked />
-        <TheoryControls />
+        <TheoryControls :show-tonic-selector="false" />
         <q-expansion-item dense icon="info_outline" label="Session details" header-class="text-grey-4">
           <div class="session-inspector">
             <div class="session-topline">
@@ -325,6 +346,9 @@ function measureGrid() {
   if (vb?.height && vb?.width) keyboardRatio.value = vb.width / vb.height
 }
 onMounted(() => {
+  // Unified never auto-selects the tonic when changing keys. Key-note highlighting
+  // is deliberate via the piano/guitar All On/Off controls.
+  store.keySelectsTonic = false
   try {
     const saved = JSON.parse(window.localStorage.getItem('d3srt-unified-layout-v2') || window.localStorage.getItem('d3srt-unified-layout-v1') || 'null')
     if (saved) {
@@ -360,7 +384,13 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .unified-toolbar { position:relative; z-index:15; flex:0 0 auto; display:flex; align-items:center; gap:7px; padding:5px 10px; min-height:52px; border-bottom:1px solid #404958; background:#282d38; }
 .unified-heading { letter-spacing:.02em; font-size:16px; white-space:nowrap; }
 .unified-key { font-size:12px; color:#9ad4cd; white-space:nowrap; }
-.unified-tempo { width:82px; }
+.unified-tempo-control { display:flex; align-items:center; gap:6px; padding:0 5px 0 8px; min-height:30px; border:1px solid #666; border-radius:5px; }
+.unified-tempo { width:43px; }
+.unified-tempo :deep(.q-field__control) { height:28px; min-height:28px; padding:0; }
+.unified-tempo :deep(.q-field__native) { height:28px; min-height:28px; padding:0; font-size:14px; font-variant-numeric:tabular-nums; }
+.unified-tempo-label { font-size:10px; font-weight:600; color:#b5bac3; letter-spacing:.035em; }
+.unified-metronome { width:32px; min-width:32px; }
+.unified-metronome svg { display:block; }
 .unified-body { flex:1 1 auto; min-height:0; display:flex; gap:4px; padding:6px; overflow:hidden; position:relative; }
 .unified-sidebar { position:absolute; top:6px; bottom:6px; z-index:11; display:flex; flex-direction:column; gap:8px; min-width:0; max-width:calc(100% - 32px); overflow:auto; background:rgba(28,36,49,.95); border:1px solid #526478; padding:11px 14px; border-radius:8px; backdrop-filter:blur(12px) saturate(110%); box-shadow:0 9px 26px #0008; scrollbar-gutter:stable; }
 .unified-sidebar--left { left:6px; }
@@ -384,9 +414,13 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .unified-sidebar :deep(.q-expansion-item) { border-top:1px solid #444d59; }
 .unified-sidebar :deep(.q-checkbox__label) { font-size:14px; }
 .unified-sidebar :deep(.q-expansion-item__content) { padding:4px; }
-.unified-reveal { position:absolute; z-index:12; top:50%; transform:translateY(-50%); width:28px; min-width:28px; height:74px; border:1px solid #506075; background:rgba(28,36,49,.95); }
-.unified-reveal--left { left:6px; }
-.unified-reveal--right { right:6px; }
+.unified-reveal { position:absolute; z-index:12; top:50%; transform:translateY(-50%); width:38px; min-width:38px; height:82px; padding:0; color:#dbe6f0; border:1px solid #63768b; background:rgba(27,37,53,.93); box-shadow:0 2px 10px #0007; transition:left 200ms ease,right 200ms ease,background 160ms ease; }
+.unified-reveal:hover,.unified-reveal:focus-visible { background:rgba(53,74,96,.97); }
+.unified-reveal :deep(.q-icon) { transition:transform 230ms ease; }
+.unified-reveal.is-open :deep(.q-icon) { transform:rotate(180deg); }
+.unified-reveal--left { border-radius:0 12px 12px 0; border-left:0; }
+.unified-reveal--right { border-radius:12px 0 0 12px; border-right:0; }
+.unified-key-notes { font-size:11px; letter-spacing:0; min-width:48px; }
 .unified-tiles { position:relative; flex:1 1 auto; min-height:0; min-width:0; display:grid; gap:6px; overflow:hidden; }
 .unified-tile { min-width:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; border:1px solid #475363; border-radius:8px; background:#292e36; }
 .unified-tile-title { min-height:31px; padding:1px 5px 1px 10px; display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:#bbd1df; border-bottom:1px solid #434d59; }

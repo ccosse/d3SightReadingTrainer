@@ -127,7 +127,7 @@ function loadChallengeScore(data) {
     // Match the grand staff key signature to the Cosmic challenge key.
     // d3SRT represents minor keys using their relative major key signatures.
     const tonic=String(data.tonic || '')
-    const wantedMode=data.mode==='minor'?'minor':'major'
+    const wantedMode=['major', 'minor', 'blues'].includes(data.mode) ? data.mode : 'major'
     const key=MAJOR_KEYS.find(k=> wantedMode==='minor'
       ? k.relativeMinor.split(' ')[0] === tonic
       : k.label === tonic)
@@ -253,7 +253,7 @@ onMounted(() => {
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'select-step'){store.setMusicalPlayhead(data.index,false);window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.index}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'key-selected') {
-        if (data.mode !== 'major' && data.mode !== 'minor') return // CH Blues has distinct harmony rules.
+        if (!['major', 'minor', 'blues'].includes(data.mode)) return
         const normalized = (name) => String(name || '').replaceAll('♯', '#').replaceAll('♭', 'b')
         const key = MAJOR_KEYS.find((item) => normalized(data.mode === 'minor' ? item.relativeMinor.split(' ')[0] : item.label) === normalized(data.tonic))
         if (key && (store.currentKeyId !== key.id || store.currentMode !== data.mode)) {

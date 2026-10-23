@@ -48,14 +48,14 @@ function roundBeat(value, quantum) {
 export const useNoteMapStore = defineStore('noteMap', {
   state: () => ({
     activeTab: 'note-map',
-    selectedPitchClasses: [7],
+    selectedPitchClasses: [],
     selectionMode: 'single',
     accidentalMode: 'sharp',
     currentKeyId: 'C',
     currentMode: 'major',
     halfStepsFromC: 0,
     showKeyOverlay: false,
-    keySelectsTonic: true,
+    keySelectsTonic: false,
     showAllNoteNames: false,
     showPianoLabels: typeof window !== 'undefined' && window.localStorage.getItem('d3srt-show-piano-labels') === 'true',
     showGuitarStrings: true,
@@ -75,7 +75,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     midiOutputs: [],
     midiOutputId: '',
     midiChannel: 0,
-    staffZoom: 1,
+    staffZoom: (1120 / 126) / (5 * 4), // Five bars by default
     visibleObjects: {
       controls: true,
       piano: true,
@@ -159,6 +159,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       return this.currentKey.relativeMinor.replace(/ minor$/, 'm')
     },
     activeScaleNames() {
+      if (this.currentMode === 'blues') return keyPitchClasses(this.currentKey, 'blues').map(pc => this.noteName(pc))
       if (this.currentMode !== 'minor') return this.currentKey.scale
       return [5, 6, 0, 1, 2, 3, 4].map((index) => this.currentKey.scale[index])
     },
@@ -170,6 +171,10 @@ export const useNoteMapStore = defineStore('noteMap', {
       return new Set(keyPitchClasses(this.currentKey, this.currentMode))
     },
     isAllSelected: (state) => state.selectedPitchClasses.length === 12,
+    isCurrentKeySelected() {
+      return this.selectedPitchClasses.length === this.keyPitchClassSet.size &&
+        this.selectedPitchClasses.every(pc => this.keyPitchClassSet.has(mod12(pc)))
+    },
     hasSelection: (state) => state.selectedPitchClasses.length > 0,
     isSelected: (state) => (pitchClass) => state.selectedPitchClasses.includes(mod12(pitchClass)),
     isInCurrentKey() {
@@ -273,6 +278,16 @@ export const useNoteMapStore = defineStore('noteMap', {
       else this.selectAll()
     },
 
+    toggleCurrentKeyNotes() {
+      if (this.isCurrentKeySelected) {
+        this.clearSelection()
+      } else {
+        this.selectionMode = 'multi'
+        this.selectedPitchClasses = [...this.keyPitchClassSet]
+        this.setMusicalFocus({ pitchClasses: this.selectedPitchClasses, source: 'key-notes' })
+      }
+    },
+
     setSelectionMode(mode) {
       if (mode !== 'single' && mode !== 'multi') return
       this.selectionMode = mode
@@ -285,7 +300,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       const { syncTranspose = true, mode = 'major' } = options
       const key = keyById(keyId)
       this.currentKeyId = key.id
-      this.currentMode = mode === 'minor' ? 'minor' : 'major'
+      this.currentMode = ['major', 'minor', 'blues'].includes(mode) ? mode : 'major'
       this.accidentalMode = key.accidentalMode
       if (syncTranspose) this.halfStepsFromC = halfStepsFromCForKey(key)
       if (this.keySelectsTonic && this.selectionMode === 'single') {
@@ -295,7 +310,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     setMode(mode) {
-      this.currentMode = mode === 'minor' ? 'minor' : 'major'
+      this.currentMode = ['major', 'minor', 'blues'].includes(mode) ? mode : 'major'
     },
 
     setHalfStepsFromC(value) {
