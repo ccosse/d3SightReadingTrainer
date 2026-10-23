@@ -63,6 +63,9 @@ export function tileLayout(visibleIds, maximizedId = '') {
 // The focus presets share the same four mounted panes and existing state.
 // A focused map or staff occupies the full left column; the other visible
 // panes stack in the right column, regardless of which instruments are shown.
+export const DEFAULT_HARMONY_COLUMN_PERCENT = 58
+export const DEFAULT_HARMONY_ROW_RATIOS = Object.freeze({ staff: 0.52, piano: 0.18, guitar: 0.30 })
+
 export const UNIFIED_LAYOUT_PRESETS = Object.freeze([
   { value: 'harmony', label: 'Harmony Focus' },
   { value: 'four', label: 'Four Panes' },
@@ -92,10 +95,26 @@ export function focusStackHeights(layout, width, height, columnPercent, keyboard
   const base = ids.map(id => id === 'piano' || id === 'guitar'
     ? Math.max(minHeight(id), instrumentPanelHeight(id, paneWidth, keyboardRatio, scales[id]))
     : minHeight(id))
-  const remaining = height - base.reduce((a, b) => a + b, 0) - gap * (ids.length - 1)
-  if (remaining > 0) {
-    const tallIndex = ids.findIndex(id => id === 'staff' || id === 'cosmic')
-    base[tallIndex >= 0 ? tallIndex : 0] += remaining
+  if (layout.focusedId === 'cosmic' && ids.join(',') === 'staff,piano,guitar') {
+    // At the factory 100% instrument scales, give Staff / Piano / Guitar
+    // approximately 52 / 18 / 30 percent of the usable height. At smaller
+    // scales, shrink the instrument rows proportionally (not their headers)
+    // and give the reclaimed space to Staff. Never clip an SVG to enforce
+    // the percentages: natural content minimums win, with scrolling if needed.
+    const usable = Math.max(0, height - gap * (ids.length - 1))
+    for (const id of ['piano', 'guitar']) {
+      const index = ids.indexOf(id)
+      const scale = clampInstrumentScale(scales[id]) / 100
+      const ideal = 44 + (usable * DEFAULT_HARMONY_ROW_RATIOS[id] - 44) * scale
+      base[index] = Math.max(base[index], Math.round(ideal))
+    }
+    base[0] = Math.max(base[0], Math.round(usable - base[1] - base[2]))
+  } else {
+    const remaining = height - base.reduce((a, b) => a + b, 0) - gap * (ids.length - 1)
+    if (remaining > 0) {
+      const tallIndex = ids.findIndex(id => id === 'staff' || id === 'cosmic')
+      base[tallIndex >= 0 ? tallIndex : 0] += remaining
+    }
   }
   const adjusted = [...base]
   offsets.slice(0, ids.length - 1).forEach((offset, i) => {
@@ -132,13 +151,13 @@ export function suggestedRowPercent(layout, width, height, keyboardRatio = 8) {
   return Math.max(24, Math.min(80, Math.round(100 * (1 - lowerHeight / height))))
 }
 
-// Size percentages are intentionally conservative so the notation and Cosmic
-// panes retain vertical space on laptop displays. Both are user-adjustable.
-export const DEFAULT_INSTRUMENT_SCALES = Object.freeze({ piano: 75, guitar: 65 })
+// Harmony Focus's factory arrangement uses full-size instruments. Each slider
+// can still scale its instrument independently, without changing SVG geometry.
+export const DEFAULT_INSTRUMENT_SCALES = Object.freeze({ piano: 100, guitar: 100 })
 
 export function clampInstrumentScale(value) {
   const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return 75
+  if (!Number.isFinite(numeric)) return DEFAULT_INSTRUMENT_SCALES.piano
   return Math.max(50, Math.min(100, Math.round(numeric / 5) * 5))
 }
 

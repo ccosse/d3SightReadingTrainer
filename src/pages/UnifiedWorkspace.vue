@@ -209,7 +209,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { UNIFIED_PANES, UNIFIED_LAYOUT_PRESETS, restoreUnifiedLayout, focusTileLayout, focusStackHeights, suggestedRowPercent, DEFAULT_INSTRUMENT_SCALES, clampInstrumentScale, instrumentPanelHeight } from '../music/unifiedTiling'
+import { UNIFIED_PANES, UNIFIED_LAYOUT_PRESETS, restoreUnifiedLayout, focusTileLayout, focusStackHeights, suggestedRowPercent, DEFAULT_INSTRUMENT_SCALES, DEFAULT_HARMONY_COLUMN_PERCENT, clampInstrumentScale, instrumentPanelHeight } from '../music/unifiedTiling'
 import CosmicMidiBridge from '../components/CosmicMidiBridge.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -251,9 +251,9 @@ const cosmicFrame = ref(null)
 const gridEl = ref(null)
 // Keep a distinct horizontal split for each named layout. Switching layouts
 // does not destroy an instrument, its scale, or the user's last split widths.
-const columnPercents = ref({ harmony: 50, four: 50, staff: 50 })
+const columnPercents = ref({ harmony: DEFAULT_HARMONY_COLUMN_PERCENT, four: 50, staff: 50 })
 const columnPercent = computed({
-  get: () => columnPercents.value[layoutPreset.value] ?? 50,
+  get: () => columnPercents.value[layoutPreset.value] ?? (layoutPreset.value === 'harmony' ? DEFAULT_HARMONY_COLUMN_PERCENT : 50),
   set: value => { columnPercents.value = { ...columnPercents.value, [layoutPreset.value]: limitPercent(value) } }
 })
 const rowPercent = ref(62)
@@ -364,9 +364,16 @@ function resetLayout() {
   visibility.value = restoreUnifiedLayout()
   focusRowOffsets.value = { harmony: [], staff: [] }
   maximized.value = ''
-  columnPercent.value = 50
+  columnPercents.value = { harmony: DEFAULT_HARMONY_COLUMN_PERCENT, four: 50, staff: 50 }
+  instrumentScale.value = { ...DEFAULT_INSTRUMENT_SCALES }
   rowPercent.value = 62
   rowAdjusted.value = false
+  // Restore the nested Cosmic split as well, without reloading the iframe
+  // (reloading would erase an in-progress unsaved harmonic path).
+  try {
+    const frameWindow = cosmicFrame.value?.contentWindow
+    if (frameWindow) frameWindow.dispatchEvent(new frameWindow.Event('d3srt:restore-layout-defaults'))
+  } catch { /* the outer layout still restores if iframe is unavailable */ }
 }
 function nudgeFocusRow(index, delta) {
   if (!layout.value.focusStack) return
@@ -527,8 +534,12 @@ onMounted(() => {
         guitar: clampInstrumentScale(saved.instrumentScale?.guitar ?? DEFAULT_INSTRUMENT_SCALES.guitar)
       }
       const oldColumn = limitPercent(Number(saved.columnPercent) || 50)
-      columnPercents.value = Object.fromEntries(layoutOptions.map(option =>
-        [option.value, limitPercent(Number(saved.columnPercents?.[option.value]) || oldColumn)]))
+      columnPercents.value = Object.fromEntries(layoutOptions.map(option => {
+        const fallback = saved.columnPercent != null ? oldColumn
+          : option.value === 'harmony' ? DEFAULT_HARMONY_COLUMN_PERCENT : 50
+        const requested = saved.columnPercents?.[option.value]
+        return [option.value, limitPercent(requested == null ? fallback : Number(requested))]
+      }))
       rowPercent.value = limitPercent(Number(saved.rowPercent) || 62)
       rowAdjusted.value = saved.rowAdjusted === true
     }

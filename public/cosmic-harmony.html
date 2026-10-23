@@ -49,7 +49,7 @@ html.embedded:not(.embed-details) .legend { gap:6px 10px; font-size:10px; paddin
    The narrative is natural-height (never an independently scrolling region);
    its growing entries push the separator and navigation controls downward.
    Standalone Cosmic Harmony is intentionally unaffected. */
-html.embedded.embed-narrative .layout { height:100%; display:grid; grid-template-columns:minmax(0,1fr) 10px minmax(var(--narrative-min-width,188px),var(--narrative-width,35%)); grid-template-rows:minmax(0,1fr); padding:0 4px 4px; gap:6px; overflow:hidden; }
+html.embedded.embed-narrative .layout { height:100%; display:grid; grid-template-columns:minmax(0,1fr) 10px minmax(var(--narrative-min-width,188px),var(--narrative-width,27%)); grid-template-rows:minmax(0,1fr); padding:0 4px 4px; gap:6px; overflow:hidden; }
 html.embedded.embed-narrative .layout > .panel:first-child { min-height:0; height:100%; display:flex; flex-direction:column; overflow:hidden; }
 html.embedded.embed-narrative .toolbar,html.embedded.embed-narrative .legend { flex:0 0 auto; }
 html.embedded.embed-narrative .viewport { flex:1 1 auto; min-height:0; display:grid; place-items:center; }
@@ -136,7 +136,7 @@ html.embedded.embed-narrative #cosmicNarrativeDivider:focus-visible { outline:2p
 @media(max-width:780px) { html.embedded.embed-narrative .layout { --narrative-min-width:165px; } }
 
 @media(max-height:450px) { html.embedded.embed-narrative .side > #notes { display:none; } }
-</style><script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embedded');</script></head><body><main class="layout"><section class="panel"><div class="cosmicPanelHeading"><strong>☀ Cosmic Harmony</strong><span>Major · Minor · Blues · M25</span></div><div class="toolbar"><label>Mode <select id="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="blues">Blues</option></select></label><label>Sun / key <select id="key"></select></label><label><input class="switch" type="checkbox" id="practice"> Mental mode (hide chord names)</label><label><input class="switch" type="checkbox" id="crossed"> Show ♭II7 (×) moons</label></div><div class="viewport"><svg id="chart" viewBox="0 0 860 775" role="img" aria-label="Interactive cosmic harmony diagram with sun, planets, and inner and outer moons"><defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#ffd17d"/></marker><radialGradient id="sunGradient"><stop offset="0" stop-color="#947239"/><stop offset="1" stop-color="#53432d"/></radialGradient></defs><circle class="orbit" cx="425" cy="380" r="253"/><circle class="orbit" cx="425" cy="380" r="312"/><g id="paths"></g><g id="nodes"></g></svg></div><div id="bluesPractice" class="bluesPractice" hidden><div class="bluesHead"><strong>12-bar blues · I7–IV7–V7</strong><button id="loadBlues">Trace all 12 bars</button></div><div id="bluesBars" class="bluesBars"></div></div><div class="legend"><span><i class="dot" style="background:#eabf69"></i>Sun</span><span><i class="dot" style="background:#6598c5"></i>Planet</span><span><i class="dot" style="background:#65baab"></i>Close moon</span><span><i class="dot" style="background:#9986d1"></i>Distant moon (ii)</span><span><i class="dot" style="background:#c27a8a"></i>♭II7 alternative</span></div></section><div id="cosmicNarrativeDivider" role="separator" aria-orientation="vertical" aria-label="Resize Cosmic diagram and narrative" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65" tabindex="0" title="Drag to resize diagram and narrative; use arrow keys for fine adjustments"></div><aside class="panel side"><div id="narrativeActionBar" role="toolbar" aria-label="Narrative path actions">
+</style><script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embedded');</script></head><body><main class="layout"><section class="panel"><div class="cosmicPanelHeading"><strong>☀ Cosmic Harmony</strong><span>Major · Minor · Blues · M25</span></div><div class="toolbar"><label>Mode <select id="mode"><option value="major">Major</option><option value="minor">Minor</option><option value="blues">Blues</option></select></label><label>Sun / key <select id="key"></select></label><label><input class="switch" type="checkbox" id="practice"> Mental mode (hide chord names)</label><label><input class="switch" type="checkbox" id="crossed"> Show ♭II7 (×) moons</label></div><div class="viewport"><svg id="chart" viewBox="0 0 860 775" role="img" aria-label="Interactive cosmic harmony diagram with sun, planets, and inner and outer moons"><defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="#ffd17d"/></marker><radialGradient id="sunGradient"><stop offset="0" stop-color="#947239"/><stop offset="1" stop-color="#53432d"/></radialGradient></defs><circle class="orbit" cx="425" cy="380" r="253"/><circle class="orbit" cx="425" cy="380" r="312"/><g id="paths"></g><g id="nodes"></g></svg></div><div id="bluesPractice" class="bluesPractice" hidden><div class="bluesHead"><strong>12-bar blues · I7–IV7–V7</strong><button id="loadBlues">Trace all 12 bars</button></div><div id="bluesBars" class="bluesBars"></div></div><div class="legend"><span><i class="dot" style="background:#eabf69"></i>Sun</span><span><i class="dot" style="background:#6598c5"></i>Planet</span><span><i class="dot" style="background:#65baab"></i>Close moon</span><span><i class="dot" style="background:#9986d1"></i>Distant moon (ii)</span><span><i class="dot" style="background:#c27a8a"></i>♭II7 alternative</span></div></section><div id="cosmicNarrativeDivider" role="separator" aria-orientation="vertical" aria-label="Resize Cosmic diagram and narrative" aria-valuemin="0" aria-valuemax="100" aria-valuenow="73" tabindex="0" title="Drag to resize diagram and narrative; use arrow keys for fine adjustments"></div><aside class="panel side"><div id="narrativeActionBar" role="toolbar" aria-label="Narrative path actions">
   <button type="button" id="narrativeBack" title="Undo the last chord" aria-label="Back one chord">↶ Back</button>
   <button type="button" id="narrativeReset" title="Return to Sun (archive current path)" aria-label="Reset path to Sun">⟲ Reset</button>
   <button type="button" id="narrativeStaff" title="Send this path to the grand staff" aria-label="Send path to staff">↗ Staff</button>
@@ -979,7 +979,7 @@ if (cosmicBridge) {
   if (!divider || !layout || !document.documentElement.classList.contains('embedded')) return;
 
   const storageKey = 'd3srtCosmicNarrativeDividerV1';
-  const defaultFraction = 0.35;
+  const defaultFraction = 0.27; // 73% Cosmic diagram / 27% narrative
   let preferredFraction = defaultFraction;
   try {
     const saved = Number(localStorage.getItem(storageKey));
@@ -1054,6 +1054,11 @@ if (cosmicBridge) {
     showWidth(width, true);
   });
 
+  window.addEventListener('d3srt:restore-layout-defaults', () => {
+    preferredFraction = defaultFraction;
+    try { localStorage.removeItem(storageKey); } catch { /* optional */ }
+    refreshWidth();
+  });
   new ResizeObserver(refreshWidth).observe(layout);
   refreshWidth();
 })();
