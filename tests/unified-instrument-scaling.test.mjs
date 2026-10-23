@@ -9,10 +9,11 @@ import {
 
 const unified = readFileSync(new URL('../src/pages/UnifiedWorkspace.vue', import.meta.url), 'utf8')
 
-test('independent, bounded default instrument scales preserve space for the Cosmic map', () => {
-  assert.ok(DEFAULT_INSTRUMENT_SCALES.piano < 100)
-  assert.ok(DEFAULT_INSTRUMENT_SCALES.guitar < 100)
+test('independent factory instrument scales start at 100 percent, remain bounded and adjustable', () => {
+  assert.equal(DEFAULT_INSTRUMENT_SCALES.piano, 100)
+  assert.equal(DEFAULT_INSTRUMENT_SCALES.guitar, 100)
   assert.equal(clampInstrumentScale(250), 100)
+  assert.equal(clampInstrumentScale(NaN), 100)
   assert.equal(clampInstrumentScale(12), 50)
   assert.equal(clampInstrumentScale(78), 80)
 })
@@ -22,7 +23,7 @@ test('instrument row height follows rendered width/scale without changing SVG ge
     const small = instrumentPanelHeight(id, width, 8, 50)
     const defaultSize = instrumentPanelHeight(id, width, 8, DEFAULT_INSTRUMENT_SCALES[id])
     const full = instrumentPanelHeight(id, width, 8, 100)
-    assert.ok(small < defaultSize && defaultSize < full, `${id}: ${small}, ${defaultSize}, ${full}`)
+    assert.ok(small < defaultSize && defaultSize === full, `${id}: ${small}, ${defaultSize}, ${full}`)
   }
   assert.ok(instrumentPanelHeight('guitar', width, 8, 65) < 320)
   assert.ok(instrumentPanelHeight('piano', width, 8, 75) < 200)

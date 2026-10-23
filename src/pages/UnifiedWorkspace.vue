@@ -70,7 +70,22 @@
         <q-expansion-item dense icon="music_note" label="Staff / playback settings">
           <SidebarStaffSettings />
         </q-expansion-item>
-        <q-btn dense flat color="grey-4" icon="restart_alt" label="Restore four panes" @click="resetLayout" />
+        <q-btn-dropdown dense flat no-caps color="grey-4" icon="dashboard_customize"
+          :label="`Layout: ${layoutOptions.find(option => option.value === layoutPreset)?.label || 'Harmony Focus'}`"
+          aria-label="Choose Unified workspace layout">
+          <q-list dense class="unified-layout-menu">
+            <q-item v-for="option in layoutOptions" :key="option.value" clickable v-close-popup
+              :active="layoutPreset === option.value" active-class="text-primary"
+              @click="chooseLayout(option.value)">
+              <q-item-section>{{ option.label }}</q-item-section>
+              <q-item-section v-if="layoutPreset === option.value" side><q-icon name="check" /></q-item-section>
+            </q-item>
+            <q-separator dark />
+            <q-item clickable v-close-popup @click="resetLayout">
+              <q-item-section>Restore layout defaults</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
         <div class="sidebar-resize-handle sidebar-resize-handle--left" role="separator" tabindex="0"
           aria-label="Resize views sidebar" aria-orientation="vertical" title="Drag to resize the sidebar"
           @pointerdown.prevent="beginSidebarResize($event, 'left')"
@@ -83,7 +98,7 @@
         <q-tooltip v-if="store.tooltipsEnabled">{{ leftOpen ? 'Hide' : 'Show' }} view controls</q-tooltip>
       </q-btn>
 
-      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '', 'unified-tiles--scalable-instruments': hasInstrumentRows }" aria-label="Tiled music workspace">
+      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '', 'unified-tiles--scalable-instruments': hasInstrumentRows, 'unified-tiles--focus': layout.focusStack }" aria-label="Tiled music workspace">
         <section
           v-for="pane in panes" v-show="layout.ids.includes(pane.id)" :key="pane.id"
           class="unified-tile" :class="`unified-tile--${pane.id}`" :style="{ gridArea: layout.areas[pane.id] || 'auto' }"
@@ -131,7 +146,14 @@
           </div>
         </section>
         <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="columnSplitStyle" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
-        <div v-if="layout.rows >= 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${instrumentRows[0]}px` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
+        <div v-if="layout.rows >= 2 && !maximized && !layout.focusStack" class="tile-split tile-split--horizontal" :style="{ top: `${instrumentRows[0]}px` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
+        <div v-for="(top, index) in focusDividerPositions" :key="`focus-row-${index}`"
+          class="tile-split tile-split--horizontal tile-split--focus-row"
+          :style="{ top: `${top}px`, left: `${columnPercent}%` }" role="separator"
+          :aria-label="`Resize right pane rows ${index + 1} and ${index + 2}`"
+          aria-orientation="horizontal" tabindex="0"
+          @pointerdown.prevent="beginFocusRowResize($event, index)"
+          @keydown.up.prevent="nudgeFocusRow(index, -12)" @keydown.down.prevent="nudgeFocusRow(index, 12)" />
       </div>
 
       <q-btn class="unified-reveal unified-reveal--right" :class="{ 'is-open': rightOpen }"
@@ -187,7 +209,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { UNIFIED_PANES, restoreUnifiedLayout, tileLayout, suggestedRowPercent, DEFAULT_INSTRUMENT_SCALES, clampInstrumentScale, instrumentPanelHeight } from '../music/unifiedTiling'
+import { UNIFIED_PANES, UNIFIED_LAYOUT_PRESETS, restoreUnifiedLayout, focusTileLayout, focusStackHeights, suggestedRowPercent, DEFAULT_INSTRUMENT_SCALES, DEFAULT_HARMONY_COLUMN_PERCENT, clampInstrumentScale, instrumentPanelHeight } from '../music/unifiedTiling'
 import CosmicMidiBridge from '../components/CosmicMidiBridge.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -211,6 +233,9 @@ const focusedNotesText = computed(() => {
   return midis.map(midi => `${names[midi % 12]}${Math.floor(midi / 12) - 1}`).join(' · ')
 })
 const panes = UNIFIED_PANES
+const layoutOptions = UNIFIED_LAYOUT_PRESETS
+const layoutPreset = ref('harmony')
+const focusRowOffsets = ref({ harmony: [], staff: [] })
 const visibility = ref(restoreUnifiedLayout())
 const leftOpen = ref(true)
 const rightOpen = ref(false)
@@ -224,7 +249,13 @@ const cosmicNarrativeOpen = ref(true)
 const cosmicFrameReady = ref(false)
 const cosmicFrame = ref(null)
 const gridEl = ref(null)
-const columnPercent = ref(50)
+// Keep a distinct horizontal split for each named layout. Switching layouts
+// does not destroy an instrument, its scale, or the user's last split widths.
+const columnPercents = ref({ harmony: DEFAULT_HARMONY_COLUMN_PERCENT, four: 50, staff: 50 })
+const columnPercent = computed({
+  get: () => columnPercents.value[layoutPreset.value] ?? (layoutPreset.value === 'harmony' ? DEFAULT_HARMONY_COLUMN_PERCENT : 50),
+  set: value => { columnPercents.value = { ...columnPercents.value, [layoutPreset.value]: limitPercent(value) } }
+})
 const rowPercent = ref(62)
 const rowAdjusted = ref(false)
 const gridDimensions = ref({ width: 0, height: 0 })
@@ -232,11 +263,19 @@ const keyboardRatio = ref(8)
 const rowTarget = computed(() => rowAdjusted.value ? rowPercent.value : suggestedRowPercent(layout.value, gridDimensions.value.width, gridDimensions.value.height, keyboardRatio.value))
 const cosmicUrl = `${import.meta.env.BASE_URL}cosmic-harmony.html?embed=1`
 const visibleIds = computed(() => panes.filter(pane => visibility.value[pane.id]).map(pane => pane.id))
-const layout = computed(() => tileLayout(visibleIds.value, maximized.value))
+const layout = computed(() => focusTileLayout(visibleIds.value, maximized.value, layoutPreset.value))
+const focusRows = computed(() => focusStackHeights(layout.value, gridDimensions.value.width || 1000,
+  gridDimensions.value.height || 700, columnPercent.value, keyboardRatio.value, instrumentScale.value,
+  focusRowOffsets.value[layoutPreset.value] || []))
+const focusDividerPositions = computed(() => {
+  if (!layout.value.focusStack) return []
+  let top = 0
+  return focusRows.value.slice(0, -1).map(height => { top += height + 6; return top - 3 })
+})
 // The instruments are scaled inside full-width tiles. Their rows must follow
 // the *rendered* SVG widths, not the overall workspace width. Preserve useful
 // room for Cosmic Harmony/Staff and scroll vertically if necessary.
-const hasInstrumentRows = computed(() => layout.value.rows > 1 &&
+const hasInstrumentRows = computed(() => layout.value.focusStack || layout.value.rows > 1 &&
   layout.value.ids.some(id => id === 'piano' || id === 'guitar'))
 function paneHeight(id, width) {
   if (id === 'piano' || id === 'guitar')
@@ -273,13 +312,16 @@ const instrumentRows = computed(() => {
 })
 const gridStyle = computed(() => ({
   gridTemplateColumns: layout.value.columns === 2 ? `${columnPercent.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)',
-  gridTemplateRows: hasInstrumentRows.value
-    ? instrumentRows.value.map(px => `${px}px`).join(' ')
+  gridTemplateRows: layout.value.focusStack
+    ? focusRows.value.map(px => `${px}px`).join(' ')
+    : hasInstrumentRows.value
+      ? instrumentRows.value.map(px => `${px}px`).join(' ')
     : 'minmax(0, 1fr)'
 }))
 const columnSplitStyle = computed(() => {
   const firstHeight = instrumentRows.value[0] || 0
   const split = { left: `${columnPercent.value}%` }
+  if (layout.value.focusStack) return { ...split, top: '0px', bottom: '0px' }
   if (layout.value.rows === 3) return { ...split, top: '0px', height: `${firstHeight}px` }
   if (layout.value.rows === 2 && layout.value.upperIds?.length === 1)
     return { ...split, top: `${firstHeight + 6}px`, height: `${instrumentRows.value[1]}px` }
@@ -301,19 +343,66 @@ function limitPercent(value) { return Math.max(24, Math.min(80, Math.round(value
 function setInstrumentScale(id, value) {
   if (id !== 'piano' && id !== 'guitar') return
   instrumentScale.value = { ...instrumentScale.value, [id]: clampInstrumentScale(value) }
+  // Scaling an instrument restores the natural row height in Focus layouts.
+  focusRowOffsets.value = { ...focusRowOffsets.value, [layoutPreset.value]: [] }
 }
 function resetInstrumentScale(id) { setInstrumentScale(id, DEFAULT_INSTRUMENT_SCALES[id]) }
 function setVisible(id, value) {
   if (value === false && visibleIds.value.length === 1) return
   visibility.value = { ...visibility.value, [id]: Boolean(value) }
+  focusRowOffsets.value = { ...focusRowOffsets.value, [layoutPreset.value]: [] }
   if (maximized.value === id && !value) maximized.value = ''
 }
-function resetLayout() {
-  visibility.value = restoreUnifiedLayout()
+function chooseLayout(value) {
+  if (!layoutOptions.some(option => option.value === value)) return
+  layoutPreset.value = value
+  if (value === 'four') visibility.value = restoreUnifiedLayout()
   maximized.value = ''
-  columnPercent.value = 50
+}
+function resetLayout() {
+  layoutPreset.value = 'harmony'
+  visibility.value = restoreUnifiedLayout()
+  focusRowOffsets.value = { harmony: [], staff: [] }
+  maximized.value = ''
+  columnPercents.value = { harmony: DEFAULT_HARMONY_COLUMN_PERCENT, four: 50, staff: 50 }
+  instrumentScale.value = { ...DEFAULT_INSTRUMENT_SCALES }
   rowPercent.value = 62
   rowAdjusted.value = false
+  // Restore the nested Cosmic split as well, without reloading the iframe
+  // (reloading would erase an in-progress unsaved harmonic path).
+  try {
+    const frameWindow = cosmicFrame.value?.contentWindow
+    if (frameWindow) frameWindow.dispatchEvent(new frameWindow.Event('d3srt:restore-layout-defaults'))
+  } catch { /* the outer layout still restores if iframe is unavailable */ }
+}
+function nudgeFocusRow(index, delta) {
+  if (!layout.value.focusStack) return
+  const original = focusRowOffsets.value[layoutPreset.value] || []
+  const offsets = [...original]
+  offsets[index] = (Number(offsets[index]) || 0) + delta
+  focusRowOffsets.value = { ...focusRowOffsets.value, [layoutPreset.value]: offsets }
+}
+function beginFocusRowResize(event, index) {
+  if (!layout.value.focusStack || event.button !== 0) return
+  const handle = event.currentTarget
+  const pointerId = event.pointerId
+  const startY = event.clientY
+  const startOffset = focusRowOffsets.value[layoutPreset.value]?.[index] || 0
+  handle.setPointerCapture?.(pointerId)
+  const move = e => {
+    const offsets = [...(focusRowOffsets.value[layoutPreset.value] || [])]
+    offsets[index] = startOffset + e.clientY - startY
+    focusRowOffsets.value = { ...focusRowOffsets.value, [layoutPreset.value]: offsets }
+  }
+  const stop = () => {
+    handle.removeEventListener('pointermove', move)
+    handle.removeEventListener('pointerup', stop)
+    handle.removeEventListener('pointercancel', stop)
+    try { handle.releasePointerCapture?.(pointerId) } catch { /* ignored */ }
+  }
+  handle.addEventListener('pointermove', move)
+  handle.addEventListener('pointerup', stop)
+  handle.addEventListener('pointercancel', stop)
 }
 function toggleTransport() {
   if (store.srtTransportState === 'playing') store.requestSrtPause()
@@ -407,7 +496,8 @@ function persistLayout() {
       visibility: visibility.value, leftOpen: leftOpen.value, rightOpen: rightOpen.value,
       leftWidth: leftWidth.value, rightWidth: rightWidth.value,
       columnPercent: columnPercent.value, rowPercent: rowPercent.value, rowAdjusted: rowAdjusted.value,
-      instrumentScale: instrumentScale.value
+      instrumentScale: instrumentScale.value, layoutPreset: layoutPreset.value,
+      columnPercents: columnPercents.value, focusRowOffsets: focusRowOffsets.value
     }))
   } catch { /* persistence is optional */ }
 }
@@ -430,6 +520,11 @@ onMounted(() => {
     const saved = JSON.parse(window.localStorage.getItem('d3srt-unified-layout-v2') || window.localStorage.getItem('d3srt-unified-layout-v1') || 'null')
     if (saved) {
       visibility.value = restoreUnifiedLayout(saved.visibility)
+      layoutPreset.value = layoutOptions.some(option => option.value === saved.layoutPreset) ? saved.layoutPreset : 'harmony'
+      focusRowOffsets.value = {
+        harmony: Array.isArray(saved.focusRowOffsets?.harmony) ? saved.focusRowOffsets.harmony.slice(0, 2).map(Number) : [],
+        staff: Array.isArray(saved.focusRowOffsets?.staff) ? saved.focusRowOffsets.staff.slice(0, 2).map(Number) : []
+      }
       leftOpen.value = saved.leftOpen !== false
       rightOpen.value = saved.rightOpen === true
       leftWidth.value = clampSidebarWidth(saved.leftWidth || 400)
@@ -438,7 +533,13 @@ onMounted(() => {
         piano: clampInstrumentScale(saved.instrumentScale?.piano ?? DEFAULT_INSTRUMENT_SCALES.piano),
         guitar: clampInstrumentScale(saved.instrumentScale?.guitar ?? DEFAULT_INSTRUMENT_SCALES.guitar)
       }
-      columnPercent.value = limitPercent(Number(saved.columnPercent) || 50)
+      const oldColumn = limitPercent(Number(saved.columnPercent) || 50)
+      columnPercents.value = Object.fromEntries(layoutOptions.map(option => {
+        const fallback = saved.columnPercent != null ? oldColumn
+          : option.value === 'harmony' ? DEFAULT_HARMONY_COLUMN_PERCENT : 50
+        const requested = saved.columnPercents?.[option.value]
+        return [option.value, limitPercent(requested == null ? fallback : Number(requested))]
+      }))
       rowPercent.value = limitPercent(Number(saved.rowPercent) || 62)
       rowAdjusted.value = saved.rowAdjusted === true
     }
@@ -451,7 +552,7 @@ onMounted(() => {
   keyboardObserver = new MutationObserver(measureGrid)
   if (gridEl.value) keyboardObserver.observe(gridEl.value, { subtree: true, attributes: true, attributeFilter: ['viewBox'] })
   measureGrid()
-  stopWatching = watch([visibility, leftOpen, rightOpen, leftWidth, rightWidth, columnPercent, rowPercent, rowAdjusted, instrumentScale], persistLayout, { deep: true })
+  stopWatching = watch([visibility, leftOpen, rightOpen, leftWidth, rightWidth, columnPercent, columnPercents, rowPercent, rowAdjusted, instrumentScale, layoutPreset, focusRowOffsets], persistLayout, { deep: true })
 })
 onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardObserver?.disconnect() })
 </script>
@@ -518,6 +619,7 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .tile-split--vertical { top:0; bottom:0; width:9px; transform:translateX(-50%); cursor:col-resize; }
 .tile-split--horizontal { left:0; right:0; height:9px; transform:translateY(-50%); cursor:row-resize; }
 .tile-split:hover { background:#6bc2b155; }
+.tile-split--focus-row { right:0; width:auto; }
 .session-label { text-transform:uppercase; font-size:11px; color:#90abc4; margin-top:8px; }
 .session-value { font-size:14px; overflow-wrap:anywhere; }
 .session-inspector { min-height:0; display:flex; flex-direction:column; gap:5px; }
@@ -555,7 +657,8 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 </style>
 
 <style>
-/* Quasar teleports instrument menus outside the scoped component subtree. */
+/* Quasar teleports instrument and layout menus outside the scoped component subtree. */
+.unified-layout-menu { background:#27313f; color:#e4edf5; min-width:205px; }
 .unified-instrument-menu { min-width:230px; padding:12px 18px 8px; background:#293441; color:#dce9f4; border:1px solid #607186; border-radius:8px; }
 .unified-instrument-menu .instrument-size-label,
 .unified-instrument-menu .instrument-size-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; }
