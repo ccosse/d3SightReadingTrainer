@@ -83,7 +83,7 @@
         <q-tooltip v-if="store.tooltipsEnabled">{{ leftOpen ? 'Hide' : 'Show' }} view controls</q-tooltip>
       </q-btn>
 
-      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '' }" aria-label="Tiled music workspace">
+      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '', 'unified-tiles--stacked-instruments': layout.stackedInstruments }" aria-label="Tiled music workspace">
         <section
           v-for="pane in panes" v-show="layout.ids.includes(pane.id)" :key="pane.id"
           class="unified-tile" :class="`unified-tile--${pane.id}`" :style="{ gridArea: layout.areas[pane.id] || 'auto' }"
@@ -115,8 +115,8 @@
             <StratocasterFretboard v-else-if="pane.id === 'guitar'" />
           </div>
         </section>
-        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="{ left: `${columnPercent}%`, top: layout.rows === 2 && layout.upperIds?.length === 1 ? `${rowTarget}%` : '0', bottom: layout.rows === 2 && layout.lowerIds?.length === 1 ? `${100 - rowTarget}%` : '0' }" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
-        <div v-if="layout.rows === 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${rowTarget}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
+        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="{ left: `${columnPercent}%`, top: layout.rows === 2 && layout.upperIds?.length === 1 ? `${rowTarget}%` : '0', bottom: layout.rows === 3 ? 'auto' : layout.rows === 2 && layout.lowerIds?.length === 1 ? `${100 - rowTarget}%` : '0', height: layout.rows === 3 ? `${stackedHeights.top}px` : 'auto' }" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
+        <div v-if="layout.rows >= 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: layout.rows === 3 ? `${stackedHeights.top}px` : `${rowTarget}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
       </div>
 
       <q-btn class="unified-reveal unified-reveal--right" :class="{ 'is-open': rightOpen }"
@@ -217,9 +217,22 @@ const rowTarget = computed(() => rowAdjusted.value ? rowPercent.value : suggeste
 const cosmicUrl = `${import.meta.env.BASE_URL}cosmic-harmony.html?embed=1`
 const visibleIds = computed(() => panes.filter(pane => visibility.value[pane.id]).map(pane => pane.id))
 const layout = computed(() => tileLayout(visibleIds.value, maximized.value))
+// With four panes, give the full-width piano and guitar their natural vertical
+// space; scroll the workspace instead of compressing the fretboard/keyboard.
+const stackedHeights = computed(() => {
+  const width = gridDimensions.value.width || 1000
+  const height = gridDimensions.value.height || 700
+  return {
+    top: Math.max(310, Math.round(height * rowTarget.value / 100)),
+    piano: Math.max(165, Math.round(width / Math.max(3, keyboardRatio.value) + 44)),
+    guitar: Math.max(220, Math.round(width * (237 / 928) + 44))
+  }
+})
 const gridStyle = computed(() => ({
   gridTemplateColumns: layout.value.columns === 2 ? `${columnPercent.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)',
-  gridTemplateRows: layout.value.rows === 2 ? `${rowTarget.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)'
+  gridTemplateRows: layout.value.rows === 3
+    ? `${stackedHeights.value.top}px ${stackedHeights.value.piano}px ${stackedHeights.value.guitar}px`
+    : layout.value.rows === 2 ? `${rowTarget.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)'
 }))
 
 function nudgeRow(delta) {
@@ -422,6 +435,7 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .unified-reveal--right { border-radius:12px 0 0 12px; border-right:0; }
 .unified-key-notes { font-size:11px; letter-spacing:0; min-width:48px; }
 .unified-tiles { position:relative; flex:1 1 auto; min-height:0; min-width:0; display:grid; gap:6px; overflow:hidden; }
+.unified-tiles--stacked-instruments { overflow-y:auto; overflow-x:hidden; align-content:start; scrollbar-gutter:stable; }
 .unified-tile { min-width:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; border:1px solid #475363; border-radius:8px; background:#292e36; }
 .unified-tile-title { min-height:31px; padding:1px 5px 1px 10px; display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:#bbd1df; border-bottom:1px solid #434d59; }
 .unified-tile-title :deep(.q-btn) { min-height:27px; min-width:27px; }

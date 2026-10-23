@@ -46,10 +46,14 @@ export function tileLayout(visibleIds, maximizedId = '') {
     }
   }
   if (active.length === 4) {
-    areas[active[0]] = '1 / 1 / 2 / 2'
-    areas[active[1]] = '1 / 2 / 2 / 3'
-    areas[active[2]] = '2 / 1 / 3 / 2'
-    areas[active[3]] = '2 / 2 / 3 / 3'
+    // Two complementary tall panes above two full-width, stacked instruments.
+    // Playing piano and guitar side-by-side makes both too narrow.
+    areas.cosmic = '1 / 1 / 2 / 2'
+    areas.staff = '1 / 2 / 2 / 3'
+    areas.piano = '2 / 1 / 3 / 3'
+    areas.guitar = '3 / 1 / 4 / 3'
+    return { columns: 2, rows: 3, areas, ids: active,
+      upperIds: ['cosmic', 'staff'], lowerIds: ['piano', 'guitar'], stackedInstruments: true }
   }
   const upperIds = active.filter((id) => areas[id]?.startsWith('1 /'))
   const lowerIds = active.filter((id) => areas[id]?.startsWith('2 /'))
@@ -63,6 +67,8 @@ export function tileLayout(visibleIds, maximizedId = '') {
  * keyboardRatio is the current keyboard SVG's natural width/height ratio.
  */
 export function suggestedRowPercent(layout, width, height, keyboardRatio = 8) {
+  // Full-width instruments are independently sized below the upper pair.
+  if (layout.rows === 3) return 56
   if (layout.rows !== 2 || !(width > 0) || !(height > 0)) return 60
   const lower = layout.lowerIds || []
   if (!lower.length) return 60

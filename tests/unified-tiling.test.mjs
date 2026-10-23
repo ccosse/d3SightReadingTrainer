@@ -2,10 +2,16 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { tileLayout, restoreUnifiedLayout, suggestedRowPercent } from '../src/music/unifiedTiling.js'
 const all = ['cosmic', 'staff', 'piano', 'guitar']
-test('four panes use a 2 by 2 layout', () => {
+test('restored four panes place cosmic/staff above full-width stacked piano/guitar', () => {
   const layout = tileLayout(all)
-  assert.deepEqual([layout.columns, layout.rows], [2, 2])
-  assert.equal(layout.areas.guitar, '2 / 2 / 3 / 3')
+  assert.deepEqual([layout.columns, layout.rows], [2, 3])
+  assert.equal(layout.stackedInstruments, true)
+  assert.equal(layout.areas.cosmic, '1 / 1 / 2 / 2')
+  assert.equal(layout.areas.staff, '1 / 2 / 2 / 3')
+  assert.equal(layout.areas.piano, '2 / 1 / 3 / 3')
+  assert.equal(layout.areas.guitar, '3 / 1 / 4 / 3')
+  assert.deepEqual(layout.lowerIds, ['piano', 'guitar'])
+  assert.equal(suggestedRowPercent(layout, 1200, 800), 56)
 })
 test('hiding guitar stretches piano across the entire bottom row', () => {
   const layout = tileLayout(all.filter(id => id !== 'guitar'))
