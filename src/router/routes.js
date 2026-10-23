@@ -3,8 +3,11 @@ const routes = [
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('../pages/IndexPage.vue') },
-      { path: 'unified', component: () => import('../pages/UnifiedWorkspace.vue') }
+      // Unified is the primary workspace for both GitHub Pages deployments.
+      // Keep the former workspace reachable directly without promoting it in navigation.
+      { path: '', redirect: '/unified' },
+      { path: 'unified', component: () => import('../pages/UnifiedWorkspace.vue') },
+      { path: 'classic', component: () => import('../pages/IndexPage.vue') }
     ]
   },
   {
