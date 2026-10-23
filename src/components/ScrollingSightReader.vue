@@ -83,7 +83,7 @@
       </svg>
     </div>
 
-    <div class="recording-console" :class="{ 'recording-console--unified': unifiedTransport }">
+    <div v-show="!unifiedTransport" class="recording-console" :class="{ 'recording-console--unified': unifiedTransport }">
       <div v-if="!unifiedTransport" class="tape-deck" role="group" aria-label="Unified piano tape transport">
         <button type="button" class="tape-key record-key" :title="store.tooltipsEnabled ? 'Record incoming MIDI notes without generating any background music' : undefined" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
         <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? (takePlaying || store.srtTransportState === 'playing' ? 'Pause playback without resetting the position' : 'Play or resume from the current position') : undefined" :aria-label="takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play'" :disabled="liveCapture.recording || (!(takePlaying || store.srtTransportState === 'playing') && !liveCapture.events.length && !hasPlayableSource)" @click="transportPlayPause">{{ takePlaying || store.srtTransportState === 'playing' ? 'Ⅱ' : '▶' }} <span>{{ takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play' }}</span></button>
@@ -101,7 +101,8 @@
         <span class="take-stat">{{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · Recorded {{ liveCapture.bpm }} BPM<span v-if="takePlaying"> · Playback {{ store.srtTempo }} BPM ({{ (store.srtTempo / liveCapture.bpm).toFixed(2) }}×)</span></span>
         <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
       </div>
-      <details class="recording-tools">
+      <Teleport to="#unified-recording-tools" :disabled="!unifiedTransport">
+      <details class="recording-tools" :open="unifiedTransport || undefined">
         <summary :title="store.tooltipsEnabled ? 'Open recording files, synchronization, and nondestructive notation cleanup' : undefined">Recording tools</summary>
         <div class="capture-files" role="group" aria-label="Recording files and staff actions">
           <button type="button" :title="store.tooltipsEnabled ? 'Load a previously exported raw MIDI JSON take' : undefined" :disabled="liveCapture.recording || takePlaying" @click="selectTakeFile">Load JSON</button>
@@ -125,6 +126,7 @@
         </div>
         <p class="tools-hint">Notation cleanup affects the visual preview only. Exported JSON, raw timing, and audio playback remain unchanged.</p>
       </details>
+      </Teleport>
     </div>
 
   </section>
