@@ -60,6 +60,53 @@ export function tileLayout(visibleIds, maximizedId = '') {
   return { columns: active.length > 1 ? 2 : 1, rows: active.length > 2 ? 2 : 1, areas, ids: active, upperIds, lowerIds }
 }
 
+// The focus presets share the same four mounted panes and existing state.
+// A focused map or staff occupies the full left column; the other visible
+// panes stack in the right column, regardless of which instruments are shown.
+export const UNIFIED_LAYOUT_PRESETS = Object.freeze([
+  { value: 'harmony', label: 'Harmony Focus' },
+  { value: 'four', label: 'Four Panes' },
+  { value: 'staff', label: 'Staff Focus' }
+])
+
+export function focusTileLayout(visibleIds, maximizedId = '', preset = 'harmony') {
+  const focusedId = preset === 'staff' ? 'staff' : 'cosmic'
+  const original = tileLayout(visibleIds, maximizedId)
+  if (preset === 'four' || maximizedId || !original.ids.includes(focusedId) || original.ids.length < 2) return original
+  const rightIds = original.ids.filter(id => id !== focusedId)
+  const rows = rightIds.length
+  const areas = { [focusedId]: `1 / 1 / ${rows + 1} / 2` }
+  rightIds.forEach((id, index) => { areas[id] = `${index + 1} / 2 / ${index + 2} / 3` })
+  return { columns: 2, rows, areas, ids: original.ids, focusStack: true,
+    focusedId, rightIds, upperIds: [focusedId, rightIds[0]], lowerIds: rightIds.slice(1) }
+}
+
+// Right-hand instrument rows follow their *scaled* canvas widths. A staff/map
+// row takes the remaining vertical space; the layout can scroll when needed.
+export function focusStackHeights(layout, width, height, columnPercent, keyboardRatio, scales, offsets = []) {
+  if (!layout.focusStack) return []
+  const paneWidth = Math.max(0, width * (1 - columnPercent / 100) - 9)
+  const ids = layout.rightIds
+  const gap = 6
+  const minHeight = id => id === 'piano' || id === 'guitar' ? 90 : 220
+  const base = ids.map(id => id === 'piano' || id === 'guitar'
+    ? Math.max(minHeight(id), instrumentPanelHeight(id, paneWidth, keyboardRatio, scales[id]))
+    : minHeight(id))
+  const remaining = height - base.reduce((a, b) => a + b, 0) - gap * (ids.length - 1)
+  if (remaining > 0) {
+    const tallIndex = ids.findIndex(id => id === 'staff' || id === 'cosmic')
+    base[tallIndex >= 0 ? tallIndex : 0] += remaining
+  }
+  const adjusted = [...base]
+  offsets.slice(0, ids.length - 1).forEach((offset, i) => {
+    const delta = Math.max(minHeight(ids[i]) - adjusted[i],
+      Math.min(adjusted[i + 1] - minHeight(ids[i + 1]), Number(offset) || 0))
+    adjusted[i] += delta
+    adjusted[i + 1] -= delta
+  })
+  return adjusted.map(n => Math.round(n))
+}
+
 /**
  * Initial splitter position using the natural shape of the lower views.
  * Height is capped by the space actually available, and dragging the splitter
