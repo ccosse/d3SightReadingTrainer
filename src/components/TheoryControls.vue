@@ -19,8 +19,8 @@
     </div>
 
     <div class="toggle-list">
-      <ImageCheckbox v-model="store.showKeyOverlay" label="Show current key" tooltip="Overlay all seven notes of the current key on the fretboard, piano, and staff." />
-      <ImageCheckbox v-model="store.keySelectsTonic" label="Key selects tonic" tooltip="In Single mode, choosing a key also selects its tonic note everywhere." />
+      <ImageCheckbox v-model="store.showKeyOverlay" label="Show current key" tooltip="Overlay notes of the current major, minor, or blues scale on the fretboard, piano, and staff." />
+      <ImageCheckbox v-if="showTonicSelector" v-model="store.keySelectsTonic" label="Key selects tonic" tooltip="In Single mode, choosing a key also selects its tonic note everywhere." />
       <ImageCheckbox v-model="store.tooltipsEnabled" label="Tooltips" tooltip="Globally enable or disable hover explanations throughout the app." />
     </div>
   </section>
@@ -31,6 +31,7 @@ import { computed } from 'vue'
 import ImageCheckbox from './ImageCheckbox.vue'
 import { useNoteMapStore } from '../stores/noteMap'
 
+defineProps({ showTonicSelector: { type: Boolean, default: true } })
 const store = useNoteMapStore()
 const signedHalfSteps = computed(() => store.halfStepsFromC > 0 ? `+${store.halfStepsFromC}` : `${store.halfStepsFromC}`)
 </script>

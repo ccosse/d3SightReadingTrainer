@@ -83,8 +83,8 @@
       </svg>
     </div>
 
-    <div class="recording-console">
-      <div class="tape-deck" role="group" aria-label="Unified piano tape transport">
+    <div v-show="!unifiedTransport" class="recording-console" :class="{ 'recording-console--unified': unifiedTransport }">
+      <div v-if="!unifiedTransport" class="tape-deck" role="group" aria-label="Unified piano tape transport">
         <button type="button" class="tape-key record-key" :title="store.tooltipsEnabled ? 'Record incoming MIDI notes without generating any background music' : undefined" aria-label="Record" :disabled="liveCapture.recording || takePlaying" @click="transportRecord">● <span>Record</span></button>
         <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? (takePlaying || store.srtTransportState === 'playing' ? 'Pause playback without resetting the position' : 'Play or resume from the current position') : undefined" :aria-label="takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play'" :disabled="liveCapture.recording || (!(takePlaying || store.srtTransportState === 'playing') && !liveCapture.events.length && !hasPlayableSource)" @click="transportPlayPause">{{ takePlaying || store.srtTransportState === 'playing' ? 'Ⅱ' : '▶' }} <span>{{ takePlaying || store.srtTransportState === 'playing' ? 'Pause' : 'Play' }}</span></button>
         <button type="button" class="tape-key" :class="{ 'tape-paused': takePaused || store.srtTransportState === 'paused' }" :title="store.tooltipsEnabled ? 'Stop recording or either playback source' : undefined" aria-label="Stop" :disabled="!liveCapture.recording && !takePlaying && store.srtTransportState !== 'playing' && store.srtTransportState !== 'paused'" @click="transportStop">■ <span>Stop</span></button>
@@ -93,7 +93,7 @@
           <input v-model="loopTake" type="checkbox" aria-label="Loop current track" /> ↻ Loop
         </label>
       </div>
-      <div class="capture-settings">
+      <div v-if="!unifiedTransport" class="capture-settings">
         <label class="capture-option" :title="store.tooltipsEnabled ? 'Click track synchronized with the recording measure grid' : undefined"><input v-model="metronomeOn" type="checkbox" /> Metronome</label>
         <label v-if="!liveCapture.recording && !takePlaying && liveCapture.notes.length" class="review-slider">Review
           <input type="range" min="0" :max="Math.max(1, liveCapture.durationMs / (60000 / liveCapture.bpm))" step="0.1" :value="currentBeat" @input="currentBeat = Number($event.target.value)" />
@@ -101,7 +101,8 @@
         <span class="take-stat">{{ liveCapture.notes.length }} notes · {{ (liveCapture.durationMs / 1000).toFixed(1) }}s · Recorded {{ liveCapture.bpm }} BPM<span v-if="takePlaying"> · Playback {{ store.srtTempo }} BPM ({{ (store.srtTempo / liveCapture.bpm).toFixed(2) }}×)</span></span>
         <span v-if="takeMessage" class="capture-message" role="status">{{ takeMessage }}</span>
       </div>
-      <details class="recording-tools">
+      <Teleport to="#unified-recording-tools" :disabled="!unifiedTransport">
+      <details class="recording-tools" :open="unifiedTransport || undefined">
         <summary :title="store.tooltipsEnabled ? 'Open recording files, synchronization, and nondestructive notation cleanup' : undefined">Recording tools</summary>
         <div class="capture-files" role="group" aria-label="Recording files and staff actions">
           <button type="button" :title="store.tooltipsEnabled ? 'Load a previously exported raw MIDI JSON take' : undefined" :disabled="liveCapture.recording || takePlaying" @click="selectTakeFile">Load JSON</button>
@@ -125,6 +126,7 @@
         </div>
         <p class="tools-hint">Notation cleanup affects the visual preview only. Exported JSON, raw timing, and audio playback remain unchanged.</p>
       </details>
+      </Teleport>
     </div>
 
   </section>
@@ -139,12 +141,19 @@ import { useNoteMapStore } from '../stores/noteMap'
 import { liveCapture, startLiveCapture, stopLiveCapture, clearLiveCapture, exportLiveCapture, importLiveCaptureJson } from '../music/liveMidiCapture'
 import { prepareCaptureMetronome, startCaptureMetronome, stopCaptureMetronome } from '../music/captureMetronome'
 
+// Classic retains the historical transport; Unified owns the visible buttons.
+const { unifiedTransport = false } = defineProps({ unifiedTransport: { type: Boolean, default: false } })
+
 const store = useNoteMapStore()
 const generator = new SightReadingGenerator()
 const events = ref([])
 const currentBeat = ref(0)
 const readerSvg = ref(null)
-const metronomeOn = ref(false)
+const classicMetronomeOn = ref(false)
+const metronomeOn = computed({
+  get: () => unifiedTransport ? store.srtMetronomeOn : classicMetronomeOn.value,
+  set: value => { if (unifiedTransport) store.srtMetronomeOn = !!value; else classicMetronomeOn.value = !!value }
+})
 // A dedicated capture layer prevents residual generated notes from appearing in takes.
 const captureDisplayActive = computed(() => liveCapture.recording || liveCapture.notes.length > 0)
 const quantizeDivision = ref(0)
@@ -156,7 +165,12 @@ const audioLeadMs = ref(250)
 const takeFileInput = ref(null)
 const takePlaying = ref(false)
 const takePaused = ref(false)
-const loopTake = ref(false)
+// Unified uses one shared loop control; Classic retains its original per-take toggle.
+const classicLoopTake = ref(false)
+const loopTake = computed({
+  get: () => unifiedTransport ? store.srtLoopManual : classicLoopTake.value,
+  set: value => { if (unifiedTransport) store.srtLoopManual = !!value; else classicLoopTake.value = !!value }
+})
 const cosmicStepCount = ref(0)
 let lastCosmicStep = -1
 function publishCosmicPlayhead(index,playing=false) {
@@ -195,7 +209,8 @@ function highlightTakeMidi(bytes) {
 // A single transport controls whichever source is active. A loaded/recorded take
 // takes priority over generated/manual music until Clear take is selected.
 async function transportRecord() {
-  if (store.srtTransportState === 'playing') pause()
+  if (liveCapture.recording) return
+  transportStop()
   await beginCapture()
 }
 async function transportPlay() {
@@ -230,6 +245,7 @@ function pauseTake() {
   takeFrame=0
   takePlaying.value=false
   takePaused.value=true
+  store.setSrtTransportState('paused')
   releaseTakeVoices({ preserveHighlights: true })
   takeMessage.value=`Paused at beat ${currentBeat.value.toFixed(1)}`
 }
@@ -240,6 +256,7 @@ function stopTake(reset=false) {
   takeFrame=0
   takePlaying.value=false
   takePaused.value=false
+  store.setSrtTransportState('stopped')
   releaseTakeVoices()
   if(reset) {takeElapsedMs=0;takeIndex=0;currentBeat.value=0;lastCosmicStep=-1;publishCosmicPlayhead(0,false)}
 }
@@ -301,6 +318,7 @@ async function playTake(resume=false) {
   takeLastFrame=performance.now()
   takePlaying.value=true
   takePaused.value=false
+  store.setSrtTransportState('playing')
   if (!resume)lastCosmicStep=-1
   takeMessage.value=`Playing at ${store.srtTempo} BPM (recorded ${liveCapture.bpm} BPM)`
   const tick=(frameNow)=>{
@@ -439,12 +457,14 @@ async function beginCapture() {
     try { await prepareCaptureMetronome() } catch (error) { console.warn('Metronome unavailable', error) }
   }
   startLiveCapture(store.srtTempo)
+  store.srtRecording = true
   currentBeat.value = 0
   if (metronomeOn.value) startCaptureMetronome(liveCapture.startedAt, liveCapture.bpm).catch(console.warn)
   startCaptureTicker()
 }
 function endCapture() {
   stopLiveCapture()
+  store.srtRecording = false
   stopCaptureMetronome()
   stopCaptureTicker()
 }
@@ -452,6 +472,7 @@ function clearStaffFromTransport() {
   clearCapture()
 }
 function clearCapture() {
+  store.srtRecording = false
   stopTake()
   takeMessage.value=''
   stopCaptureMetronome()
@@ -1114,23 +1135,28 @@ function saveFromTransport() {
 
 
 watch(() => store.srtTransportNonce, () => {
-  if (store.srtTransportCommand === 'play' || store.srtTransportCommand === 'start') play()
-  else if (store.srtTransportCommand === 'pause') pause()
+  // Always pass through the same transport used by the Classic staff controls.
+  // Direct play()/pause()/stop() bypasses recorded takes and Cosmic playheads.
+  if (store.srtTransportCommand === 'play' || store.srtTransportCommand === 'start') void transportPlay()
+  else if (store.srtTransportCommand === 'pause') transportPause()
+  else if (store.srtTransportCommand === 'record') void transportRecord()
+  else if (store.srtTransportCommand === 'clear') clearStaffFromTransport()
   else if (store.srtTransportCommand === 'save') saveFromTransport()
-  else stop()
-})
+  else transportStop()
+}, { flush: 'sync' })
 watch(() => store.srtGenerationNonce, regenerate)
 watch(() => liveCapture.take, () => { if(!liveCapture.recording) currentBeat.value=0 })
 watch(() => store.srtTempo, rebaseTempoClock)
 watch(() => store.staffEvents.map((event) => `${event.id}:${event.beat}:${event.duration}:${event.midi}`).join('|'), refreshManualEvents)
 watch(() => store.srtLoopManual, () => { if (store.srtSource === 'staff') regenerate() })
-watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') pause() })
+watch(() => store.activeTab, (tab) => { if (tab !== 'note-map' && store.srtTransportState === 'playing') transportPause() })
 function focusCosmicStep(event){if(liveCapture.recording || takePlaying.value || !liveCapture.notes.length || !cosmicStepCount.value)return;const index=event.detail?.index;if(!Number.isInteger(index)||index<0||index>=cosmicStepCount.value)return;currentBeat.value=index*4;publishCosmicPlayhead(index,false)}
 onMounted(() => { prepareSession(); store.setSrtTransportState('stopped');window.addEventListener('cosmic-review-step',focusCosmicStep);window.addEventListener('cosmic-take-loaded',onCosmicTakeLoaded) })
-onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCosmicStep);window.removeEventListener('cosmic-take-loaded',onCosmicTakeLoaded); stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
+onBeforeUnmount(() => { window.removeEventListener('cosmic-review-step',focusCosmicStep);window.removeEventListener('cosmic-take-loaded',onCosmicTakeLoaded); stopTake(); stopCaptureMetronome(); stopCaptureTicker(); stopLiveCapture(); store.srtRecording = false; sessionToken += 1; cancelAnimation(); clearReleaseTimers(); store.setSrtTransportState('stopped') })
 </script>
 
 <style scoped>
+.recording-console--unified { padding-top: 0; }
 .srt-shell { display: grid; gap: 10px; width: 100%; margin: 0; padding: 2px; color: white; }
 .scroll-stage { overflow: hidden; border: 0; border-radius: 5px; background: #202020; }
 .scroll-svg { width: 100%; height: auto; display: block; touch-action: none; }

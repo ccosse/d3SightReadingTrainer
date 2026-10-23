@@ -86,7 +86,7 @@
               @pointerdown.prevent="pressNote(note)"
               @pointerup.prevent="releasePreview"
               @pointercancel="releasePreview"
-              @click="store.selectPitchClass(note.pitchClass)"
+              @click="store.selectPitchClass(note.pitchClass, 'guitar')"
             />
 
             <circle
@@ -100,7 +100,7 @@
               @pointerdown.prevent="pressNote(note)"
               @pointerup.prevent="releasePreview"
               @pointercancel="releasePreview"
-              @click="store.selectPitchClass(note.pitchClass)"
+              @click="store.selectPitchClass(note.pitchClass, 'guitar')"
             />
 
             <text
@@ -114,7 +114,7 @@
               @pointerdown.prevent="pressNote(note)"
               @pointerup.prevent="releasePreview"
               @pointercancel="releasePreview"
-              @click="store.selectPitchClass(note.pitchClass)"
+              @click="store.selectPitchClass(note.pitchClass, 'guitar')"
             >{{ store.noteName(note.pitchClass) }}</text>
 
             <text
@@ -153,13 +153,14 @@ let previewToken = null
 let previewRequest = 0
 
 function noteVisible(note) {
-  return store.showAllNoteNames || store.isPlayingMidi(note.midi) || store.isSelected(note.pitchClass) || (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass))
+  return store.showAllNoteNames || store.isFocusedMidi(note.midi) || store.isPlayingMidi(note.midi) || store.isSelected(note.pitchClass) || (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass))
 }
 
 function noteClass(note) {
   return {
     selected: store.isSelected(note.pitchClass),
     playing: store.isPlayingMidi(note.midi),
+    focused: store.isFocusedMidi(note.midi),
     'current-key': store.showKeyOverlay && store.isInCurrentKey(note.pitchClass) && !store.isSelected(note.pitchClass),
     neutral: store.showAllNoteNames && !store.isSelected(note.pitchClass) && !(store.showKeyOverlay && store.isInCurrentKey(note.pitchClass)),
     'beyond-wood': note.beyondWood
@@ -168,6 +169,7 @@ function noteClass(note) {
 
 function noteRadius(note) {
   if (store.isPlayingMidi(note.midi)) return 9.2
+  if (store.isFocusedMidi(note.midi)) return 8.8
   if (store.isSelected(note.pitchClass)) return 8.5
   if (store.showKeyOverlay && store.isInCurrentKey(note.pitchClass)) return 6.8
   return 3.2
@@ -224,6 +226,7 @@ onBeforeUnmount(releasePreview)
 .note-dot.selected { fill: var(--asymptopia-green); stroke: #d7ffd3; }
 .note-dot.current-key { fill: var(--asymptopia-green); stroke: #c8ffc3; opacity: .76; }
 .note-dot.neutral { fill: #bdbdbd; stroke: #e6e6e6; opacity: 0.68; }
+.note-dot.focused { fill: #49aebd; stroke: #bcf6ff; stroke-width: 1.7; }
 .note-dot.playing { fill: #d7a928; stroke: #fff1a6; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(215, 169, 40, 0.85)); }
 .note-dot.beyond-wood { stroke-dasharray: 2 1; }
 .note-label { fill: #fff; font-size: 16px; cursor: pointer; user-select: none; font-weight: 600; }
@@ -232,6 +235,7 @@ onBeforeUnmount(releasePreview)
 /* Name-only stays green; names over filled markers require contrasting ink. */
 .note-label.on-dot, .note-label.on-dot.current-key, .note-label.on-dot.selected { fill: #10253e; stroke: rgba(255,255,255,.85); stroke-width: .35; paint-order: stroke; font-weight: 850; }
 .note-label.neutral { fill: #e2e2e2; opacity: 0.76; }
+.note-label.focused { fill: #90eeff; font-weight: 900; }
 .note-label.playing { fill: #ffd866; font-weight: 900; }
 .octave-label { fill: #ffeb84; font-size: 12px; pointer-events: none; }
 </style>

@@ -3,6 +3,7 @@ export const FLAT_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A�
 export const NATURAL_PITCH_CLASSES = new Set([0, 2, 4, 5, 7, 9, 11])
 export const MAJOR_SCALE_OFFSETS = [0, 2, 4, 5, 7, 9, 11]
 export const NATURAL_MINOR_OFFSETS = [0, 2, 3, 5, 7, 8, 10]
+export const BLUES_SCALE_OFFSETS = [0, 3, 5, 6, 7, 10]
 export const STANDARD_GUITAR_MIDI_LOW_TO_HIGH = [40, 45, 50, 55, 59, 64]
 export const SHARP_SIGNATURE_ORDER = ['F♯', 'C♯', 'G♯', 'D♯', 'A♯', 'E♯', 'B♯']
 export const FLAT_SIGNATURE_ORDER = ['B♭', 'E♭', 'A♭', 'D♭', 'G♭', 'C♭', 'F♭']
@@ -58,7 +59,7 @@ export function keyById(id) {
 export function keyPitchClasses(key, mode = key?.mode || 'major') {
   const minor = mode === 'minor'
   const tonic = minor ? mod12(key.tonic + 9) : key.tonic
-  const offsets = minor ? NATURAL_MINOR_OFFSETS : MAJOR_SCALE_OFFSETS
+  const offsets = mode === 'blues' ? BLUES_SCALE_OFFSETS : minor ? NATURAL_MINOR_OFFSETS : MAJOR_SCALE_OFFSETS
   return offsets.map((offset) => mod12(tonic + offset))
 }
 

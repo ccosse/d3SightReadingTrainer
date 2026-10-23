@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { keyboardPresetById } from '../music/keyboardPresets'
-import { reconcileMusicalSteps } from '../music/musicalSession'
+import { reconcileMusicalSteps, normalizeMusicalFocus } from '../music/musicalSession'
 import {
   configureAudioEngine,
   requestMidiOutputs,
@@ -48,14 +48,14 @@ function roundBeat(value, quantum) {
 export const useNoteMapStore = defineStore('noteMap', {
   state: () => ({
     activeTab: 'note-map',
-    selectedPitchClasses: [7],
+    selectedPitchClasses: [],
     selectionMode: 'single',
     accidentalMode: 'sharp',
     currentKeyId: 'C',
     currentMode: 'major',
     halfStepsFromC: 0,
     showKeyOverlay: false,
-    keySelectsTonic: true,
+    keySelectsTonic: false,
     showAllNoteNames: false,
     showPianoLabels: typeof window !== 'undefined' && window.localStorage.getItem('d3srt-show-piano-labels') === 'true',
     showGuitarStrings: true,
@@ -75,7 +75,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     midiOutputs: [],
     midiOutputId: '',
     midiChannel: 0,
-    staffZoom: 1,
+    staffZoom: (1120 / 126) / (5 * 4), // Five bars by default
     visibleObjects: {
       controls: true,
       piano: true,
@@ -99,7 +99,8 @@ export const useNoteMapStore = defineStore('noteMap', {
     // staff and highlight state during incremental migration.
     musicalSession: {
       revision: 0, source: '', mode: 'major', tonic: 'C',
-      steps: [], activeIndex: -1, playing: false
+      steps: [], activeIndex: -1, playing: false,
+      focus: normalizeMusicalFocus(), focusRevision: 0
     },
     nextMusicalStepId: 1,
 
@@ -113,6 +114,8 @@ export const useNoteMapStore = defineStore('noteMap', {
     srtTransportState: 'stopped',
     srtTransportCommand: 'stop',
     srtTransportNonce: 0,
+    srtMetronomeOn: false,
+    srtRecording: false,
     srtTempo: 72,
     srtEventSpacing: 1,
     srtMaterial: 'mixed',
@@ -156,6 +159,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       return this.currentKey.relativeMinor.replace(/ minor$/, 'm')
     },
     activeScaleNames() {
+      if (this.currentMode === 'blues') return keyPitchClasses(this.currentKey, 'blues').map(pc => this.noteName(pc))
       if (this.currentMode !== 'minor') return this.currentKey.scale
       return [5, 6, 0, 1, 2, 3, 4].map((index) => this.currentKey.scale[index])
     },
@@ -167,6 +171,10 @@ export const useNoteMapStore = defineStore('noteMap', {
       return new Set(keyPitchClasses(this.currentKey, this.currentMode))
     },
     isAllSelected: (state) => state.selectedPitchClasses.length === 12,
+    isCurrentKeySelected() {
+      return this.selectedPitchClasses.length === this.keyPitchClassSet.size &&
+        this.selectedPitchClasses.every(pc => this.keyPitchClassSet.has(mod12(pc)))
+    },
     hasSelection: (state) => state.selectedPitchClasses.length > 0,
     isSelected: (state) => (pitchClass) => state.selectedPitchClasses.includes(mod12(pitchClass)),
     isInCurrentKey() {
@@ -203,6 +211,12 @@ export const useNoteMapStore = defineStore('noteMap', {
     isPlayingPitchClass() {
       return (pitchClass) => this.playingPitchClassSet.has(mod12(pitchClass))
     },
+    isFocusedMidi() {
+      return (midi) => this.musicalSession.focus.midis.includes(Number(midi))
+    },
+    isFocusedPitchClass() {
+      return (pitchClass) => this.musicalSession.focus.pitchClasses.includes(mod12(pitchClass))
+    },
     staffVisibleBeats: (state) => {
       const measures = Math.max(1, Math.min(6, Math.round((1120 / (126 * state.staffZoom)) / 4)))
       return measures * 4
@@ -233,15 +247,16 @@ export const useNoteMapStore = defineStore('noteMap', {
   },
 
   actions: {
-    selectPitchClass(pitchClass) {
+    selectPitchClass(pitchClass, source = 'pitch-selector') {
       const pc = mod12(pitchClass)
       if (this.selectionMode === 'single') {
         this.selectedPitchClasses = [pc]
-        return
+      } else {
+        const index = this.selectedPitchClasses.indexOf(pc)
+        if (index >= 0) this.selectedPitchClasses.splice(index, 1)
+        else this.selectedPitchClasses.push(pc)
       }
-      const index = this.selectedPitchClasses.indexOf(pc)
-      if (index >= 0) this.selectedPitchClasses.splice(index, 1)
-      else this.selectedPitchClasses.push(pc)
+      this.setMusicalFocus({ pitchClasses: this.selectedPitchClasses, source })
     },
 
     togglePitchClass(pitchClass) {
@@ -250,15 +265,27 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     selectAll() {
       this.selectedPitchClasses = Array.from({ length: 12 }, (_, index) => index)
+      this.setMusicalFocus({ pitchClasses: this.selectedPitchClasses, source: 'pitch-selector' })
     },
 
     clearSelection() {
       this.selectedPitchClasses = []
+      this.setMusicalFocus({ source: 'pitch-selector' })
     },
 
     toggleAllNone() {
       if (this.hasSelection) this.clearSelection()
       else this.selectAll()
+    },
+
+    toggleCurrentKeyNotes() {
+      if (this.isCurrentKeySelected) {
+        this.clearSelection()
+      } else {
+        this.selectionMode = 'multi'
+        this.selectedPitchClasses = [...this.keyPitchClassSet]
+        this.setMusicalFocus({ pitchClasses: this.selectedPitchClasses, source: 'key-notes' })
+      }
     },
 
     setSelectionMode(mode) {
@@ -273,7 +300,7 @@ export const useNoteMapStore = defineStore('noteMap', {
       const { syncTranspose = true, mode = 'major' } = options
       const key = keyById(keyId)
       this.currentKeyId = key.id
-      this.currentMode = mode === 'minor' ? 'minor' : 'major'
+      this.currentMode = ['major', 'minor', 'blues'].includes(mode) ? mode : 'major'
       this.accidentalMode = key.accidentalMode
       if (syncTranspose) this.halfStepsFromC = halfStepsFromCForKey(key)
       if (this.keySelectsTonic && this.selectionMode === 'single') {
@@ -283,7 +310,7 @@ export const useNoteMapStore = defineStore('noteMap', {
     },
 
     setMode(mode) {
-      this.currentMode = mode === 'minor' ? 'minor' : 'major'
+      this.currentMode = ['major', 'minor', 'blues'].includes(mode) ? mode : 'major'
     },
 
     setHalfStepsFromC(value) {
@@ -445,16 +472,32 @@ export const useNoteMapStore = defineStore('noteMap', {
         : []
     },
 
-    syncMusicalPath({ mode = 'major', tonic = 'C', steps = [], source = 'cosmic' } = {}) {
+    setMusicalFocus(focus = {}) {
+      const normalized = normalizeMusicalFocus(focus)
+      const current = this.musicalSession.focus
+      if (current.source === normalized.source && current.stepId === normalized.stepId &&
+        current.midis.join(',') === normalized.midis.join(',') &&
+        current.pitchClasses.join(',') === normalized.pitchClasses.join(',')) return
+      this.musicalSession.focus = normalized
+      this.musicalSession.focusRevision += 1
+    },
+
+    syncMusicalPath({ mode = 'major', tonic = 'C', steps = [], source = 'cosmic', activeIndex = -1 } = {}) {
       if (!Array.isArray(steps) || steps.length > 128) return
       const previous = this.musicalSession
       const compatible = previous.mode === mode && previous.tonic === tonic
       const result = reconcileMusicalSteps(compatible ? previous.steps : [], steps, this.nextMusicalStepId)
       this.nextMusicalStepId = result.nextId
+      // Free paths focus the last clicked chord; staff imports focus the first bar.
+      const index = Number.isInteger(activeIndex) && activeIndex >= 0 && activeIndex < result.steps.length ? activeIndex : -1
       this.musicalSession = {
         ...previous, revision: previous.revision + 1,
         source, mode, tonic, steps: result.steps,
-        activeIndex: -1, playing: false
+        activeIndex: index, playing: false
+      }
+      if (index >= 0) {
+        const step = result.steps[index]
+        this.setMusicalFocus({ midis: step.notes.map((note) => note.midi), source, stepId: step.stepId })
       }
     },
 
@@ -462,6 +505,12 @@ export const useNoteMapStore = defineStore('noteMap', {
       const normalized = Number.isInteger(index) && index >= 0 && index < this.musicalSession.steps.length ? index : -1
       this.musicalSession.activeIndex = normalized
       this.musicalSession.playing = Boolean(playing) && normalized >= 0
+      if (normalized >= 0) {
+        const step = this.musicalSession.steps[normalized]
+        this.setMusicalFocus({ midis: step.notes.map((note) => note.midi), source: 'staff-playhead', stepId: step.stepId })
+      }
+      // On pause, intentionally retain the focus snapshot and sounding-note
+      // visuals. The audio transport is responsible for silencing voices.
     },
 
     setStaffDragPayload(payload) {
@@ -512,6 +561,10 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     setSelectedStaffBeat(beat) {
       this.selectedStaffBeat = beat === null ? null : Number(beat)
+      const cluster = this.selectedStaffCluster
+      if (cluster) this.setMusicalFocus({
+        midis: cluster.events.map((event) => event.midi), source: 'staff-selection'
+      })
     },
 
     setStaffClusterDuration(beat, duration) {
@@ -597,6 +650,16 @@ export const useNoteMapStore = defineStore('noteMap', {
 
     requestSrtStop() {
       this.srtTransportCommand = 'stop'
+      this.srtTransportNonce += 1
+    },
+
+    requestSrtRecord() {
+      this.srtTransportCommand = 'record'
+      this.srtTransportNonce += 1
+    },
+
+    requestSrtClear() {
+      this.srtTransportCommand = 'clear'
       this.srtTransportNonce += 1
     },
 

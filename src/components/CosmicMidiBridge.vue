@@ -91,6 +91,7 @@ function acceptCosmicPath(data, source = 'cosmic') {
     tonic: String(data.tonic || 'C'),
     mode: ['major', 'minor', 'blues'].includes(data.mode) ? data.mode : 'major',
     steps: data.steps,
+    activeIndex: source === 'cosmic-staff' ? 0 : (Number.isInteger(data.activeIndex) ? data.activeIndex : data.steps.length - 1),
     source
   })
 }
@@ -126,7 +127,7 @@ function loadChallengeScore(data) {
     // Match the grand staff key signature to the Cosmic challenge key.
     // d3SRT represents minor keys using their relative major key signatures.
     const tonic=String(data.tonic || '')
-    const wantedMode=data.mode==='minor'?'minor':'major'
+    const wantedMode=['major', 'minor', 'blues'].includes(data.mode) ? data.mode : 'major'
     const key=MAJOR_KEYS.find(k=> wantedMode==='minor'
       ? k.relativeMinor.split(' ')[0] === tonic
       : k.label === tonic)
@@ -248,9 +249,18 @@ onMounted(() => {
     channel = new BroadcastChannel('d3srt-cosmic-v1')
     channel.onmessage = ({ data }) => {
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'free-path-state') { acceptCosmicPath(data); return }
-      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'audition-chord'){auditionChord(data.notes,data.durationMs); if(Number.isInteger(data.stepIndex))window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.stepIndex}}));return}
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'audition-chord'){store.setMusicalFocus({ midis: data.notes, source: 'cosmic-audition' });auditionChord(data.notes,data.durationMs); if(Number.isInteger(data.stepIndex))window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.stepIndex}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'select-step'){store.setMusicalPlayhead(data.index,false);window.dispatchEvent(new CustomEvent('cosmic-review-step',{detail:{index:data.index}}));return}
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'challenge-take') { loadChallengeScore(data); return }
+      if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'key-selected') {
+        if (!['major', 'minor', 'blues'].includes(data.mode)) return
+        const normalized = (name) => String(name || '').replaceAll('♯', '#').replaceAll('♭', 'b')
+        const key = MAJOR_KEYS.find((item) => normalized(data.mode === 'minor' ? item.relativeMinor.split(' ')[0] : item.label) === normalized(data.tonic))
+        if (key && (store.currentKeyId !== key.id || store.currentMode !== data.mode)) {
+          store.setKey(key.id, { mode: data.mode })
+        }
+        return
+      }
       if (data?.source === 'cosmic' && data?.version === 1 && data?.type === 'ready') {
         publishKey(); publishStatus()
         if (pendingChallenge) { publish('challenge-start'); pendingChallenge = false }
