@@ -14,10 +14,12 @@ test('session inspector uses stable path step identities and follows active inde
   assert.match(ui, /index === store.musicalSession.activeIndex/)
   assert.match(ui, /store.musicalSession.focus.midis/)
 })
-test('Cosmic narrative is the only vertical prose scroller in embed', () => {
-  assert.match(cosmic, /embed-narrative \.side > #history \{[^}]*overflow-y:hidden/)
-  assert.match(cosmic, /embed-narrative \.side > #notes \{[^}]*overflow:hidden/)
-  assert.match(cosmic, /embed-narrative \.side > #pathNarrative \{[^}]*overflow-y:auto/)
+test('Cosmic narrative and its secondary controls use one vertical scrollbar in embed', () => {
+  assert.match(cosmic, /html\.embedded\.embed-narrative \.side \{[^}]*overflow-y:auto/)
+  assert.match(cosmic, /html\.embedded\.embed-narrative \.side > #pathNarrative \{[^}]*flex:0 0 auto;[^}]*max-height:none;[^}]*overflow:visible/)
+  assert.match(cosmic, /html\.embedded\.embed-narrative \.side > #current \{[^}]*order:1;[^}]*border-top:/)
+  assert.match(cosmic, /html\.embedded\.embed-narrative \.side > #history \{[^}]*flex-wrap:wrap;[^}]*overflow:visible/)
+  assert.match(cosmic, /html\.embedded\.embed-narrative \.side > #notes \{[^}]*overflow:visible/)
 })
 test('standalone Cosmic Harmony remains separate from embedded adjustments', () => {
   assert.match(cosmic, /html\.embedded\.embed-narrative \.layout/)
