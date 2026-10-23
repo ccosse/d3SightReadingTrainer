@@ -83,7 +83,7 @@
           <div class="unified-tile-title">
             <span>{{ pane.label }}</span>
             <q-space />
-            <q-btn v-if="pane.id === 'cosmic'" dense unelevated color="primary" text-color="black" icon="queue_music" label="Send to Staff" :disable="!cosmicFrameReady" title="Send current Cosmic Harmony path to staff" @click="sendCosmicPathToStaff" />
+            <q-btn v-if="pane.id === 'cosmic' && !cosmicNarrativeOpen" dense unelevated color="primary" text-color="black" icon="queue_music" label="Send to Staff" :disable="!cosmicFrameReady" title="Send current Cosmic Harmony path to staff" @click="sendCosmicPathToStaff" />
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="article" :color="cosmicNarrativeOpen ? 'primary' : 'grey-5'" aria-label="Toggle full-height Cosmic narrative" title="Toggle Cosmic narrative" @click="toggleCosmicNarrative" />
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="tune" :color="cosmicDetails ? 'primary' : 'grey-5'" aria-label="Show Cosmic Harmony navigation and narrative" @click="toggleCosmicDetails" />
             <q-btn dense flat round :icon="maximized === pane.id ? 'close_fullscreen' : 'open_in_full'" :aria-label="maximized === pane.id ? `Restore ${pane.label} tile` : `Maximize ${pane.label} tile`" @click="maximized = maximized === pane.id ? '' : pane.id" />
