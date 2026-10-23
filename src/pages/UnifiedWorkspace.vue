@@ -83,7 +83,7 @@
         <q-tooltip v-if="store.tooltipsEnabled">{{ leftOpen ? 'Hide' : 'Show' }} view controls</q-tooltip>
       </q-btn>
 
-      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '', 'unified-tiles--stacked-instruments': layout.stackedInstruments }" aria-label="Tiled music workspace">
+      <div ref="gridEl" class="unified-tiles" :style="gridStyle" :class="{ 'unified-tiles--maximized': maximized !== '', 'unified-tiles--scalable-instruments': hasInstrumentRows }" aria-label="Tiled music workspace">
         <section
           v-for="pane in panes" v-show="layout.ids.includes(pane.id)" :key="pane.id"
           class="unified-tile" :class="`unified-tile--${pane.id}`" :style="{ gridArea: layout.areas[pane.id] || 'auto' }"
@@ -100,6 +100,19 @@
               @click="store.toggleCurrentKeyNotes()">
               <q-tooltip v-if="store.tooltipsEnabled">{{ store.isCurrentKeySelected ? 'Clear' : 'Select' }} all notes of the {{ store.currentMode }} {{ store.currentMode === 'minor' ? store.currentMinorLabel : store.currentKey.label }} scale on piano and guitar</q-tooltip>
             </q-btn>
+            <q-btn v-if="pane.id === 'piano' || pane.id === 'guitar'" dense flat round icon="more_horiz"
+              :aria-label="`${pane.label} display options`">
+              <q-tooltip v-if="store.tooltipsEnabled">{{ pane.label }} size options</q-tooltip>
+              <q-menu anchor="bottom right" self="top right" class="unified-instrument-menu">
+                <div class="instrument-size-label"><strong>{{ pane.label }} size</strong><span>{{ instrumentScale[pane.id] }}%</span></div>
+                <q-slider :model-value="instrumentScale[pane.id]" :min="50" :max="100" :step="5"
+                  label :label-value="`${instrumentScale[pane.id]}%`" color="primary"
+                  :aria-label="`${pane.label} display size`" @update:model-value="setInstrumentScale(pane.id, $event)" />
+                <div class="instrument-size-foot"><span>Smaller · Larger</span>
+                  <q-btn dense flat no-caps label="Default" color="primary" @click="resetInstrumentScale(pane.id)" />
+                </div>
+              </q-menu>
+            </q-btn>
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="article" :color="cosmicNarrativeOpen ? 'primary' : 'grey-5'" aria-label="Toggle full-height Cosmic narrative" title="Toggle Cosmic narrative" @click="toggleCosmicNarrative" />
             <q-btn v-if="pane.id === 'cosmic'" dense flat round icon="tune" :color="cosmicDetails ? 'primary' : 'grey-5'" aria-label="Show Cosmic Harmony navigation and narrative" @click="toggleCosmicDetails" />
             <q-btn dense flat round :icon="maximized === pane.id ? 'close_fullscreen' : 'open_in_full'" :aria-label="maximized === pane.id ? `Restore ${pane.label} tile` : `Maximize ${pane.label} tile`" @click="maximized = maximized === pane.id ? '' : pane.id" />
@@ -111,12 +124,14 @@
               @load="onCosmicFrameLoad"
             />
             <ScrollingSightReader v-else-if="pane.id === 'staff'" unified-transport />
-            <PianoKeyboard v-else-if="pane.id === 'piano'" />
-            <StratocasterFretboard v-else-if="pane.id === 'guitar'" />
+            <div v-else-if="pane.id === 'piano'" class="unified-instrument-wrap"
+              :style="{ width: `${instrumentScale.piano}%` }"><PianoKeyboard /></div>
+            <div v-else-if="pane.id === 'guitar'" class="unified-instrument-wrap"
+              :style="{ width: `${instrumentScale.guitar}%` }"><StratocasterFretboard /></div>
           </div>
         </section>
-        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="{ left: `${columnPercent}%`, top: layout.rows === 2 && layout.upperIds?.length === 1 ? `${rowTarget}%` : '0', bottom: layout.rows === 3 ? 'auto' : layout.rows === 2 && layout.lowerIds?.length === 1 ? `${100 - rowTarget}%` : '0', height: layout.rows === 3 ? `${stackedHeights.top}px` : 'auto' }" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
-        <div v-if="layout.rows >= 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: layout.rows === 3 ? `${stackedHeights.top}px` : `${rowTarget}%` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
+        <div v-if="layout.columns === 2 && !maximized" class="tile-split tile-split--vertical" :style="columnSplitStyle" role="separator" aria-label="Resize left and right tiles" aria-orientation="vertical" tabindex="0" @pointerdown.prevent="beginSplit($event, 'column')" @keydown.left.prevent="columnPercent = limitPercent(columnPercent - 5)" @keydown.right.prevent="columnPercent = limitPercent(columnPercent + 5)" />
+        <div v-if="layout.rows >= 2 && !maximized" class="tile-split tile-split--horizontal" :style="{ top: `${instrumentRows[0]}px` }" role="separator" aria-label="Resize upper and lower tiles" aria-orientation="horizontal" tabindex="0" @pointerdown.prevent="beginSplit($event, 'row')" @keydown.up.prevent="nudgeRow(-5)" @keydown.down.prevent="nudgeRow(5)" />
       </div>
 
       <q-btn class="unified-reveal unified-reveal--right" :class="{ 'is-open': rightOpen }"
@@ -172,7 +187,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useNoteMapStore } from '../stores/noteMap'
-import { UNIFIED_PANES, restoreUnifiedLayout, tileLayout, suggestedRowPercent } from '../music/unifiedTiling'
+import { UNIFIED_PANES, restoreUnifiedLayout, tileLayout, suggestedRowPercent, DEFAULT_INSTRUMENT_SCALES, clampInstrumentScale, instrumentPanelHeight } from '../music/unifiedTiling'
 import CosmicMidiBridge from '../components/CosmicMidiBridge.vue'
 import PianoKeyboard from '../components/PianoKeyboard.vue'
 import StratocasterFretboard from '../components/StratocasterFretboard.vue'
@@ -201,6 +216,7 @@ const leftOpen = ref(true)
 const rightOpen = ref(false)
 const leftWidth = ref(400)
 const rightWidth = ref(440)
+const instrumentScale = ref({ ...DEFAULT_INSTRUMENT_SCALES })
 const recordingToolsOpen = ref(false)
 const maximized = ref('')
 const cosmicDetails = ref(false)
@@ -217,29 +233,76 @@ const rowTarget = computed(() => rowAdjusted.value ? rowPercent.value : suggeste
 const cosmicUrl = `${import.meta.env.BASE_URL}cosmic-harmony.html?embed=1`
 const visibleIds = computed(() => panes.filter(pane => visibility.value[pane.id]).map(pane => pane.id))
 const layout = computed(() => tileLayout(visibleIds.value, maximized.value))
-// With four panes, give the full-width piano and guitar their natural vertical
-// space; scroll the workspace instead of compressing the fretboard/keyboard.
-const stackedHeights = computed(() => {
+// The instruments are scaled inside full-width tiles. Their rows must follow
+// the *rendered* SVG widths, not the overall workspace width. Preserve useful
+// room for Cosmic Harmony/Staff and scroll vertically if necessary.
+const hasInstrumentRows = computed(() => layout.value.rows > 1 &&
+  layout.value.ids.some(id => id === 'piano' || id === 'guitar'))
+function paneHeight(id, width) {
+  if (id === 'piano' || id === 'guitar')
+    return instrumentPanelHeight(id, width, keyboardRatio.value, instrumentScale.value[id])
+  return 0
+}
+const instrumentRows = computed(() => {
   const width = gridDimensions.value.width || 1000
   const height = gridDimensions.value.height || 700
-  return {
-    top: Math.max(310, Math.round(height * rowTarget.value / 100)),
-    piano: Math.max(165, Math.round(width / Math.max(3, keyboardRatio.value) + 44)),
-    guitar: Math.max(220, Math.round(width * (237 / 928) + 44))
+  const current = layout.value
+  const gap = 6
+  if (current.rows === 3) {
+    // The upper row is Cosmic Harmony | Staff, with stacked full-width instruments.
+    return [
+      Math.max(rowAdjusted.value ? 360 : 430, Math.round(height * rowTarget.value / 100)),
+      paneHeight('piano', width),
+      paneHeight('guitar', width)
+    ]
   }
+  if (current.rows !== 2) return []
+  const upperIds = current.upperIds || []
+  const lowerIds = current.lowerIds || []
+  const naturalHeight = (ids) => Math.max(0, ...ids.map((id, index) => {
+    const tileWidth = ids.length === 1 ? width
+      : (width - gap) * (index === 0 ? columnPercent.value : 100 - columnPercent.value) / 100
+    return paneHeight(id, tileWidth)
+  }))
+  const lower = Math.max(110, naturalHeight(lowerIds))
+  const upper = upperIds.some(id => id === 'cosmic' || id === 'staff')
+    ? Math.max(rowAdjusted.value ? 360 : 430, Math.round(height * rowTarget.value / 100),
+        rowAdjusted.value ? 0 : height - lower - gap)
+    : Math.max(110, naturalHeight(upperIds))
+  return [upper, lower]
 })
 const gridStyle = computed(() => ({
   gridTemplateColumns: layout.value.columns === 2 ? `${columnPercent.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)',
-  gridTemplateRows: layout.value.rows === 3
-    ? `${stackedHeights.value.top}px ${stackedHeights.value.piano}px ${stackedHeights.value.guitar}px`
-    : layout.value.rows === 2 ? `${rowTarget.value}% minmax(0, 1fr)` : 'minmax(0, 1fr)'
+  gridTemplateRows: hasInstrumentRows.value
+    ? instrumentRows.value.map(px => `${px}px`).join(' ')
+    : 'minmax(0, 1fr)'
 }))
+const columnSplitStyle = computed(() => {
+  const firstHeight = instrumentRows.value[0] || 0
+  const split = { left: `${columnPercent.value}%` }
+  if (layout.value.rows === 3) return { ...split, top: '0px', height: `${firstHeight}px` }
+  if (layout.value.rows === 2 && layout.value.upperIds?.length === 1)
+    return { ...split, top: `${firstHeight + 6}px`, height: `${instrumentRows.value[1]}px` }
+  if (layout.value.rows === 2 && layout.value.lowerIds?.length === 1)
+    return { ...split, top: '0px', height: `${firstHeight}px` }
+  return { ...split, top: '0px', bottom: '0px' }
+})
 
+function measuredRowPercent() {
+  return hasInstrumentRows.value && gridDimensions.value.height > 0
+    ? instrumentRows.value[0] / gridDimensions.value.height * 100
+    : rowTarget.value
+}
 function nudgeRow(delta) {
-  rowPercent.value = limitPercent(rowTarget.value + delta)
+  rowPercent.value = limitPercent(measuredRowPercent() + delta)
   rowAdjusted.value = true
 }
 function limitPercent(value) { return Math.max(24, Math.min(80, Math.round(value))) }
+function setInstrumentScale(id, value) {
+  if (id !== 'piano' && id !== 'guitar') return
+  instrumentScale.value = { ...instrumentScale.value, [id]: clampInstrumentScale(value) }
+}
+function resetInstrumentScale(id) { setInstrumentScale(id, DEFAULT_INSTRUMENT_SCALES[id]) }
 function setVisible(id, value) {
   if (value === false && visibleIds.value.length === 1) return
   visibility.value = { ...visibility.value, [id]: Boolean(value) }
@@ -318,7 +381,7 @@ function beginSidebarResize(event, side) {
 }
 function beginSplit(event, axis) {
   if (!gridEl.value || event.button !== 0) return
-  if (axis === 'row' && !rowAdjusted.value) { rowPercent.value = rowTarget.value; rowAdjusted.value = true }
+  if (axis === 'row' && !rowAdjusted.value) { rowPercent.value = limitPercent(measuredRowPercent()); rowAdjusted.value = true }
   const pointerId = event.pointerId
   const divider = event.currentTarget
   divider.setPointerCapture?.(pointerId)
@@ -343,7 +406,8 @@ function persistLayout() {
     window.localStorage.setItem('d3srt-unified-layout-v2', JSON.stringify({
       visibility: visibility.value, leftOpen: leftOpen.value, rightOpen: rightOpen.value,
       leftWidth: leftWidth.value, rightWidth: rightWidth.value,
-      columnPercent: columnPercent.value, rowPercent: rowPercent.value, rowAdjusted: rowAdjusted.value
+      columnPercent: columnPercent.value, rowPercent: rowPercent.value, rowAdjusted: rowAdjusted.value,
+      instrumentScale: instrumentScale.value
     }))
   } catch { /* persistence is optional */ }
 }
@@ -370,6 +434,10 @@ onMounted(() => {
       rightOpen.value = saved.rightOpen === true
       leftWidth.value = clampSidebarWidth(saved.leftWidth || 400)
       rightWidth.value = clampSidebarWidth(saved.rightWidth || 440)
+      instrumentScale.value = {
+        piano: clampInstrumentScale(saved.instrumentScale?.piano ?? DEFAULT_INSTRUMENT_SCALES.piano),
+        guitar: clampInstrumentScale(saved.instrumentScale?.guitar ?? DEFAULT_INSTRUMENT_SCALES.guitar)
+      }
       columnPercent.value = limitPercent(Number(saved.columnPercent) || 50)
       rowPercent.value = limitPercent(Number(saved.rowPercent) || 62)
       rowAdjusted.value = saved.rowAdjusted === true
@@ -383,7 +451,7 @@ onMounted(() => {
   keyboardObserver = new MutationObserver(measureGrid)
   if (gridEl.value) keyboardObserver.observe(gridEl.value, { subtree: true, attributes: true, attributeFilter: ['viewBox'] })
   measureGrid()
-  stopWatching = watch([visibility, leftOpen, rightOpen, leftWidth, rightWidth, columnPercent, rowPercent, rowAdjusted], persistLayout, { deep: true })
+  stopWatching = watch([visibility, leftOpen, rightOpen, leftWidth, rightWidth, columnPercent, rowPercent, rowAdjusted, instrumentScale], persistLayout, { deep: true })
 })
 onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardObserver?.disconnect() })
 </script>
@@ -435,7 +503,10 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 .unified-reveal--right { border-radius:12px 0 0 12px; border-right:0; }
 .unified-key-notes { font-size:11px; letter-spacing:0; min-width:48px; }
 .unified-tiles { position:relative; flex:1 1 auto; min-height:0; min-width:0; display:grid; gap:6px; overflow:hidden; }
-.unified-tiles--stacked-instruments { overflow-y:auto; overflow-x:hidden; align-content:start; scrollbar-gutter:stable; }
+.unified-tiles--scalable-instruments { overflow-y:auto; overflow-x:hidden; align-content:start; scrollbar-gutter:stable; }
+.unified-instrument-wrap { max-width:100%; min-width:0; flex:0 0 auto; }
+.unified-instrument-wrap :deep(.instrument-section) { width:100%; }
+
 .unified-tile { min-width:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; border:1px solid #475363; border-radius:8px; background:#292e36; }
 .unified-tile-title { min-height:31px; padding:1px 5px 1px 10px; display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:#bbd1df; border-bottom:1px solid #434d59; }
 .unified-tile-title :deep(.q-btn) { min-height:27px; min-width:27px; }
@@ -476,9 +547,19 @@ onBeforeUnmount(() => { stopWatching?.(); gridObserver?.disconnect(); keyboardOb
 /* Slice 4: preserve original geometry; center narrow content in unused pane height. */
 .unified-tile--staff .unified-tile-content,
 .unified-tile--piano .unified-tile-content,
-.unified-tile--guitar .unified-tile-content { display: flex; align-items: safe center; }
+.unified-tile--guitar .unified-tile-content { display: flex; align-items: safe center; justify-content:center; }
 .unified-tile--staff .unified-tile-content > *,
 .unified-tile--piano .unified-tile-content > *,
 .unified-tile--guitar .unified-tile-content > * { width: 100%; flex: 0 0 auto; }
 .unified-tile--cosmic .unified-tile-content { overflow: hidden; }
+</style>
+
+<style>
+/* Quasar teleports instrument menus outside the scoped component subtree. */
+.unified-instrument-menu { min-width:230px; padding:12px 18px 8px; background:#293441; color:#dce9f4; border:1px solid #607186; border-radius:8px; }
+.unified-instrument-menu .instrument-size-label,
+.unified-instrument-menu .instrument-size-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.unified-instrument-menu .instrument-size-label { font-size:13px; }
+.unified-instrument-menu .instrument-size-label span { color:#9ac4d2; font-variant-numeric:tabular-nums; }
+.unified-instrument-menu .instrument-size-foot { font-size:11px; color:#9eaebd; }
 </style>

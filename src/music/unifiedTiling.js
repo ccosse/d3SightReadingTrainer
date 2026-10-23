@@ -84,3 +84,22 @@ export function suggestedRowPercent(layout, width, height, keyboardRatio = 8) {
   const lowerHeight = Math.min(height * 0.60, Math.max(115, ...wanted) + 10)
   return Math.max(24, Math.min(80, Math.round(100 * (1 - lowerHeight / height))))
 }
+
+// Size percentages are intentionally conservative so the notation and Cosmic
+// panes retain vertical space on laptop displays. Both are user-adjustable.
+export const DEFAULT_INSTRUMENT_SCALES = Object.freeze({ piano: 75, guitar: 65 })
+
+export function clampInstrumentScale(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 75
+  return Math.max(50, Math.min(100, Math.round(numeric / 5) * 5))
+}
+
+// Return the tile's required height including its 31px header and breathing
+// room; match the SVG viewBox so resizing changes row height without cropping.
+export function instrumentPanelHeight(id, paneWidth, keyboardRatio = 8, scale = 100) {
+  if (id !== 'piano' && id !== 'guitar') return 0
+  const drawnWidth = Math.max(0, paneWidth - 12) * clampInstrumentScale(scale) / 100
+  const ratio = id === 'piano' ? 1 / Math.max(3, keyboardRatio) : 236.93617021276594 / 928
+  return Math.ceil(drawnWidth * ratio + 44)
+}
