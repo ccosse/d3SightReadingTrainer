@@ -11,6 +11,10 @@ const routes = [
     ]
   },
   {
+    path: '/demo',
+    component: () => import('../pages/HomepageDemo.vue')
+  },
+  {
     path: '/:catchAll(.*)*',
     component: () => import('../pages/ErrorNotFound.vue')
   }
