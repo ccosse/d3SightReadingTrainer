@@ -53,6 +53,9 @@ onBeforeUnmount(() => store.requestSrtStop())
 html, body, #q-app { min-height:100%; background:#303030; }
 .homepage-demo .srt-shell { padding:0 !important; margin:0 !important; }
 .homepage-demo .scroll-stage { width:100%; }
+.homepage-demo .scroll-svg { width:100%; height:min(24vw,220px) !important; min-height:140px; }
+.homepage-demo .keyboard-frame { max-height:115px; overflow:hidden; }
+.homepage-demo .keyboard-frame .instrument-svg { max-height:110px; }
 .homepage-demo .recording-console { display:none !important; }
 .homepage-demo .instrument-section { margin:0 !important; }
 </style>
